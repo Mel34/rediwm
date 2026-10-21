@@ -28,7 +28,14 @@ case "$family" in
         ;;
     debian|ubuntu)
         extra="xwayland xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk python3 xkb-data libgl1-mesa-dri libegl-mesa0 squashfs-tools"
-        owner() { { dpkg-query -S "$1" 2>/dev/null || dpkg-query -S "/usr$1" 2>/dev/null; } | head -n 1 | sed 's/:.*//'; }
+        # A diverted file (usr-merge) prints "diversion by PKG from: ..." lines
+        # first; skip them, and keep only the first package of a shared path.
+        owner() {
+            for owned in "$1" "/usr$1"; do
+                found=$(dpkg-query -S "$owned" 2>/dev/null | grep -v '^diversion ' | head -n 1 | sed 's/:.*//; s/,.*//')
+                [ -z "$found" ] || { echo "$found"; return; }
+            done
+        }
         ;;
     fedora)
         extra="xorg-x11-server-Xwayland xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk python3 mesa-dri-drivers squashfs-tools"
@@ -97,6 +104,9 @@ for soname in $sonames; do
     [ -n "$path" ] || die "$soname isn't installed in this container"
     pkg=$(owner "$path")
     [ -n "$pkg" ] || die "no package owns $path ($soname)"
+    case "$pkg" in
+        *[!A-Za-z0-9.+_-]*) die "unusable package name '$pkg' for $path ($soname)" ;;
+    esac
     pkgs="$pkgs $pkg"
 done
 {
