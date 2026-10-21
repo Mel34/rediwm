@@ -45,7 +45,7 @@ chmod 440 /etc/sudoers.d/tester
 log "Running install.sh as an ordinary user"
 cd /
 runuser -u tester -- env HOME=/home/tester REDIWM_RELEASE_URL="file://$rel" \
-    sh "$installer" --no-restart
+    sh "$installer" --prebuilt-only --no-restart
 
 # Not cwd=$src: the installed copy, from outside any checkout.
 log "Checking the installed files"

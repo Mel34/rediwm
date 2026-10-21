@@ -15,6 +15,7 @@
 # the release). That path installs build dependencies, bootstraps a pinned Zig
 # from ziglang.org, gets the source (the current checkout if run from inside
 # one, otherwise a clone) and hands off to scripts/install-session.sh.
+# --prebuilt-only fails instead of building from source (release checks use it).
 # Arguments are forwarded (`curl ... | sh -s -- --dm`).
 #
 # This never replaces the login manager: RediWM is added as a session entry,
@@ -44,6 +45,7 @@ if [ "$(id -u)" -eq 0 ]; then SUDO=""; else SUDO="sudo"; fi
 
 # Our own flags are consumed here; everything else goes to install-session.sh.
 BUILD=no
+PREBUILT_ONLY=no
 DEPS_ONLY=no
 DM=no
 n=$#
@@ -51,6 +53,7 @@ while [ "$n" -gt 0 ]; do
     arg=$1; shift; n=$((n - 1))
     case "$arg" in
         --build) BUILD=yes ;;
+        --prebuilt-only) PREBUILT_ONLY=yes ;;
         # For scripts/release-build.sh: install what a release build needs.
         --build-deps-only) BUILD=yes; DEPS_ONLY=yes ;;
         --dm) DM=yes; set -- "$@" "$arg" ;;
@@ -191,8 +194,11 @@ if [ "$BUILD" = no ] && fetch_release; then
     else
         log "This system doesn't have the packages the prebuilt release needs"
     fi
+    [ "$PREBUILT_ONLY" = no ] || die "the prebuilt release can't be used here (see above); --prebuilt-only forbids building from source"
     log "Falling back to building from source"
 fi
+[ "$PREBUILT_ONLY" = no ] || [ "$BUILD" = no ] || die "--prebuilt-only conflicts with --build"
+[ "$PREBUILT_ONLY" = no ] || die "no prebuilt release could be fetched (see above); --prebuilt-only forbids building from source"
 
 # ---------------------------------------------------------------------------
 # 3. Source build: build dependencies
