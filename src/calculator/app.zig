@@ -6,9 +6,9 @@ const W = ui.layout.Widget;
 const c = @import("../files/c.zig").api;
 const Model = @import("model.zig").Model;
 
-/// The entry line is set in the keypad's own label size.
+/// Give the entry twice the usual large-button label size.
 fn entrySize() f32 {
-    return ui.widgets.button.metrics(.lg, theme.global).font_size;
+    return ui.widgets.button.metrics(.lg, theme.global).font_size * 2;
 }
 
 const labels = [_][]const u8{
@@ -90,7 +90,7 @@ pub const App = struct {
         const height: f32 = @floatFromInt(self.h);
         const gap: f32 = 8;
         const cell_w = (width - 32 - gap * 3) / 4;
-        const top: f32 = @max(112, entrySize() + cairo.statusSize() * 3 + 56);
+        const top: f32 = @max(112, entrySize() + cairo.statusSize() + 56);
         const cell_h = @max(24, (height - top - 16 - gap * 5) / 6);
         self.root.computed_width = width;
         self.root.computed_height = height;
@@ -209,14 +209,17 @@ pub const App = struct {
         c.cairo_paint(cr);
         const status = cairo.statusSize();
         const heading = entrySize();
-        if (self.model.history_len > 0) self.textRight(cr, self.model.history[0..self.model.history_len], 16 + status, status, false);
+        const history = if (self.model.notice.len > 0) self.model.notice else self.model.history[0..self.model.history_len];
+        if (history.len > 0) self.textRight(cr, history, 16 + status, status, false);
         const expression = self.model.display();
         self.textRight(cr, if (expression.len == 0) "0" else expression, 28 + status + heading, heading, true);
-        self.textRight(cr, if (self.model.notice.len > 0) self.model.notice else @import("i18n").tr("Enter =   Esc clear   F9 ±   % = ÷100"), 40 + status * 2 + heading, status, false);
         ui.input.active_dispatcher = &self.dispatcher;
         defer ui.input.active_dispatcher = null;
         if (cairo.Layer.begin(cr, .{ .x = 0, .y = 0, .w = @floatFromInt(self.w), .h = @floatFromInt(self.h) })) |value| {
             var layer = value;
+            var keypad_theme = theme.shellPalette();
+            keypad_theme.button_font_size *= 1.5;
+            layer.renderer.palette = keypad_theme;
             ui.paint.paint(&self.root, &layer.renderer);
             layer.finish();
         }

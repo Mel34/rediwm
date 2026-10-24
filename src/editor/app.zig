@@ -20,6 +20,9 @@ const app_files = @import("app_files.zig");
 const app_view = @import("app_view.zig");
 const app_input = @import("app_input.zig");
 const app_paint = @import("app_paint.zig");
+const app_search = @import("app_search.zig");
+const app_edit = @import("app_edit.zig");
+const app_controls = @import("app_controls.zig");
 const a = std.heap.c_allocator;
 pub const top: f64 = 40;
 pub const status_h: f64 = 26;
@@ -32,8 +35,8 @@ const Status = struct {
 };
 /// Stand-in for the position of a cursor too far from the view to measure.
 pub const far: c_int = 1_000_000 * 1024;
-pub const Action = enum { new, open, save, save_as, find, wrap };
-pub const labels = [_]i18n.Message{ i18n.msg("New"), i18n.msg("Open"), i18n.msg("Save"), i18n.msg("Save As"), i18n.msg("Find"), i18n.msg("Word Wrap") };
+pub const Action = enum { new, open, save, save_as, find, replace, wrap };
+pub const labels = [_]i18n.Message{ i18n.msg("New"), i18n.msg("Open"), i18n.msg("Save"), i18n.msg("Save As"), i18n.msg("Find"), i18n.msg("Replace"), i18n.msg("Word Wrap") };
 pub const Tab = struct {
     id: usize,
     doc: Document = .{},
@@ -87,8 +90,8 @@ pub const App = struct {
     /// the same tab shows feedback, not switching to a tab scrolled elsewhere.
     bar_observed: f64 = 0,
     bar_tab: ?*Tab = null,
-    px: f64 = 0,
-    py: f64 = 0,
+    px: f64 = -1,
+    py: f64 = -1,
     wrap: bool = true,
     io: std.Io,
     operation: ?*op.Operation = null,
@@ -100,7 +103,10 @@ pub const App = struct {
     notice_len: usize = 0,
     title: [1024:0]u8 = @splat(0),
     find_open: bool = false,
+    replace_open: bool = false,
+    search_focus: app_search.Control = .query,
     query: @import("../files/editor.zig").Editor = .{},
+    replacement: @import("../files/editor.zig").Editor = .{},
     clipboard: std.ArrayList(u8) = .empty,
     clipboard_revision: usize = 0,
     paste_requested: bool = false,
@@ -120,6 +126,7 @@ pub const App = struct {
         for (self.queue.items) |path| a.free(path);
         self.queue.deinit(a);
         self.query.deinit(a);
+        self.replacement.deinit(a);
         self.clipboard.deinit(a);
         self.preedit.deinit(a);
         self.rows.deinit(a);
@@ -183,6 +190,11 @@ pub const App = struct {
     pub const menuHit = app_paint.menuHit;
     pub const paintMenu = app_paint.paintMenu;
     pub const paintButton = app_paint.paintButton;
+    pub const paintIcon = app_controls.paintIcon;
+    pub const tabCloseBox = app_controls.tabCloseBox;
+    pub const newButtonBox = app_controls.newButtonBox;
+    pub const menuButtonBox = app_controls.menuButtonBox;
+    pub const hoverTarget = app_controls.hoverTarget;
     pub const render = app_paint.render;
     pub const paintLine = app_paint.paintLine;
     pub const paintClose = app_paint.paintClose;
@@ -223,9 +235,18 @@ pub const App = struct {
     pub const handleMotion = app_input.handleMotion;
     pub const handleButton = app_input.handleButton;
     pub const pasteText = app_input.pasteText;
-    pub const findNext = app_input.findNext;
+    pub const findNext = app_search.findNext;
+    pub const openSearch = app_search.openSearch;
+    pub const searchEditor = app_search.searchEditor;
+    pub const searchBox = app_search.searchBox;
+    pub const searchHit = app_search.searchHit;
+    pub const searchKey = app_search.searchKey;
+    pub const searchActivate = app_search.searchActivate;
+    pub const paintSearch = app_search.paintSearch;
+    pub const searchCaret = app_search.searchCaret;
     pub const keyRepeats = app_input.keyRepeats;
     pub const handleKey = app_input.handleKey;
+    pub const editKey = app_edit.editKey;
 };
 pub fn fill(cr: *c.cairo_t, x: f64, y: f64, w: f64, h: f64, color: [4]f32) void {
     ui.setSource(cr, color);

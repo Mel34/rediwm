@@ -55,23 +55,32 @@ pub const Model = struct {
         self.notice = @import("i18n").tr("Expression is full");
     }
 
-    /// Toggle the trailing number (including a scientific-notation result).
+    /// Toggle the trailing operand, including a percentage or grouped result.
     pub fn negate(self: *Model) void {
         self.notice = "";
         self.evaluated = false;
         var start = self.len;
-        while (start > 0 and (std.ascii.isDigit(self.buffer[start - 1]) or self.buffer[start - 1] == '.')) start -= 1;
-        if (start > 0) {
-            var exponent = start;
-            if (self.buffer[exponent - 1] == '+' or self.buffer[exponent - 1] == '-') exponent -= 1;
-            if (exponent > 0 and (self.buffer[exponent - 1] == 'e' or self.buffer[exponent - 1] == 'E')) {
-                start = exponent - 1;
-                while (start > 0 and (std.ascii.isDigit(self.buffer[start - 1]) or self.buffer[start - 1] == '.')) start -= 1;
+        while (start > 0 and self.buffer[start - 1] == '%') start -= 1;
+        if (start > 0 and self.buffer[start - 1] == ')') {
+            var depth: usize = 1;
+            start -= 1;
+            while (start > 0 and depth > 0) {
+                start -= 1;
+                if (self.buffer[start] == ')') depth += 1;
+                if (self.buffer[start] == '(') depth -= 1;
+            }
+            if (depth != 0) return;
+        } else {
+            while (start > 0 and (std.ascii.isDigit(self.buffer[start - 1]) or self.buffer[start - 1] == '.')) start -= 1;
+            if (start > 0) {
+                var exponent = start;
+                if (self.buffer[exponent - 1] == '+' or self.buffer[exponent - 1] == '-') exponent -= 1;
+                if (exponent > 0 and (self.buffer[exponent - 1] == 'e' or self.buffer[exponent - 1] == 'E')) {
+                    start = exponent - 1;
+                    while (start > 0 and (std.ascii.isDigit(self.buffer[start - 1]) or self.buffer[start - 1] == '.')) start -= 1;
+                }
             }
         }
-        // After an operator, ± starts a negative entry; on a closed group or
-        // percentage it leaves the completed operand alone.
-        if (start == self.len and self.len > 0 and (self.buffer[self.len - 1] == ')' or self.buffer[self.len - 1] == '%')) return;
         if (start > 0 and self.buffer[start - 1] == '-' and
             (start == 1 or std.mem.indexOfScalar(u8, "+-*/(", self.buffer[start - 2]) != null))
         {
@@ -132,10 +141,17 @@ const Parser = struct {
     pos: usize = 0,
     depth: usize = 0,
 
+    const Value = struct {
+        number: f64,
+        /// A percentage operand keeps its meaning through signs and grouping.
+        /// Products and sums produce ordinary numbers.
+        percent: bool = false,
+    };
+
     fn evaluate(self: *Parser) EvalError!f64 {
         const value = try self.sum();
         if (self.pos != self.text.len) return error.InvalidExpression;
-        return value;
+        return value.number;
     }
 
     fn take(self: *Parser, char: u8) bool {
@@ -149,33 +165,34 @@ const Parser = struct {
         return value;
     }
 
-    fn sum(self: *Parser) EvalError!f64 {
+    fn sum(self: *Parser) EvalError!Value {
         var value = try self.product();
         while (self.pos < self.text.len) {
-            if (self.take('+')) {
-                value = try finite(value + try self.product());
-            } else if (self.take('-')) {
-                value = try finite(value - try self.product());
-            } else break;
+            const subtract = if (self.take('+')) false else if (self.take('-')) true else break;
+            const rhs = try self.product();
+            // Calculator-style increases/discounts: 200 + 10% = 220.
+            // Resolve multiplication/division first, using fractional rates.
+            const amount = if (rhs.percent) try finite(value.number * rhs.number) else rhs.number;
+            value = .{ .number = try finite(if (subtract) value.number - amount else value.number + amount) };
         }
         return value;
     }
 
-    fn product(self: *Parser) EvalError!f64 {
+    fn product(self: *Parser) EvalError!Value {
         var value = try self.operand();
         while (self.pos < self.text.len) {
             if (self.take('*')) {
-                value = try finite(value * try self.operand());
+                value = .{ .number = try finite(value.number * (try self.operand()).number) };
             } else if (self.take('/')) {
-                const divisor = try self.operand();
+                const divisor = (try self.operand()).number;
                 if (divisor == 0) return error.DivisionByZero;
-                value = try finite(value / divisor);
+                value = .{ .number = try finite(value.number / divisor) };
             } else break;
         }
         return value;
     }
 
-    fn operand(self: *Parser) EvalError!f64 {
+    fn operand(self: *Parser) EvalError!Value {
         if (self.depth >= 32) return error.InvalidExpression;
         self.depth += 1;
         defer self.depth -= 1;
@@ -183,7 +200,7 @@ const Parser = struct {
         while (self.pos < self.text.len) {
             if (self.take('-')) negative = !negative else if (!self.take('+')) break;
         }
-        var value: f64 = undefined;
+        var value: Value = undefined;
         if (self.take('(')) {
             value = try self.sum();
             if (!self.take(')')) return error.InvalidExpression;
@@ -194,9 +211,17 @@ const Parser = struct {
                 _ = self.take('+') or self.take('-');
                 while (self.pos < self.text.len and std.ascii.isDigit(self.text[self.pos])) self.pos += 1;
             }
-            value = std.fmt.parseFloat(f64, self.text[start..self.pos]) catch return error.InvalidExpression;
+            value = .{ .number = std.fmt.parseFloat(f64, self.text[start..self.pos]) catch return error.InvalidExpression };
         }
-        while (self.take('%')) value /= 100;
-        return finite(if (negative) -value else value);
+        while (self.take('%')) {
+            value.number /= 100;
+            value.percent = true;
+        }
+        value.number = try finite(if (negative) -value.number else value.number);
+        return value;
     }
 };
+
+test {
+    _ = @import("model_tests.zig");
+}

@@ -141,3 +141,6 @@ src/system_monitor_main.zig
 src/taskbar/battery.zig
 src/taskbar/window_menu.zig
 src/toplevel/info.zig
+src/editor/app_controls.zig
+src/editor/app_search.zig
+src/editor/app_edit.zig

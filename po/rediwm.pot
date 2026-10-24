@@ -1135,7 +1135,7 @@ msgstr ""
 msgid "Clear search"
 msgstr ""
 
-#: src/editor/app_input.zig
+#: src/editor/app_edit.zig
 msgid "Clipboard selections are limited to 1 MiB."
 msgstr ""
 
@@ -2255,10 +2255,6 @@ msgstr ""
 msgid "Enlarge this window to show the terminal"
 msgstr ""
 
-#: src/calculator/app.zig
-msgid "Enter =   Esc clear   F9 ±   % = ÷100"
-msgstr ""
-
 #: src/polkit/dialog.zig
 msgid "Enter Password"
 msgstr ""
@@ -2515,7 +2511,7 @@ msgstr ""
 msgid "Find ▲"
 msgstr ""
 
-#: src/editor/app_paint.zig
+#: src/editor/app_search.zig
 msgid "Find…"
 msgstr ""
 
@@ -3291,6 +3287,10 @@ msgstr ""
 msgid "Master volume"
 msgstr ""
 
+#: src/editor/app_search.zig
+msgid "Matches replaced: {count}"
+msgstr ""
+
 #: src/control_center/sections/shortcuts.zig
 msgid "Maximize or restore the focused window."
 msgstr ""
@@ -3327,7 +3327,7 @@ msgstr ""
 msgid "Memory (resident)"
 msgstr ""
 
-#: src/editor/client_render.zig
+#: src/editor/app_paint.zig
 msgid "Menu"
 msgstr ""
 
@@ -3607,7 +3607,7 @@ msgstr ""
 msgid "Newest first"
 msgstr ""
 
-#: src/editor/app_paint.zig
+#: src/editor/app_search.zig
 msgid "Next"
 msgstr ""
 
@@ -4739,12 +4739,20 @@ msgstr ""
 msgid "Repeat rate"
 msgstr ""
 
-#: src/files/app_chooser.zig
+#: src/editor/app.zig
 msgid "Replace"
+msgstr ""
+
+#: src/editor/app_search.zig
+msgid "Replace All"
 msgstr ""
 
 #: src/control_center/sections/appearance_sections.zig
 msgid "Replace installed theme"
+msgstr ""
+
+#: src/editor/app_search.zig
+msgid "Replace with…"
 msgstr ""
 
 #: src/control_center/sections/printers_details.zig
@@ -5767,7 +5775,7 @@ msgstr ""
 msgid "Text files are limited to 4 GiB."
 msgstr ""
 
-#: src/editor/app_input.zig
+#: src/editor/app_search.zig
 msgid "Text not found"
 msgstr ""
 
@@ -7471,7 +7479,7 @@ msgctxt "desktop:Comment"
 msgid "Edit text files in tabs"
 msgstr ""
 
-#: data/rediwm.desktop
+#: data/rediwm-release-safe.desktop
 msgctxt "desktop:Comment"
 msgid "RediWM Wayland compositor"
 msgstr ""
@@ -7546,7 +7554,7 @@ msgctxt "desktop:Name"
 msgid "PDF Viewer"
 msgstr ""
 
-#: data/rediwm.desktop
+#: data/rediwm-release-safe.desktop
 msgctxt "desktop:Name"
 msgid "RediWM"
 msgstr ""

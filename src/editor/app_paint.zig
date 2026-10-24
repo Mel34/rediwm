@@ -31,6 +31,7 @@ pub const CaretState = struct {
     cursor: usize,
     anchor: usize,
     find: bool,
+    search_focus: @import("app_search.zig").Control,
     query_hash: u64,
     activity: usize,
     top: usize,
@@ -44,14 +45,16 @@ pub const CaretState = struct {
 pub fn caretState(self: *App) CaretState {
     const d = self.document();
     const r = self.inputRectangle();
+    const editor = self.searchEditor();
     const in_view = @as(f64, @floatFromInt(r.y + r.height)) > self.viewTop() and @as(f64, @floatFromInt(r.y)) < self.viewTop() + self.viewHeight();
     return .{
-        .active = self.focused and !self.menu_open and self.close_tab == null and self.preedit.items.len == 0 and (self.find_open or (d.cursor == d.anchor and in_view)),
+        .active = self.focused and !self.menu_open and self.close_tab == null and self.preedit.items.len == 0 and (editor != null or (!self.find_open and d.cursor == d.anchor and in_view)),
         .tab = self.tabId(),
         .revision = d.revision,
-        .cursor = if (self.find_open) self.query.cursor else d.cursor,
-        .anchor = if (self.find_open) self.query.anchor else d.anchor,
+        .cursor = if (editor) |e| e.cursor else d.cursor,
+        .anchor = if (editor) |e| e.anchor else d.anchor,
         .find = self.find_open,
+        .search_focus = self.search_focus,
         .activity = self.caret_activity,
         .top = d.top,
         .dy = self.current().dy,
@@ -59,7 +62,7 @@ pub fn caretState(self: *App) CaretState {
         .width = self.w,
         .height = self.h,
         .scale = self.scale,
-        .query_hash = if (self.find_open) std.hash.Wyhash.hash(0, self.query.text.items) else 0,
+        .query_hash = if (editor) |e| std.hash.Wyhash.hash(0, e.text.items) else 0,
     };
 }
 
@@ -71,12 +74,7 @@ pub fn stepCaret(self: *App, now: i64, active: bool, restart: bool, snap: bool) 
         .h = @as(f32, @floatFromInt(r.height)) / 1024,
     };
     if (self.find_open) {
-        if (self.layouts.cr) |cr| target = .{
-            .x = @floatCast(22 + ui.measureText(cr, self.query.text.items[0..@min(self.query.cursor, self.query.text.items.len)], ui.textSize(), false)),
-            .y = 48,
-            .w = 1,
-            .h = 18,
-        };
+        if (self.layouts.cr) |cr| target = self.searchCaret(cr);
     }
     if (self.caret.update(now, active, restart, target, snap or self.caret_snap)) self.caret_dirty = true;
     self.caret_snap = false;
@@ -102,7 +100,7 @@ pub fn paintCaret(self: *App, cr: *c.cairo_t) void {
 }
 
 pub fn tabRight(self: *const App) f64 {
-    return @as(f64, @floatFromInt(self.w)) - @as(f64, if (self.has_titlebar) 34 else 70);
+    return @as(f64, @floatFromInt(self.w)) - @as(f64, if (self.has_titlebar) 40 else 80);
 }
 
 pub fn dismissMenu(self: *App) void {
@@ -144,8 +142,8 @@ pub fn menuHit(self: *const App, x: f64, y: f64) ?usize {
 pub fn paintMenu(self: *App, cr: *c.cairo_t) void {
     menu.frame(cr, self.menuBox(), true);
     const IconId = @import("ui").layout.IconId;
-    const icons = [_]?IconId{ .plus, .open, .save, .save, .search, if (self.wrap) .checkmark else null };
-    const hints = [_]?[]const u8{ "CTRL+N", "CTRL+O", "CTRL+S", "CTRL+SHIFT+S", "CTRL+F", null };
+    const icons = [_]?IconId{ .plus, .open, .save, .save, .search, .search, if (self.wrap) .checkmark else null };
+    const hints = [_]?[]const u8{ "CTRL+N", "CTRL+O", "CTRL+S", "CTRL+SHIFT+S", "CTRL+F", "CTRL+H", null };
     for (labels, 0..) |label, i| menu.row(cr, self.menuRow(i), .{
         .label = label.get(),
         .hint = hints[i],
@@ -178,40 +176,16 @@ pub fn render(self: *App, cr: *c.cairo_t) void {
         var buf: [512]u8 = undefined;
         const label = std.fmt.bufPrint(&buf, "{s}{s}", .{ tab.name(), if (tab.doc.modified()) " •" else "" }) catch tr("Text file");
         c.cairo_save(cr);
-        c.cairo_rectangle(cr, x + 12, 2, tab_w - 42, 32);
+        c.cairo_rectangle(cr, x + 12, 2, tab_w - 52, 32);
         c.cairo_clip(cr);
         ui.setSource(cr, t.window_fg);
         ui.drawText(cr, label, x + 12, 24, ui.textSize(), false);
         c.cairo_restore(cr);
-        self.paintButton(cr, .{ .x = @floatCast(x + tab_w - 28), .y = 5, .w = 24, .h = 26 }, "×", false);
+        self.paintIcon(cr, self.tabCloseBox(i - self.first_tab), .close, tr("Close tab"), false);
     }
-    self.paintButton(cr, .{ .x = @floatCast(self.tabRight() + 2), .y = 5, .w = 28, .h = 26 }, "+", false);
-    if (!self.has_titlebar) self.paintButton(cr, .{ .x = @floatFromInt(self.w - 32), .y = 5, .w = 28, .h = 26 }, "…", self.menu_open);
-    if (self.find_open) {
-        const box: field.Rect = .{ .x = 12, .y = 43, .w = @floatFromInt(self.w - 110), .h = 30 };
-        if (ui.Layer.begin(cr, box)) |l| {
-            var layer = l;
-            _ = field.paintFrame(&layer.renderer, layer.local(), .{}, .{ .focused = true });
-            layer.finish();
-        }
-        c.cairo_save(cr);
-        c.cairo_rectangle(cr, 22, 43, @floatFromInt(self.w - 130), 30);
-        c.cairo_clip(cr);
-        const bytes = self.query.text.items;
-        const selected = self.query.selection();
-        if (selected[0] != selected[1]) {
-            const x = 22 + ui.measureText(cr, bytes[0..selected[0]], ui.textSize(), false);
-            const width = ui.measureText(cr, bytes[selected[0]..selected[1]], ui.textSize(), false);
-            fill(cr, x, 46, width, 24, t.app_item_selected);
-        }
-        var ink = t.window_fg;
-        if (bytes.len == 0) ink[3] *= 0.5;
-        ui.setSource(cr, ink);
-        ui.drawText(cr, if (bytes.len == 0) tr("Find…") else bytes, 22, 64, ui.textSize(), false);
-        self.paintCaret(cr);
-        c.cairo_restore(cr);
-        self.paintButton(cr, .{ .x = @floatFromInt(self.w - 90), .y = 43, .w = 78, .h = 30 }, tr("Next"), false);
-    }
+    self.paintIcon(cr, self.newButtonBox(), .plus, tr("New tab"), false);
+    if (!self.has_titlebar) self.paintIcon(cr, self.menuButtonBox(), .more, tr("Menu"), self.menu_open);
+    if (self.find_open) self.paintSearch(cr);
     self.layouts.beginFrame();
     const pt = self.port();
     pt.clamp();

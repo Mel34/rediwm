@@ -201,6 +201,53 @@ def run():
                 title("beta.txt")
                 print("find, selection replacement and undo", flush=True)
 
+                # Replace one and all through the real fields and buttons. A
+                # replacement containing its query must not be searched again.
+                key(30, ctrl=True)
+                ipc.type_text("cat cat cafe cat")
+                key(31, ctrl=True)
+                wait_for(lambda: second.read_text() == "cat cat cafe cat", "replacement fixture saved")
+                key(35, ctrl=True)  # Ctrl+H
+                ipc.type_text("cat")
+                key(15)  # Tab focuses replacement
+                ipc.type_text("catfish")
+                if output := os.environ.get("REDIWM_EDITOR_REPLACE_PREVIEW"):
+                    ipc.screenshot(path=output)
+                key(28)  # Replace current/next match
+                key(31, ctrl=True)
+                wait_for(lambda: second.read_text() == "catfish cat cafe cat", "replace one")
+                key(44, ctrl=True)  # Undo while the replacement field has focus
+                key(31, ctrl=True)
+                wait_for(lambda: second.read_text() == "cat cat cafe cat", "replace-one undo")
+                box = ipc.get_window_debug(editor()["id"])["client_box"]
+                click(editor(), box["width"] - 76, header + 99)  # Replace All
+                key(31, ctrl=True)
+                wait_for(lambda: second.read_text() == "catfish catfish cafe catfish", "replace all without rescanning replacements")
+                key(44, ctrl=True)
+                key(31, ctrl=True)
+                wait_for(lambda: second.read_text() == "cat cat cafe cat", "replace-all single undo")
+                key(21, ctrl=True)
+                key(31, ctrl=True)
+                wait_for(lambda: second.read_text() == "catfish catfish cafe catfish", "replace-all redo")
+                key(1)
+                menu_action(5)  # Replace is also discoverable in the menu
+                ipc.type_text("catfish")
+                key(15)
+                key(14)  # Empty replacement deletes every match
+                key(28, ctrl=True)
+                key(31, ctrl=True)
+                wait_for(lambda: second.read_text() == "  cafe ", "replace all with empty text")
+                key(35, ctrl=True)
+                ipc.type_text("missing")
+                key(15)
+                ipc.type_text("unused")
+                key(28, ctrl=True)
+                key(31, ctrl=True)
+                title("beta.txt")
+                assert second.read_text() == "  cafe ", "no-match replace changed text"
+                key(1)
+                print("replace one/all, empty replacement, no match and atomic undo/redo", flush=True)
+
                 # Drive the actual text-input-v3 client with the existing IM peer.
                 im_log = tmp / "ime.log"
                 with im_log.open("w") as log:

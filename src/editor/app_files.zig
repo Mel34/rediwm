@@ -182,9 +182,9 @@ pub fn act(self: *App, action: Action) void {
         .save => self.save(false),
         .save_as => self.save(true),
         .find => {
-            self.find_open = !self.find_open;
-            self.query.select_all = true;
+            if (self.find_open) self.find_open = false else self.openSearch(false);
         },
+        .replace => self.openSearch(true),
         .wrap => {
             self.wrap = !self.wrap;
             self.current().scroll_x = 0;

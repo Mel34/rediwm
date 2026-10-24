@@ -197,6 +197,7 @@ pub const Document = struct {
             }
         }
     }
+    pub const replaceAll = @import("document_search.zig").replaceAll;
     pub fn undo(d: *Document, redo: bool) !void {
         if (d.locked) return error.Busy;
         if (redo) {

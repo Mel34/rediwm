@@ -20,7 +20,7 @@ pub fn resize(self: *App, w: i32, h: i32) void {
 }
 
 pub fn viewTop(self: *App) f64 {
-    return top + if (self.find_open) @as(f64, 40) else 0;
+    return top + if (self.find_open) @as(f64, if (self.replace_open) 80 else 40) else 0;
 }
 
 pub fn viewHeight(self: *App) f64 {
@@ -34,7 +34,11 @@ pub fn cancelDrag(self: *App) void {
 }
 
 pub fn cursorName(self: *App) [*:0]const u8 {
-    return if (!self.menu_open and self.py >= self.viewTop() and self.py < @as(f64, @floatFromInt(self.h)) - status_h and self.px < @as(f64, @floatFromInt(self.w)) - 16) "text" else "default";
+    if (self.close_tab != null or self.menu_open) return "default";
+    if (self.find_open) if (self.searchHit(self.px, self.py)) |control| {
+        return if (control == .query or control == .replacement) "text" else "default";
+    };
+    return if (self.px >= 0 and self.py >= self.viewTop() and self.py < @as(f64, @floatFromInt(self.h)) - status_h and self.px < @as(f64, @floatFromInt(self.w)) - 16) "text" else "default";
 }
 
 /// The current tab's bar, along the right edge of the text view; null

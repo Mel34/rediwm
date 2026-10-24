@@ -140,6 +140,7 @@ pub fn renderTitlebar(self: *Client, cr: *c.cairo_t, w: i32, h: i32) void {
                 },
                 .variant = if (control == .close) .chrome else .ghost,
                 .size = .sm,
+                .icon_scale = if (control == .menu) 1.25 else 0.5,
             }, .{
                 .pointer = if (self.overHeaderButton(control)) .hover else .idle,
                 .selected = control == .menu and self.app.menu_open,

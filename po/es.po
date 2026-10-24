@@ -1141,7 +1141,7 @@ msgstr "Clásico (apilado)"
 msgid "Clear search"
 msgstr "Limpiar búsqueda"
 
-#: src/editor/app_input.zig
+#: src/editor/app_edit.zig
 msgid "Clipboard selections are limited to 1 MiB."
 msgstr "Las selecciones del portapapeles tienen un límite de 1 MiB."
 
@@ -2257,10 +2257,6 @@ msgstr "Terminar proceso"
 msgid "Enlarge this window to show the terminal"
 msgstr "Amplía esta ventana para mostrar el terminal"
 
-#: src/calculator/app.zig
-msgid "Enter =   Esc clear   F9 ±   % = ÷100"
-msgstr "Intro =   Esc borrar   F9 ±   % = ÷100"
-
 #: src/polkit/dialog.zig
 msgid "Enter Password"
 msgstr "Introducir contraseña"
@@ -2513,7 +2509,7 @@ msgstr "Buscar en el documento..."
 msgid "Find ▲"
 msgstr "Buscar ▲"
 
-#: src/editor/app_paint.zig
+#: src/editor/app_search.zig
 msgid "Find…"
 msgstr "Buscar…"
 
@@ -3321,7 +3317,7 @@ msgstr "Medio"
 msgid "Memory (resident)"
 msgstr "Memoria (residente)"
 
-#: src/editor/client_render.zig
+#: src/editor/app_paint.zig
 msgid "Menu"
 msgstr "Menú"
 
@@ -3601,7 +3597,7 @@ msgstr "Pestaña nueva"
 msgid "Newest first"
 msgstr "Más reciente primero"
 
-#: src/editor/app_paint.zig
+#: src/editor/app_search.zig
 msgid "Next"
 msgstr "Siguiente"
 
@@ -4721,7 +4717,7 @@ msgstr "Retardo de repetición"
 msgid "Repeat rate"
 msgstr "Frecuencia de repetición"
 
-#: src/files/app_chooser.zig
+#: src/editor/app.zig
 msgid "Replace"
 msgstr "Reemplazar"
 
@@ -5741,7 +5737,7 @@ msgstr "Archivo de texto"
 msgid "Text files are limited to 4 GiB."
 msgstr "Los archivos de texto tienen un límite de 4 GiB."
 
-#: src/editor/app_input.zig
+#: src/editor/app_search.zig
 msgid "Text not found"
 msgstr "No se encontró el texto"
 
@@ -7441,7 +7437,7 @@ msgctxt "desktop:Comment"
 msgid "Edit text files in tabs"
 msgstr "Edita archivos de texto en pestañas"
 
-#: data/rediwm.desktop
+#: data/rediwm-release-safe.desktop
 msgctxt "desktop:Comment"
 msgid "RediWM Wayland compositor"
 msgstr "Compositor Wayland RediWM"
@@ -7516,7 +7512,7 @@ msgctxt "desktop:Name"
 msgid "PDF Viewer"
 msgstr "Visor de PDF"
 
-#: data/rediwm.desktop
+#: data/rediwm-release-safe.desktop
 msgctxt "desktop:Name"
 msgid "RediWM"
 msgstr "RediWM"
@@ -7572,3 +7568,23 @@ msgstr "configuración;control;panel;preferencias;pantalla;apariencia;ratón;tec
 #: src/control_center/sections/region.zig
 msgid "English"
 msgstr "Inglés"
+
+#: src/battery_popup.zig
+msgid "No power profile service is running."
+msgstr ""
+
+#: src/battery_popup.zig
+msgid "Power profiles unavailable"
+msgstr ""
+
+#: src/editor/app_search.zig
+msgid "Replace All"
+msgstr ""
+
+#: src/editor/app_search.zig
+msgid "Replace with…"
+msgstr ""
+
+#: src/editor/app_search.zig
+msgid "Matches replaced: {count}"
+msgstr ""
