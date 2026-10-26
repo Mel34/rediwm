@@ -87,6 +87,12 @@ test "config field parsing preserves ranges and derived zoom state" {
     }
 
     var c = CompositorConfig{};
+    try std.testing.expectEqual(types.TaskbarAlignment.center, c.taskbar_alignment);
+    inline for (.{ "left", "center", "right" }) |value| {
+        try applyCompositorKey(&c, a, "taskbar_alignment", "\"" ++ value ++ "\"");
+        try std.testing.expectEqualStrings(value, @tagName(c.taskbar_alignment));
+    }
+    try std.testing.expectError(error.InvalidValue, applyCompositorKey(&c, a, "taskbar_alignment", "top"));
     try std.testing.expectEqual(types.DockPosition.bottom, c.dock_position);
     inline for (.{ "top", "bottom", "left", "right" }) |value| {
         try applyCompositorKey(&c, a, "dock_position", value);

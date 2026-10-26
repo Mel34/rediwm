@@ -571,6 +571,10 @@ msgstr ""
 msgid "Bass boost"
 msgstr ""
 
+#: src/server/wakeups.zig
+msgid "Battery is at {percent}%. Plug in your charger."
+msgstr ""
+
 #: src/printing/options.zig
 msgid "Black and white"
 msgstr ""
@@ -901,6 +905,10 @@ msgstr ""
 
 #: src/control_center/sections/shortcuts.zig
 msgid "Capture the current display."
+msgstr ""
+
+#: src/control_center/sections/appearance_sections.zig
+msgid "Center"
 msgstr ""
 
 #: src/control_center/sections/sound.zig
@@ -3251,6 +3259,10 @@ msgstr ""
 msgid "Lost contact with login service. Try again."
 msgstr ""
 
+#: src/server/wakeups.zig
+msgid "Low battery"
+msgstr ""
+
 #: src/control_center/sections/network.zig
 msgid "MAC address"
 msgstr ""
@@ -4237,6 +4249,10 @@ msgstr ""
 
 #: src/images/app_edit.zig
 msgid "Please wait for the file operation to finish."
+msgstr ""
+
+#: src/server/wakeups.zig
+msgid "Plug in your charger."
 msgstr ""
 
 #: src/taskbar/battery.zig
@@ -5691,6 +5707,10 @@ msgstr ""
 msgid "Taskbar"
 msgstr ""
 
+#: src/control_center/search_index.zig
+msgid "Taskbar alignment"
+msgstr ""
+
 #: src/control_center/sections/region.zig
 msgid "Taskbar clock. The date uses your regional format."
 msgstr ""
@@ -7024,6 +7044,10 @@ msgid "panel height"
 msgstr ""
 
 #: src/control_center/search_index.zig
+msgid "panel left center right"
+msgstr ""
+
+#: src/control_center/search_index.zig
 msgid "panel margin"
 msgstr ""
 
@@ -7315,6 +7339,10 @@ msgid_plural "{count}{more} items"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/taskbar/battery.zig
+msgid "{hours}h {minutes}min"
+msgstr ""
+
 #: src/desktop/app_paint.zig
 msgid "{kind} · {bytes} bytes"
 msgstr ""
@@ -7325,6 +7353,10 @@ msgstr ""
 
 #: src/control_center/sections/region.zig
 msgid "{locale} · RediWM stays in English"
+msgstr ""
+
+#: src/taskbar/battery.zig
+msgid "{minutes}min"
 msgstr ""
 
 #: src/images/app_thumbs.zig
@@ -7433,6 +7465,10 @@ msgstr ""
 
 #: src/files/app_torrents.zig
 msgid "{value}% · ↓ {rate} KiB/s · ↑ {rate3} KiB/s"
+msgstr ""
+
+#: src/taskbar/battery.zig
+msgid "~{time} left"
 msgstr ""
 
 #: src/files/app_torrent_rows.zig

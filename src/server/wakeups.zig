@@ -1,6 +1,7 @@
 //! Server wake handlers: audio, battery and the GPU timer.
 
 const std = @import("std");
+const i18n = @import("i18n");
 const Server = @import("../Server.zig");
 const wl = @import("wayland").server.wl;
 const battery_mod = @import("../taskbar/battery.zig");
@@ -42,11 +43,47 @@ pub fn handleBatteryUevent(fd: c_int, mask: wl.EventMask, server: *Server) c_int
     _ = mask;
     if (!battery_mod.drainUevents(fd)) return 0;
     const state = battery_mod.read(server.io, @import("../main.zig").gpa);
+    server.updateBatteryWarning(state);
     var it = server.outputs.iterator(.forward);
     while (it.next()) |output| {
         if (output.taskbar) |bar| bar.applyBattery(state);
     }
     return 0;
+}
+
+/// Uses the same snapshots as the badge, without another timer or sysfs read.
+pub fn updateBatteryWarning(server: *Server, state: battery_mod.State) void {
+    if (server.greeter_mode) return;
+    const manager = server.notifications orelse return;
+    switch (server.battery_warning.update(state)) {
+        .none => {},
+        .clear => {
+            if (server.battery_warning_id) |id| manager.closeNotification(id, 3);
+            server.battery_warning_id = null;
+        },
+        .show => {
+            var buf: [256]u8 = undefined;
+            const body = i18n.fmt(&buf, i18n.tr("Battery is at {percent}%. Plug in your charger."), .{ .percent = state.percent.? }) catch i18n.tr("Plug in your charger.");
+            server.battery_warning_id = manager.postNotification(
+                "RediWM",
+                0,
+                "battery-caution",
+                i18n.tr("Low battery"),
+                body,
+                &.{},
+                2,
+                false,
+                false,
+                0,
+                "",
+                null,
+            ) catch blk: {
+                // Retry on the next normal update if posting failed.
+                server.battery_warning.notified = false;
+                break :blk null;
+            };
+        },
+    }
 }
 
 pub fn ensureGpuTimer(server: *Server) void {

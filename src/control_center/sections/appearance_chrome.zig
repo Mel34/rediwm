@@ -183,6 +183,22 @@ pub fn onTaskbarPositionChanged(owner: ?*anyopaque, _: usize, index: usize) void
     server.applyTaskbarPosition();
 }
 
+pub fn onTaskbarAlignmentChanged(owner: ?*anyopaque, _: usize, index: usize) void {
+    if (index > 2) return;
+    const s = section(owner);
+    const server = s.cc.server;
+    const alignment: @TypeOf(server.config.compositor.taskbar_alignment) = @enumFromInt(index);
+    if (alignment == server.config.compositor.taskbar_alignment) return;
+    setting_save.saveCompositor(main.gpa, server.io, server.config.path, "taskbar_alignment", alignment) catch |err| {
+        std.log.warn("could not save taskbar alignment: {}", .{err});
+        s.taskbar_alignment_children[1].kind.segmented.selected = @intFromEnum(server.config.compositor.taskbar_alignment);
+        s.taskbar_alignment_children[1].markDirty();
+        return;
+    };
+    server.config.compositor.taskbar_alignment = alignment;
+    server.refreshTaskbarsGeometry();
+}
+
 pub fn onFocusZoomChanged(owner: ?*anyopaque, _: usize, index: usize) void {
     if (index >= focus_zoom_labels.len) return;
     const s = section(owner);

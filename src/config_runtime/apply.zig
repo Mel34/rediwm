@@ -212,7 +212,9 @@ pub fn applyDiff(server: *Server, old: Config, new: Config) void {
         server.refreshTaskbars();
     }
 
-    if (!std.meta.eql(old.compositor.taskbar_items, new.compositor.taskbar_items)) {
+    if (!std.meta.eql(old.compositor.taskbar_items, new.compositor.taskbar_items) or
+        old.compositor.taskbar_alignment != new.compositor.taskbar_alignment)
+    {
         if (!theme_changed) server.refreshTaskbarsGeometry();
         if (server.input.open_control_center) |cc| cc.refresh();
     }

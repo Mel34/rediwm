@@ -139,7 +139,12 @@ def run():
                             well = ui.find(f'taskbar_zone_{zones[zone]}')['global_box']
                             if well == aimed:
                                 break
-                            ipc.move_cursor(round(well['x'] + well['width'] / 2), well['y'] + well['height'] - 3)
+                            # The drag grab follows the pointer outside the
+                            # viewport, but synthetic input must stay on-screen.
+                            height = ipc.get_outputs()[0]['logical_height']
+                            y = max(0, min(height - 1, well['y'] + well['height'] - 3))
+                            assert well['y'] <= y < well['y'] + well['height'], well
+                            ipc.move_cursor(round(well['x'] + well['width'] / 2), y)
                             aimed = well
                         ipc.pointer_button(0x110, False)
                         wait_for(lambda: any(entry.lstrip('-~') == f'{zones[zone]}:{name}'

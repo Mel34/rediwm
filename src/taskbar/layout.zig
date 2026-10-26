@@ -37,6 +37,7 @@ pub fn placement(bar: *Taskbar, output_box: wlr.Box) shape.Placement {
         .height = barHeight(),
         .edge_gap = edgeGap(),
         .length = ui_theme.global.taskbar_length,
+        .alignment = bar.server.config.compositor.taskbar_alignment,
         .radius = barRadius(),
         .top = bar.server.config.compositor.taskbar_position == .top,
     });

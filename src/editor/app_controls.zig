@@ -49,7 +49,7 @@ pub fn paintIcon(self: *App, cr: *c.cairo_t, box: Rect, icon: @import("ui").layo
     var layer = ui.Layer.begin(cr, .{ .x = @floatCast(box.x), .y = @floatCast(box.y), .w = @floatCast(box.w), .h = @floatCast(box.h) }) orelse return;
     defer layer.finish();
     layer.renderer.palette = theme.shellPalette();
-    button.paint(&layer.renderer, layer.local(), .{ .label = label, .icon = icon, .icon_scale = 1, .variant = .ghost, .size = .sm }, .{
+    button.paint(&layer.renderer, layer.local(), .{ .label = label, .icon = icon, .variant = .ghost, .size = .sm }, .{
         .selected = selected,
         .pointer = if (!self.menu_open and self.close_tab == null and box.contains(self.px, self.py)) .hover else .idle,
     });

@@ -11,6 +11,12 @@ fn entrySize() f32 {
     return ui.widgets.button.metrics(.lg, theme.global).font_size * 2;
 }
 
+fn keypadTheme() theme.Theme {
+    var palette = theme.shellPalette();
+    palette.button_font_size *= 1.5;
+    return palette;
+}
+
 const labels = [_][]const u8{
     "AC", "(", ")",
     "⌫", // Clear and editing.
@@ -73,6 +79,7 @@ pub const App = struct {
         for (&self.buttons, labels, 0..) |*button, label, id| {
             button.* = .{ .kind = .{ .button = .{
                 .label = label,
+                .icon = if (id == 6) .divide else null,
                 .size = .lg,
                 .variant = if (id == 19) .primary else .secondary,
                 .owner = self,
@@ -92,6 +99,7 @@ pub const App = struct {
         const cell_w = (width - 32 - gap * 3) / 4;
         const top: f32 = @max(112, entrySize() + cairo.statusSize() + 56);
         const cell_h = @max(24, (height - top - 16 - gap * 5) / 6);
+        const icon_size = ui.widgets.button.metrics(.lg, keypadTheme()).font_size;
         self.root.computed_width = width;
         self.root.computed_height = height;
         for (&self.buttons, 0..) |*button, id| {
@@ -113,6 +121,8 @@ pub const App = struct {
                 y = top + 5 * (cell_h + gap);
             }
             ui.arrange.arrange(button, x, y, w, h);
+            // Keep the operator icon at the label size when the keypad resizes.
+            if (button.kind.button.icon != null) button.kind.button.icon_scale = icon_size / @min(w, h);
         }
     }
     pub fn resize(self: *App, width: i32, height: i32) void {
@@ -217,9 +227,7 @@ pub const App = struct {
         defer ui.input.active_dispatcher = null;
         if (cairo.Layer.begin(cr, .{ .x = 0, .y = 0, .w = @floatFromInt(self.w), .h = @floatFromInt(self.h) })) |value| {
             var layer = value;
-            var keypad_theme = theme.shellPalette();
-            keypad_theme.button_font_size *= 1.5;
-            layer.renderer.palette = keypad_theme;
+            layer.renderer.palette = keypadTheme();
             ui.paint.paint(&self.root, &layer.renderer);
             layer.finish();
         }

@@ -316,6 +316,7 @@ pub fn destroy(bar: *Taskbar) void {
 
 /// Takes a fresh `battery.read` snapshot; only a change requests a frame.
 pub fn applyBattery(bar: *Taskbar, next: battery.State) void {
+    bar.server.updateBatteryWarning(next);
     if (std.meta.eql(next, bar.battery_state)) return;
     const layout_changed = (next.percent == null) != (bar.battery_state.percent == null);
     bar.battery_shimmer.update(bar.battery_state, next, nowMs());

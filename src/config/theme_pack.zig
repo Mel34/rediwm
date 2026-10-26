@@ -11,6 +11,7 @@ const TaskbarItems = @import("taskbar_items.zig").Config;
 /// remain in [compositor]; packs cannot inject other compositor settings.
 pub const Layout = struct {
     taskbar_position: ?@import("types.zig").TaskbarPosition = null,
+    taskbar_alignment: ?@import("types.zig").TaskbarAlignment = null,
     /// Which section (left, centre or right) each taskbar item sits in, in
     /// what order and whether it shows: the `[compositor]` list's own syntax.
     taskbar_items: ?TaskbarItems = null,
@@ -19,7 +20,7 @@ pub const Layout = struct {
     dock_height: ?u32 = null,
     dock_hover_zoom: ?f32 = null,
 
-    pub const keys = .{ "taskbar_position", "taskbar_items", "dock_enabled", "dock_position", "dock_height", "dock_hover_zoom" };
+    pub const keys = .{ "taskbar_position", "taskbar_alignment", "taskbar_items", "dock_enabled", "dock_position", "dock_height", "dock_hover_zoom" };
 
     pub fn apply(self: Layout, compositor: anytype) void {
         inline for (keys) |key| if (@field(self, key)) |value| {
@@ -30,6 +31,8 @@ pub const Layout = struct {
     fn parseKey(self: *Layout, key: []const u8, value: []const u8) !void {
         if (std.mem.eql(u8, key, "taskbar_position")) {
             self.taskbar_position = std.meta.stringToEnum(@import("types.zig").TaskbarPosition, try theme.unquote(value)) orelse return error.InvalidLayout;
+        } else if (std.mem.eql(u8, key, "taskbar_alignment")) {
+            self.taskbar_alignment = std.meta.stringToEnum(@import("types.zig").TaskbarAlignment, try theme.unquote(value)) orelse return error.InvalidLayout;
         } else if (std.mem.eql(u8, key, "taskbar_items")) {
             self.taskbar_items = TaskbarItems.parse(value) catch return error.InvalidLayout;
         } else if (std.mem.eql(u8, key, "dock_enabled")) {
@@ -50,8 +53,8 @@ pub const Layout = struct {
     pub fn write(a: A, bytes: *std.ArrayList(u8), compositor: anytype) !void {
         const items = try compositor.taskbar_items.serialize(a);
         defer a.free(items);
-        const text = try std.fmt.allocPrint(a, "[layout]\ntaskbar_position = \"{s}\"\ntaskbar_items = {s}\ndock_enabled = {}\ndock_position = \"{s}\"\ndock_height = {d}\ndock_hover_zoom = {d}\n", .{
-            @tagName(compositor.taskbar_position), items, compositor.dock_enabled, @tagName(compositor.dock_position), compositor.dock_height, compositor.dock_hover_zoom,
+        const text = try std.fmt.allocPrint(a, "[layout]\ntaskbar_position = \"{s}\"\ntaskbar_alignment = \"{s}\"\ntaskbar_items = {s}\ndock_enabled = {}\ndock_position = \"{s}\"\ndock_height = {d}\ndock_hover_zoom = {d}\n", .{
+            @tagName(compositor.taskbar_position), @tagName(compositor.taskbar_alignment), items, compositor.dock_enabled, @tagName(compositor.dock_position), compositor.dock_height, compositor.dock_hover_zoom,
         });
         defer a.free(text);
         try bytes.appendSlice(a, text);
@@ -262,6 +265,16 @@ test "pack metadata, future tokens and unsafe paths" {
         try Layout.write(a, &bytes, compositor);
         const exported = try parse(a, bytes.items, "test", "");
         try std.testing.expectEqual(pack.layout.dock_position, exported.layout.dock_position);
+    }
+    inline for (.{ "left", "center", "right" }) |alignment| {
+        const pack = try parse(a, "[layout]\ntaskbar_alignment = \"" ++ alignment ++ "\"\n", "test", "");
+        var compositor = @import("loader.zig").CompositorConfig{};
+        pack.layout.apply(&compositor);
+        try std.testing.expectEqualStrings(alignment, @tagName(compositor.taskbar_alignment));
+        var bytes: std.ArrayList(u8) = .empty;
+        try Layout.write(a, &bytes, compositor);
+        const exported = try parse(a, bytes.items, "test", "");
+        try std.testing.expectEqual(pack.layout.taskbar_alignment, exported.layout.taskbar_alignment);
     }
     {
         // A pack arranges the taskbar's items, and an export carries them.

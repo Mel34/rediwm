@@ -124,6 +124,12 @@ pub fn startDesktopService(server: *Server, step: usize) bool {
                 log.warn("init: could not create notifications manager: {}", .{err});
                 break :blk null;
             };
+            // Outputs already took their initial battery snapshots before the
+            // notification service started. Warn immediately when logging in low.
+            var outputs = server.outputs.iterator(.forward);
+            while (outputs.next()) |output| {
+                if (output.taskbar) |bar| server.updateBatteryWarning(bar.battery_state);
+            }
         },
         1 => {
             server.configurePolkit(server.config.polkit);

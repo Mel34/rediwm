@@ -104,6 +104,7 @@ pub fn configure(io: std.Io, root: []const u8) void {
         .{ IconId.eject, "eject" },
         .{ IconId.users, "users" },
         .{ IconId.squares, "squares" },
+        .{ IconId.divide, "divide" },
     }) |pair| {
         loadOverride(io, root, pair[0], pair[1]);
     }
@@ -195,6 +196,7 @@ fn builtinSource(id: IconId) ?[]const u8 {
         .eject => @embedFile("shell-icon-eject"),
         .users => @embedFile("shell-icon-users"),
         .squares => @embedFile("shell-icon-squares"),
+        .divide => @embedFile("shell-icon-divide"),
         else => null,
     };
 }
@@ -254,7 +256,7 @@ fn rasterize(svg: []const u8, size: i32) ?Mask {
 
 test "bundled shell SVGs render nonempty transparent masks at fractional scales" {
     defer deinit();
-    for ([_]IconId{ .print, .usb_stick, .drive, .eject, .home, .settings, .mouse, .display, .music, .headphones, .wifi, .bluetooth, .battery, .notification, .volume, .volume_muted, .power, .clock, .lock, .logout, .reboot }) |id| {
+    for ([_]IconId{ .print, .usb_stick, .drive, .eject, .home, .settings, .mouse, .display, .music, .headphones, .wifi, .bluetooth, .battery, .notification, .volume, .volume_muted, .power, .clock, .lock, .logout, .reboot, .divide }) |id| {
         for ([_]i32{ 24, 36, 48 }) |size| {
             const mask = get(id, size) orelse return error.InvalidShellIcon;
             var visible = false;

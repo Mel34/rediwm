@@ -97,7 +97,10 @@ pub const Popup = struct {
         var pct: [16]u8 = undefined;
         const percent = if (state.percent) |p| std.fmt.bufPrint(&pct, "{d}%", .{p}) catch "" else "—";
         label(&r, 24, 16, 100, 38, percent, 27, t.window_fg, true);
-        label(&r, 125, 18, 220, 36, state.status(), 16, t.window_dim, false);
+        var estimate_buf: [192]u8 = undefined;
+        const estimate = state.estimate(&estimate_buf);
+        label(&r, 125, if (estimate != null) 14 else 18, 220, if (estimate != null) 24 else 36, state.status(), 16, t.window_dim, false);
+        if (estimate) |value| label(&r, 125, 38, 220, 20, value, 12, t.window_dim, false);
         r.fillRect(20, 66, 328, 1, .{ .color = t.border });
         ring(&r, state.percent orelse 0);
         centered(&r, 136, 52, percent, 36, t.window_fg, true);

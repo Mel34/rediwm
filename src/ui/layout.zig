@@ -143,6 +143,7 @@ pub const IconId = enum {
     more,
     users,
     squares,
+    divide,
 };
 
 pub const ButtonState = enum { idle, hover, press, disabled };

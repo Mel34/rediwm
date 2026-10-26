@@ -82,6 +82,7 @@ const source_entries = [_]SourceEntry{
     .{ .page = .appearance, .title = i18n.msg("Inactive window opacity"), .target = "inactive_opacity", .keywords = i18n.msg("transparency unfocused") },
     .{ .page = .appearance, .title = i18n.msg("Terminal opacity"), .target = "terminal_opacity", .keywords = i18n.msg("transparency") },
     .{ .page = .appearance, .title = i18n.msg("Taskbar position"), .target = "taskbar_position", .keywords = i18n.msg("panel top bottom") },
+    .{ .page = .appearance, .title = i18n.msg("Taskbar alignment"), .target = "taskbar_alignment", .keywords = i18n.msg("panel left center right") },
     .{ .page = .appearance, .title = i18n.msg("Taskbar edge gap"), .target = "taskbar_edge_gap", .keywords = i18n.msg("panel margin") },
     .{ .page = .appearance, .title = i18n.msg("Taskbar length"), .target = "taskbar_length", .keywords = i18n.msg("panel width") },
     .{ .page = .appearance, .title = i18n.msg("Taskbar corner radius"), .target = "taskbar_radius", .keywords = i18n.msg("panel rounded") },

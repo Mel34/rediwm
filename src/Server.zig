@@ -164,6 +164,8 @@ audio_wake_source: ?*wl.EventSource = null,
 // taskbar still picks up plug changes on its minute tick.
 battery_uevent_fd: ?std.posix.fd_t = null,
 battery_uevent_source: ?*wl.EventSource = null,
+battery_warning: battery_mod.Warning = .{},
+battery_warning_id: ?u32 = null,
 
 // Optional for the same reason `audio` is: a spawn/eventfd failure just
 // means every consumer's `server.iconLookup(...)` reports `.missing`
@@ -1049,6 +1051,7 @@ pub const IconNameCache = struct {
 pub const createAudioWakeFd = server_wakeups.createAudioWakeFd;
 pub const handleAudioWake = server_wakeups.handleAudioWake;
 pub const handleBatteryUevent = server_wakeups.handleBatteryUevent;
+pub const updateBatteryWarning = server_wakeups.updateBatteryWarning;
 pub const ensureGpuTimer = server_wakeups.ensureGpuTimer;
 pub const observingStats = server_wakeups.observingStats;
 pub const expireGpuTimer = server_wakeups.expireGpuTimer;
