@@ -72,6 +72,7 @@ pub fn build(b: *std.Build) void {
     ui_mod.addAnonymousImport("theme-rediwm-light", .{ .root_source_file = b.path("assets/themes/rediwm-light.toml") });
     ui_mod.addAnonymousImport("theme-redi-blue", .{ .root_source_file = b.path("assets/themes/redi-blue.toml") });
     ui_mod.addAnonymousImport("theme-redi-mocha", .{ .root_source_file = b.path("assets/themes/redi-mocha.toml") });
+    ui_mod.addAnonymousImport("theme-chamfer-blue", .{ .root_source_file = b.path("assets/themes/chamfer-blue.toml") });
     ui_mod.addAnonymousImport("theme-gold", .{ .root_source_file = b.path("assets/themes/gold.toml") });
     b.getInstallStep().dependOn(&b.addInstallDirectory(.{
         .source_dir = b.path("assets/themes/gold"),

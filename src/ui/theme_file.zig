@@ -5,6 +5,7 @@ const Allocator = std.mem.Allocator;
 const Io = std.Io;
 const log = std.log.scoped(.theme);
 const theme = @import("theme.zig");
+const window_shape = @import("window_shape.zig");
 const Theme = theme.Theme;
 const TaskbarToken = theme.TaskbarToken;
 
@@ -121,6 +122,9 @@ pub fn applyKey(allocator: Allocator, t: *Theme, name_in: []const u8, value: []c
             const text = try unquote(value);
             if (comptime std.mem.eql(u8, name, "start_button_icon")) {
                 if (text.len > 0 and !std.fs.path.isAbsolute(text)) return error.InvalidIconPath;
+            }
+            if (comptime std.mem.eql(u8, name, "window_shape") or std.mem.eql(u8, name, "taskbar_shape")) {
+                _ = try window_shape.parse(text);
             }
             @field(t, name) = try allocator.dupe(u8, text);
             return;

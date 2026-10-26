@@ -27,7 +27,7 @@ struct program {
     unsigned bit; // which bit of pass.targets_set tracks this program's target size
     GLint target, dst, color, alpha, opaque, sampler, coords;
     // Shaped programs only (-1 elsewhere): the shape, and the shadow's own terms.
-    GLint mode, origin, size, radii, border, bcolor, glow, gcolor, offset, softness, hide, use_shape, dim;
+    GLint mode, origin, size, radii, npoly, poly, border, bcolor, glow, gcolor, offset, softness, hide, use_shape, dim;
     // What `dim` holds now (a uniform keeps its value between draws and passes).
     float dim_brightness, dim_saturation;
     // The backdrop composite (shaped mode 3) and the blur program.
@@ -60,6 +60,12 @@ struct rediwm_scene_renderer {
     // a 2D texture, a solid colour and the shape's shadow (they differ in a mode
     // uniform, which every fragment of a draw reads the same), one for external.
     struct program shaped, shaped_external;
+    // The same, with the polygon distance compiled in (POLY), built on demand by
+    // enable_polygons the first time a theme gives a window or the bar an outline.
+    // Draws of a polygon shape use these; every other draw the programs above,
+    // which are what they were before polygons.
+    struct program shaped_poly, shaped_poly_external;
+    bool polys_tried, has_polys;
     // Backdrops (stage 5b), built by enable_backdrops: the blur, and scratch the
     // size of the largest region so far: the copy, and the horizontal pass.
     struct program blur;
@@ -99,11 +105,23 @@ struct pass {
 // The unit quad every draw is made of.
 static const GLfloat positions[] = {0, 0, 1, 0, 0, 1, 1, 1};
 
+// The program a draw of `shape` (NULL: none) uses: the polygon variant for an outline.
+static inline struct program *shaped_for(struct rediwm_scene_renderer *r,
+        const struct rediwm_pass_shape *shape, bool external) {
+    const bool poly = shape && shape->poly_count > 0;
+    if (external) return poly ? &r->shaped_poly_external : &r->shaped_external;
+    return poly ? &r->shaped_poly : &r->shaped;
+}
 // The shape's uniforms. A degenerate or non-finite shape is the caller's bug;
 // it fails the pass at submit like any other bad draw.
 static inline bool shape_usable(const struct rediwm_pass_shape *s) {
     if (!isfinite(s->border) || s->border < 0) return false;
     for (int i = 0; i < 4; i++) if (!isfinite(s->radii[i]) || s->radii[i] < 0) return false;
+    if (s->poly_count < 0 || s->poly_count == 1 || s->poly_count == 2 || s->poly_count > REDIWM_PASS_POLY_MAX) return false;
+    for (int i = 0; i < s->poly_count; i++) {
+        const float *a = s->poly[i], *b = s->poly[i + 1 < s->poly_count ? i + 1 : 0];
+        if (!isfinite(a[0]) || !isfinite(a[1]) || (a[0] == b[0] && a[1] == b[1])) return false;
+    }
     for (int i = 0; i < 4; i++) if (!isfinite(s->border_color[i]) || !isfinite(s->glow_color[i])) return false;
     return isfinite(s->glow_radius) && isfinite(s->glow_depth) && s->glow_radius >= 0 && s->glow_depth >= 0 &&
         isfinite(s->glow_center[0]) && isfinite(s->glow_center[1]);

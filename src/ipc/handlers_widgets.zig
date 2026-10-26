@@ -515,7 +515,7 @@ pub fn buildWindowWidgetTree(
     };
 
     for (controls) |c| {
-        const crect = chrome.controlRectScaled(toplevel.chrome_width, c.kind, toplevel.chromeDensity());
+        const crect = chrome.controlRectScaled(toplevel.chrome_width - toplevel.controlInsets().right, c.kind, toplevel.chromeDensity());
         const cpt = toplevel.frameWorld(@floatFromInt(crect.x), @floatFromInt(crect.y));
         const cw = @as(i32, @intFromFloat(@round(@as(f64, @floatFromInt(crect.w)) * toplevel.worldScale())));
         const ch = @as(i32, @intFromFloat(@round(@as(f64, @floatFromInt(crect.h)) * toplevel.worldScale())));

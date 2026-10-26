@@ -9,6 +9,7 @@ const sn = @import("../node.zig");
 const Server = @import("../Server.zig");
 const ControlCenter = @import("../control_center/panel.zig").ControlCenter;
 const chrome = @import("../chrome.zig");
+const window_shape = @import("ui").window_shape;
 const geometry = @import("../geometry.zig");
 const resize = @import("../resize.zig");
 const scene_data = @import("../scene_data.zig");
@@ -332,6 +333,9 @@ pub fn insideFrame(toplevel: *Toplevel, px: f32, py: f32) bool {
     const height = toplevel.chrome_height;
     if (width <= 0 or height <= 0) return false;
 
+    if (toplevel.shapePolygon(width, height)) |polygon| {
+        return chrome.coverage(@floatCast(window_shape.sdPolygon(polygon, px, py))) != 0;
+    }
     const radius: f32 = toplevel.cornerRadius();
     return chrome.coverage(chrome.sdRoundedBox(
         px,

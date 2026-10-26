@@ -10,8 +10,9 @@ const fromSurface = Toplevel.fromSurface;
 
 pub fn controlAt(toplevel: *Toplevel, sx: f64, sy: f64) ?chrome.ControlKind {
     if (!toplevel.hasServerDecorations() or sy >= @as(f64, @floatFromInt(toplevel.titlebarHeight()))) return null;
+    const width = toplevel.chrome_width - toplevel.controlInsets().right;
     inline for (.{ chrome.ControlKind.close, .maximize, .minimize }) |kind| {
-        if (chrome.controlRectScaled(toplevel.chrome_width, kind, toplevel.chromeDensity()).contains(sx, sy)) return kind;
+        if (chrome.controlRectScaled(width, kind, toplevel.chromeDensity()).contains(sx, sy)) return kind;
     }
     return null;
 }

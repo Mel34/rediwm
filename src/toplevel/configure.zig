@@ -5,6 +5,8 @@ const Toplevel = @import("../Toplevel.zig");
 const xscale = @import("../xwayland_scale.zig");
 const wlr = @import("wlroots");
 const chrome = @import("../chrome.zig");
+const window_shape = @import("ui").window_shape;
+const theme = @import("ui").theme;
 const resize = @import("../resize.zig");
 const scene_data = @import("../scene_data.zig");
 const xdg = @import("../xdg.zig");
@@ -105,6 +107,37 @@ pub fn owner(toplevel: *Toplevel) ?*Toplevel {
 
 pub fn cornerRadius(toplevel: *const Toplevel) f32 {
     return if (toplevel.isMaximized() or toplevel.isFullscreen()) 0 else chrome.frameRadius() * toplevel.chromeDensity();
+}
+
+/// The window's polygon outline for a frame of `width` x `height` (the theme's
+/// `window_shape`), or null for the rounded rectangle: maximized and fullscreen
+/// windows are square, and an outline that does not parse or cannot be drawn is
+/// ignored (the theme loader refuses one that does not parse).
+pub fn shapePolygon(toplevel: *const Toplevel, width: i32, height: i32) ?window_shape.Resolved {
+    if (!chrome.polygons or toplevel.isMaximized() or toplevel.isFullscreen() or width <= 0 or height <= 0) return null;
+    const outline = (window_shape.parse(theme.global.window_shape) catch return null) orelse return null;
+    const resolved = window_shape.resolve(outline, @floatFromInt(width), @floatFromInt(height), toplevel.chromeDensity());
+    return if (window_shape.usable(resolved)) resolved else null;
+}
+
+/// What the window's polygon depends on beyond its size, for memos: the outline's
+/// text and the density its px coordinates scale with. 0 without a polygon.
+pub fn shapeKey(toplevel: *const Toplevel) u64 {
+    if (theme.global.window_shape.len == 0) return 0;
+    const density: u32 = @bitCast(toplevel.chromeDensity());
+    return std.hash.Wyhash.hash(density, theme.global.window_shape) | 1;
+}
+
+/// How far the titlebar's icon and controls keep in from the left and right of a
+/// polygon outline's slanted or cut ends (zero for the rounded rectangle), over the
+/// rows they occupy. The titlebar raster, the control hit tests and the tab strip
+/// all lay out against the frame less these.
+pub fn controlInsets(toplevel: *const Toplevel) window_shape.Insets {
+    const polygon = toplevel.shapePolygon(toplevel.chrome_width, toplevel.chrome_height) orelse return .{};
+    const density = toplevel.chromeDensity();
+    const bar: f64 = @floatFromInt(toplevel.titlebarHeight());
+    const band: f64 = @floatFromInt((chrome.Metrics{ .density = density }).length(34));
+    return window_shape.rowInsets(polygon, @floatFromInt(toplevel.chrome_width), @max(0, (bar - band) / 2), @min(bar, (bar + band) / 2));
 }
 
 pub fn ownsSurface(toplevel: *const Toplevel, candidate: *wlr.Surface) bool {

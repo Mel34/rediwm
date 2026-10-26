@@ -404,6 +404,9 @@ pub const x11Class = toplevel_configure.x11Class;
 pub const x11Instance = toplevel_configure.x11Instance;
 pub const owner = toplevel_configure.owner;
 pub const cornerRadius = toplevel_configure.cornerRadius;
+pub const shapePolygon = toplevel_configure.shapePolygon;
+pub const shapeKey = toplevel_configure.shapeKey;
+pub const controlInsets = toplevel_configure.controlInsets;
 pub const ownsSurface = toplevel_configure.ownsSurface;
 pub const attachSceneData = toplevel_configure.attachSceneData;
 

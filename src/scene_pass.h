@@ -27,11 +27,17 @@ struct wlr_render_pass *rediwm_scene_pass_begin(struct rediwm_scene_renderer *,
 // `box` of the draws (y down, row 0 first). The caller snaps the box (see
 // rediwm_edges_snap in scene_graph.h) and scales the radii and border; nothing
 // is rounded here, so a fractional radius or border is drawn as given.
+enum { REDIWM_PASS_POLY_MAX = 16 };
 struct rediwm_pass_shape {
   struct wlr_box box;
   // Top-left, top-right, bottom-right, bottom-left. A radius larger than half
   // the short side is capped to it.
   float radii[4];
+  // A polygon instead of the rounded rectangle when `poly_count` is 3 or more:
+  // its vertices in device pixels from the box's corner, and `radii` is not used.
+  // Simple, no two neighbouring vertices the same, either winding.
+  int poly_count;
+  float poly[REDIWM_PASS_POLY_MAX][2];
   // Width of the ring just inside the edge. The same fragment that draws the body
   // composites the ring over it, then applies the shape's coverage, so a
   // translucent border tints the fill beneath it, as the legacy border rects do,
@@ -62,6 +68,11 @@ struct rediwm_pass_shadow {
 // first shaped draw; later calls return the first result. False when they did not
 // build: shaped draws then fail the pass at submit, plain drawing is unaffected.
 bool rediwm_scene_renderer_enable_shapes(struct rediwm_scene_renderer *);
+// Builds the programs that draw a polygon shape (`poly_count` > 0), which are the
+// shaped ones with the polygon distance compiled in: another 280 KiB or so, so only
+// on request, outside a pass, before the first such draw. False when they did not
+// build; a polygon draw then fails the pass, so callers must not make one.
+bool rediwm_scene_renderer_enable_polygons(struct rediwm_scene_renderer *);
 
 // These take a pass from rediwm_scene_pass_begin only (a wlroots pass is a
 // programming error). `box` of the options is the piece to draw; the shape is

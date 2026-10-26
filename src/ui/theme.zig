@@ -35,6 +35,13 @@ pub const Theme = struct {
     chrome_control_gap: f32 = 4.0,
     /// Circular window controls and pill-shaped tabs, including tab controls.
     chrome_round_buttons: bool = false,
+    /// A polygon outline for server-decorated windows instead of the rounded
+    /// rectangle (syntax in `window_shape.zig`); empty keeps `radius_lg`.
+    window_shape: []const u8 = "",
+    /// A strip of this colour along the top of the titlebar, `window_top_band_height`
+    /// logical px tall (0 draws none), clipped by the window's shape.
+    window_top_band: [4]f32 = .{ 0, 0, 0, 0 },
+    window_top_band_height: f32 = 0,
     // Window decorations use neutral charcoal independently of shell glass.
     window_bg: [4]f32 = .{ @as(f32, 7.6) / 255.0, 9.0 / 255.0, 11.0 / 255.0, 0.80 }, // 80% darkness and opacity
     // Neutral foregrounds keep text and monochrome icons free of a blue tint.
@@ -123,6 +130,10 @@ pub const Theme = struct {
     taskbar_edge_gap: f32 = 0,
     taskbar_length: f32 = 100,
     taskbar_radius: f32 = 0,
+    // A polygon outline for the bar instead of the rounded rectangle, in the
+    // syntax of `window_shape` but against the bar's own box; empty keeps
+    // `taskbar_radius`. Items keep clear of its slanted ends, nothing else.
+    taskbar_shape: []const u8 = "",
     // Thickness of the bar's own outline (colour: `taskbar_outline`). With a
     // flush, full-width, square bar only the edge facing the windows is drawn.
     taskbar_outline_width: f32 = 1,

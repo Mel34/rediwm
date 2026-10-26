@@ -165,6 +165,7 @@ test "ShadowMemo.eql ignores geometry while the shadow is disabled" {
         .offset_y = 0,
         .scale = 1,
         .disabled = true,
+        .shape = 0,
     };
     var b = a;
     b.width = 999;
@@ -183,6 +184,7 @@ test "ShadowMemo.eql is false when softness changes" {
         .offset_y = 8,
         .scale = 1,
         .disabled = false,
+        .shape = 0,
     };
     var b = a;
     try std.testing.expect(a.eql(b));

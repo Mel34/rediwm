@@ -52,6 +52,15 @@ void scene_pass_set_shape(const struct pass *p, const struct program *g, const s
     else glUniform2f(g->origin, s->box.x, s->box.y);
     glUniform2f(g->size, s->box.width, s->box.height);
     glUniform4f(g->radii, s->radii[0], s->radii[1], s->radii[2], s->radii[3]);
+    if (g->npoly >= 0) glUniform1f(g->npoly, (float)s->poly_count);
+    if (s->poly_count && g->poly >= 0) {
+        // The walk closes the outline on a copy of the first vertex.
+        float v[REDIWM_PASS_POLY_MAX + 1][2];
+        memcpy(v, s->poly, sizeof(float) * 2 * s->poly_count);
+        v[s->poly_count][0] = v[0][0];
+        v[s->poly_count][1] = v[0][1];
+        glUniform2fv(g->poly, s->poly_count + 1, &v[0][0]);
+    }
     glUniform1f(g->border, s->border);
     glUniform4f(g->bcolor, s->border_color[0], s->border_color[1], s->border_color[2],
         s->border_color[3]);
@@ -73,7 +82,7 @@ static void add_rect(struct wlr_render_pass *base, const struct wlr_render_rect_
 }
 static void rect_shaped(struct pass *p, const struct wlr_render_rect_options *o,
         const struct rediwm_pass_shape *shape) {
-    struct program *g = &p->renderer->shaped;
+    struct program *g = shaped_for(p->renderer, shape, false);
     if (p->failed || (o->clip && !pixman_region32_not_empty(o->clip))) return;
     if (!g->id || !shape_usable(shape)) { p->failed = true; return; }
     struct wlr_box box;
@@ -102,8 +111,8 @@ static bool wait_point(struct pass *p, struct wlr_drm_syncobj_timeline *timeline
 static void texture_draw(struct pass *p, const struct wlr_render_texture_options *o,
         struct wlr_gles2_texture_attribs a, const struct rediwm_pass_shape *shape) {
     struct rediwm_scene_renderer *r = p->renderer;
-    struct program *program = a.target == GL_TEXTURE_2D ? &r->shaped :
-        a.target == GL_TEXTURE_EXTERNAL_OES ? &r->shaped_external : NULL;
+    struct program *program = a.target == GL_TEXTURE_2D ? shaped_for(r, shape, false) :
+        a.target == GL_TEXTURE_EXTERNAL_OES ? shaped_for(r, shape, true) : NULL;
     if (!program || !program->id || (shape && !shape_usable(shape))) { p->failed = true; return; }
     struct wlr_box dst;
     struct wlr_fbox src;
@@ -237,7 +246,7 @@ void rediwm_scene_pass_add_texture_shaped(struct wlr_render_pass *base,
 void rediwm_scene_pass_add_shadow(struct wlr_render_pass *base,
         const struct rediwm_pass_shape *shape, const struct rediwm_pass_shadow *shadow) {
     struct pass *p = owned_pass(base);
-    struct program *g = &p->renderer->shaped;
+    struct program *g = shaped_for(p->renderer, shape, false);
     if (p->failed || (shadow->clip && !pixman_region32_not_empty(shadow->clip))) return;
     if (!g->id || !shape_usable(shape) || !isfinite(shadow->offset_x) ||
             !isfinite(shadow->offset_y) || !isfinite(shadow->softness) || shadow->softness > 4096 ||

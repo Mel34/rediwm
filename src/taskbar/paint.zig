@@ -9,6 +9,7 @@ const battery = @import("../taskbar/battery.zig");
 const battery_badge = @import("ui").widgets.battery;
 const start_button = @import("../taskbar/start_button.zig");
 const shape = @import("../taskbar/shape.zig");
+const window_shape = @import("ui").window_shape;
 const ui_theme = @import("ui").theme;
 const stats = @import("../ipc/stats.zig");
 const log = std.log.scoped(.taskbar);
@@ -157,7 +158,16 @@ pub fn renderPart(bar: *Taskbar, now_ms: i64, part: Part, origin_x: i32, origin_
     };
     const battery_progress = if (part == .battery) bar.battery_shimmer.sweep.value(now_ms) else 1;
     const part_width: f32 = if (part == .capture) @floatFromInt(bar.captureWidth()) else @floatFromInt(trayHit());
-    if (chip_paint) |*paint| fillChipColumns(paint, buf.pixels, buf.width, buf.height, origin_x, origin_y, 0, stride, scale) else for (0..@intCast(buf.height)) |dy| {
+    // A polygon bar: the rows are filled in runs, and only the pixels near an edge
+    // pay for a distance (`shape.paintPolygon`).
+    const polygon: ?window_shape.Resolved = if (part == .background and Taskbar.hasPolygon())
+        shape.polygon(ui_theme.global.taskbar_shape, @floatFromInt(bar.box.width), @floatFromInt(bar.box.height))
+    else
+        null;
+    if (polygon) |poly| {
+        // The raster reaches no further than the bar's own box.
+        shape.paintPolygon(Color, .{ .pixels = buf.pixels, .stride = stride, .width = @intCast(buf.width), .height = @intCast(buf.height), .scale = scale }, poly, ui_theme.global.taskbar_outline_width, Color.bar_fill(), Color.outline());
+    } else if (chip_paint) |*paint| fillChipColumns(paint, buf.pixels, buf.width, buf.height, origin_x, origin_y, 0, stride, scale) else for (0..@intCast(buf.height)) |dy| {
         const py = @as(f32, @floatFromInt(origin_y)) + (@as(f32, @floatFromInt(dy)) + 0.5) / scale;
         for (0..stride) |dx| {
             const px = @as(f32, @floatFromInt(origin_x)) + (@as(f32, @floatFromInt(dx)) + 0.5) / scale;

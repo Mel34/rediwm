@@ -493,6 +493,8 @@ pub fn init(server: *Server, scale: ?f32, icon_theme_cfg: icon_theme.Config, io:
     // window exists. Without them windows are square, with no ring or shadow.
     if (server.output_renderer.enableShapes()) {
         @import("chrome.zig").shapes = true;
+        @import("chrome.zig").polygon_context = server;
+        @import("chrome.zig").polygon_enabler = &enablePolygons;
         // Glass (stage 5c of docs/plans/scene-graph.md); without the blur program
         // each glass surface shows its own tint.
         if (server.glass_engine != null and !server.output_renderer.enableBackdrops())
@@ -1108,4 +1110,9 @@ pub fn parseGreeterFile(path: []const u8, a: std.mem.Allocator, io: std.Io) !con
     const bytes = try std.Io.Dir.cwd().readFileAlloc(io, path, a, .limited(1 << 20));
     defer a.free(bytes);
     return config_loader.parse(a, bytes, path);
+}
+
+fn enablePolygons(context: *anyopaque) bool {
+    const server: *Server = @ptrCast(@alignCast(context));
+    return server.output_renderer.enablePolygons();
 }

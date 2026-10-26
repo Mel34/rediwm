@@ -22,8 +22,8 @@ static bool clip_same_shape(const struct rediwm_clip *a, const struct rediwm_cli
       a->edges.y2 - a->edges.y1 != b->edges.y2 - b->edges.y1 || a->border != b->border)
     return false;
   for (int i = 0; i < 4; i++)
-    if (a->radii[i] != b->radii[i] || a->border_color[i] != b->border_color[i]) return false;
-  return true;
+    if (a->border_color[i] != b->border_color[i]) return false;
+  return rediwm_clip_outline_equal(a, b);
 }
 // Where the highlight is, as far as it can be seen: a square around its point.
 static bool clip_glow_box(const struct rediwm_clip *c, pixman_box32_t *out) {
@@ -45,10 +45,7 @@ static bool clip_same_glow(const struct rediwm_clip *a, const struct rediwm_clip
 static void clip_rim(pixman_region32_t *out, const struct rediwm_clip *c, const pixman_box32_t *only) {
   const struct rediwm_snap f = rediwm_edges_snap(c->edges);
   if (f.width <= 0 || f.height <= 0) return;
-  double radius = 0;
-  for (int i = 0; i < 4; i++)
-    if (c->radii[i] > radius) radius = c->radii[i];
-  const int inset = (int)ceil(radius) + (int)ceil(c->border) + (int)ceil(c->glow_depth) + 2;
+  const int inset = (int)ceil(c->inset) + (int)ceil(c->border) + (int)ceil(c->glow_depth) + 2;
   pixman_region32_t rim;
   pixman_region32_init_rect(&rim, f.x, f.y, f.width, f.height);
   if (f.width > 2 * inset && f.height > 2 * inset) {

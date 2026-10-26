@@ -42,6 +42,7 @@ pub const shell_icons = @import("shell_icons.zig");
 pub const text = @import("text.zig");
 pub const theme_presets = @import("theme_presets.zig");
 pub const wheel = @import("wheel.zig");
+pub const window_shape = @import("window_shape.zig");
 
 test {
     @import("std").testing.refAllDecls(@This());

@@ -19,7 +19,21 @@ chrome, capture, or retained panel painting. General rules remain in
   `shadow_tree`, the CPU formula's smoothstep); its leaf `shadow_node` has no
   buffer and carries footprint, opacity and input only, so the projection
   damages that footprint itself. CSD windows have no shape and keep the
-  `border_rects` outline. A changed clip damages its rim itself
+  `border_rects` outline. A theme's `window_shape` makes the clip a polygon
+  (`ui/window_shape.zig`, anchored points resolved against the live frame in
+  `Toplevel.shapePolygon`): `radii` is then unused, `rediwm_clip.inset` is how
+  far in the largest rectangle wholly inside it lies (the opaque cover, the
+  plain core and the damage rim all use it), and the shader's `sdpoly` walks
+  the same edges as `rediwm_sd_polygon`; keep the two, and `window_shape.sdPolygon`,
+  in step. Anything that mirrors `rediwm_pass_shape` in Zig must mirror it whole.
+  The polygon distance is compiled only into two extra programs (`POLY`,
+  `shaped_poly[_external]`, `rediwm_scene_renderer_enable_polygons`), built on the
+  first `chrome.polygonsReady()` from layout code (never inside a pass); a polygon
+  draw before that fails the pass, so draw and capture code reads `chrome.polygons`.
+  The taskbar uses the same clip on its tree (`Taskbar.applyClip`) with its raster
+  outer edge left hard (`taskbar/shape.zig` `paintPolygon`: row spans, a distance
+  only near an edge).
+  A changed clip damages its rim itself
   (`projection_resolve.c`); a point the shape cuts away is declined by the pick
   (`pick_world`), so the pick falls to what is below. Window capture draws the client alone and is
   handed the shape explicitly. The ring is one `max(1, round(border * scale))`.

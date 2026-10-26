@@ -313,6 +313,7 @@ int main(void) {
   test_graph(scene);
   test_clean_sync(scene);
   test_clip_geometry();
+  test_polygon_geometry();
   test_clip_opaque();
   test_clip_projection(scene);
   test_clip_output(scene, out);

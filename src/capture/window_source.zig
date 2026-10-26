@@ -42,11 +42,18 @@ const DRM_FORMAT_ARGB8888: u32 = 0x34325241;
 /// and scene_pass.h). The capture is of the client alone, so the shape only
 /// matters where it cuts the client: its two bottom corners, which stay
 /// transparent here as they are on screen.
+/// Mirrors `struct rediwm_pass_shape` field for field: the C side reads all of it.
 const PassShape = extern struct {
     box: wlr.Box,
     radii: [4]f32,
+    poly_count: c_int = 0,
+    poly: [16][2]f32 = @splat(.{ 0, 0 }),
     border: f32 = 0,
     border_color: [4]f32 = @splat(0),
+    glow_center: [2]f32 = .{ 0, 0 },
+    glow_radius: f32 = 0,
+    glow_depth: f32 = 0,
+    glow_color: [4]f32 = @splat(0),
 };
 extern fn rediwm_scene_pass_add_texture_shaped(pass: *wlr.RenderPass, options: *const wlr.RenderPass.TextureOptions, shape: *const PassShape) void;
 
@@ -175,8 +182,9 @@ pub const WindowCaptureSource = struct {
         if (!chrome.shapes) return null;
         const toplevel = self.manager.server.findToplevelById(self.window_id) orelse return null;
         const radius = toplevel.cornerRadius();
-        if (!toplevel.hasServerDecorations() or radius <= 0 or toplevel.chrome_width <= 0 or toplevel.chrome_height <= 0) return null;
-        return .{
+        const polygon = toplevel.shapePolygon(toplevel.chrome_width, toplevel.chrome_height);
+        if (!toplevel.hasServerDecorations() or (radius <= 0 and polygon == null) or toplevel.chrome_width <= 0 or toplevel.chrome_height <= 0) return null;
+        var shape: PassShape = .{
             .box = .{
                 .x = -self.content_node.x - off_x,
                 .y = -self.content_node.y - off_y,
@@ -185,6 +193,12 @@ pub const WindowCaptureSource = struct {
             },
             .radii = @splat(radius),
         };
+        if (polygon) |p| {
+            shape.radii = @splat(0);
+            shape.poly_count = @intCast(p.count);
+            for (p.points[0..p.count], 0..) |point, i| shape.poly[i] = .{ @floatCast(point[0]), @floatCast(point[1]) };
+        }
+        return shape;
     }
 
     const RenderCtx = struct {

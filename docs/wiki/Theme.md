@@ -127,6 +127,33 @@ same setting. It defaults to `false`, preserving the existing corner radii,
 and reloads live from the main config or the `REDIWM_THEME` file. Button sizes
 and hit targets stay the same; `radius_lg` still controls the window frame.
 
+`[theme].window_shape` replaces the rounded rectangle of server-decorated
+windows with a polygon: up to 16 points, `"x y"` pairs separated by commas.
+A coordinate is logical px from the left or top edge, a negative one (`-0`
+included) px from the right or bottom edge, and `N%` a fraction of the window,
+so one outline fits any size. For example
+`window_shape = "0 14, 14 0, -160 0, -148 3, -14 3, -0 17, -0 -14, -14 -0, 14 -0, 0 -14"`
+cuts the corners and steps the top edge down for its last 160 px. The ring,
+shadow, glass and pointer picking follow the outline. An outline that does not
+parse is refused when the theme loads; one that crosses itself at a window's
+size (a window narrower than its notches) falls back to the rounded rectangle,
+as do maximized and fullscreen windows. `window_top_band` (colour) and
+`window_top_band_height` (logical px, 0 = none) paint a strip along the top of
+the titlebar, clipped by the shape. The titlebar's icon, title and controls
+(and the tab strip's right end) keep in from the outline's slanted or cut ends
+over the rows they occupy; a notch they do not reach into is left to the clip.
+The outline's GL programs are built the first time a theme asks for one, so a
+theme without `window_shape` or `taskbar_shape` never pays for them. The
+bundled `chamfer-blue` pack is an example.
+
+`[theme].taskbar_shape` does the same for the taskbar, against the bar's own
+box (so `-0` is the bar's right or bottom edge): for example
+`"0 -0, 14 0, 300 0, 312 6, -14 6, -0 -0"` is a raised left section, a 6 px step
+down and a slanted right tip. It replaces `taskbar_radius`. Items keep clear of
+the slanted ends but not of a notch in the middle, the notch is transparent and
+clicks in it reach what is below, and glass follows the outline. The bar is
+painted once per layout change, not per frame.
+
 The lock's background always paints opaque, even if `lock_bg` supplies alpha;
 `lock_wallpaper_opacity` controls its wallpaper overlay. Actual image pixels,
 PDF paper/content, application-provided icons and fixed layout/hit-test
@@ -290,6 +317,10 @@ Numeric tokens accept 0–4096 unless constrained below. Fractions ending in
 | `title_size` | `13.5` |
 | `chrome_height` | `46.0` |
 | `chrome_control_gap` | `4.0` |
+| `window_shape` | `""` (the rounded rectangle) |
+| `window_top_band` | `rgba(0,0,0,0)` |
+| `window_top_band_height` | `0.0` |
+| `taskbar_shape` | `""` (the rounded rectangle) |
 | `taskbar_title_size` | `12.5` |
 | `clock_bold`, `clock_italic` | `false` |
 | `taskbar_size` | `44.0` |

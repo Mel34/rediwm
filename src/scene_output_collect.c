@@ -23,8 +23,7 @@ static void clip_cover(pixman_region32_t *out, const struct rediwm_clip *c, doub
 static bool same_clip(const struct rediwm_clip *a, const struct rediwm_clip *b) {
     if (a->edges.x1 != b->edges.x1 || a->edges.y1 != b->edges.y1 || a->edges.x2 != b->edges.x2 ||
         a->edges.y2 != b->edges.y2 || a->border != b->border) return false;
-    for (int i = 0; i < 4; i++) if (a->radii[i] != b->radii[i]) return false;
-    return true;
+    return rediwm_clip_outline_equal(a, b);
 }
 bool scene_output_collect(const struct rediwm_item *item, struct rediwm_node *transport, void *data) {
     struct collector *collector = data;

@@ -12,5 +12,6 @@ pub const bundled = [_]Preset{
     .{ .id = "rediwm-light", .name = "RediWM Light", .bytes = @embedFile("theme-rediwm-light") },
     .{ .id = "redi-blue", .name = "Redi Blue", .bytes = @embedFile("theme-redi-blue") },
     .{ .id = "redi-mocha", .name = "Redi-Mocha", .bytes = @embedFile("theme-redi-mocha") },
+    .{ .id = "chamfer-blue", .name = "Chamfer Blue", .bytes = @embedFile("theme-chamfer-blue") },
     .{ .id = "gold", .name = "Gold", .bytes = @embedFile("theme-gold") },
 };

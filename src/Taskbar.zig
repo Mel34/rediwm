@@ -68,6 +68,7 @@ pub const buttonSize = taskbar_metrics.buttonSize;
 pub const startButtonGap = taskbar_metrics.startButtonGap;
 pub const startButtonLeft = taskbar_metrics.startButtonLeft;
 pub const endInset = taskbar_metrics.endInset;
+pub const hasPolygon = taskbar_metrics.hasPolygon;
 pub const rightPad = taskbar_metrics.rightPad;
 pub const startButtonBox = taskbar_metrics.startButtonBox;
 pub const startIconSize = taskbar_metrics.startIconSize;
@@ -445,6 +446,7 @@ pub const bleedFor = taskbar_layout.bleedFor;
 pub const boxesOverlap = taskbar_layout.boxesOverlap;
 pub const isPlaced = taskbar_layout.isPlaced;
 pub const relayout = taskbar_layout.relayout;
+pub const applyClip = taskbar_layout.applyClip;
 pub const notifyToplevelsChanged = taskbar_layout.notifyToplevelsChanged;
 
 /// Logical px the bar's background reaches past the far edges of its output.

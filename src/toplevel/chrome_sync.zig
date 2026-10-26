@@ -152,7 +152,7 @@ pub fn syncChrome(toplevel: *Toplevel, rebuild_shadow: bool, now_ms: i64) !void 
     // ReleaseSafe would fill on every client commit.
     const tab_storage = if (toplevel.tab_group != 0) try gpa.create([@import("../window_tabs.zig").max_tabs]@import("../chrome_tabs.zig").Tab) else null;
     defer if (tab_storage) |storage| gpa.destroy(storage);
-    const state: chrome.ChromeState = .{
+    var state: chrome.ChromeState = .{
         .tabs = toplevel.tabStrip(tab_storage),
         .active = toplevel.activated,
         .workspace_focus = toplevel.hasWorkspaceFocusBorder(),
@@ -169,6 +169,9 @@ pub fn syncChrome(toplevel: *Toplevel, rebuild_shadow: bool, now_ms: i64) !void 
     toplevel.last_painted_hover = hover;
     toplevel.chrome_width = width;
     toplevel.chrome_height = height;
+    const insets = toplevel.controlInsets();
+    state.inset_left = insets.left;
+    state.inset_right = insets.right;
 
     const title_memo = chrome.TitlebarMemo.capture(width, height, toplevel.titlePtr(), state);
     const skip_titlebar = if (toplevel.last_titlebar) |prev| prev.eql(title_memo) or toplevel.stretchesTitlebar(prev, title_memo, now_ms) else false;
@@ -271,8 +274,9 @@ pub fn visualChromeSize(toplevel: *Toplevel, now_ms: i64, natural_w: i32, natura
 // where geometry or theme may have changed, never on a hover repaint.
 pub fn syncShadow(toplevel: *Toplevel, width: i32, height: i32, radius: f32) !void {
     const t = theme.global;
+    if (t.window_shape.len > 0) _ = chrome.polygonsReady();
     const disabled = !chrome.shapes or toplevel.isMaximized() or t.shadow[3] <= 0 or t.shadow_size <= 0;
-    const memo = chrome.ShadowMemo.capture(width, height, radius, toplevel.render_scale, disabled);
+    const memo = chrome.ShadowMemo.capture(width, height, radius, toplevel.render_scale, disabled, toplevel.shapeKey());
 
     if (disabled) {
         toplevel.shadow_tree.node.setEnabled(false);
@@ -291,7 +295,7 @@ pub fn syncShadow(toplevel: *Toplevel, width: i32, height: i32, radius: f32) !vo
     toplevel.shadow_node.node.setPosition(-margin, -margin + offset_y);
     toplevel.shadow_node.setDestSize(width + 2 * margin, height + 2 * margin);
     const r: f64 = radius;
-    if (!projection.setTreeShadow(&toplevel.shadow_tree.node, .{
+    var spec: projection.ShadowSpec = .{
         .width = width,
         .height = height,
         .radii = .{ r, r, r, r },
@@ -299,7 +303,13 @@ pub fn syncShadow(toplevel: *Toplevel, width: i32, height: i32, radius: f32) !vo
         .offset_y = @floatFromInt(offset_y),
         .softness = t.shadow_size,
         .color = col.Straight.fromRgba(t.shadow).premultiply().rgba,
-    })) log.warn("could not set the window shadow ({d}x{d})", .{ width, height });
+    };
+    if (toplevel.shapePolygon(width, height)) |polygon| {
+        spec.poly_count = @intCast(polygon.count);
+        spec.poly = polygon.points;
+        spec.radii = @splat(0);
+    }
+    if (!projection.setTreeShadow(&toplevel.shadow_tree.node, spec)) log.warn("could not set the window shadow ({d}x{d})", .{ width, height });
     toplevel.last_shadow = memo;
 }
 
@@ -323,6 +333,8 @@ pub fn applyShape(toplevel: *Toplevel) void {
         _ = projection.setTreeClip(node, null);
         return;
     }
+    // The polygon programs are built the first time a theme asks for an outline.
+    if (theme.global.window_shape.len > 0) _ = chrome.polygonsReady();
     const radius: f64 = toplevel.cornerRadius();
     const ring = toplevel.borderColor().scale(toplevel.shape_opacity);
     var spec: projection.ClipSpec = .{
@@ -332,6 +344,11 @@ pub fn applyShape(toplevel: *Toplevel) void {
         .border = @floatFromInt(chrome.frame_border),
         .border_color = ring.rgba,
     };
+    if (toplevel.shapePolygon(toplevel.chrome_width, toplevel.chrome_height)) |polygon| {
+        spec.poly_count = @intCast(polygon.count);
+        spec.poly = polygon.points;
+        spec.radii = @splat(0);
+    }
     const t = theme.global;
     const glow = toplevel.glow_anim.value(nowMs()) * toplevel.shape_opacity;
     if (t.border_glow_enabled and glow * t.border_glow[3] >= 0.004) {

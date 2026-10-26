@@ -90,7 +90,24 @@ static const char shaped_vertex[] =
     "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n" \
     "varying vec2 uv; varying vec2 local; uniform vec2 size; uniform vec4 radii, bcolor, color;" \
     "uniform float border; uniform vec4 glow, gcolor;" \
-    "float sdf(vec2 p, vec4 r){ vec2 q=p-size*.5;" \
+    /* A polygon's distance: the nearest edge, signed by an even-odd crossing count; */ \
+    /* the loop of rediwm_sd_polygon (scene_graph.h). poly[npoly] repeats poly[0]. */ \
+    /* Only the polygon programs (POLY, built on demand) carry it: the others */ \
+    /* compile to what they did before polygons existed. */ \
+    "\n#ifdef POLY\n" \
+    "uniform float npoly; uniform vec2 poly[17];" \
+    "float sdpoly(vec2 p){ float d=dot(p-poly[0],p-poly[0]); float s=1.;" \
+    "for(int i=0;i<16;i++){ if(float(i)>=npoly) break; vec2 a=poly[i], b=poly[i+1];" \
+    "vec2 e=b-a, w=p-a; float h=clamp(dot(w,e)/max(dot(e,e),1e-4),0.,1.); vec2 q=w-e*h; d=min(d,dot(q,q));" \
+    "bool c0=p.y>=a.y, c1=p.y<b.y, c2=e.x*w.y>e.y*w.x;" \
+    "if((c0&&c1&&c2)||(!c0&&!c1&&!c2)) s=-s; }" \
+    "return s*sqrt(d); }" \
+    "\n#endif\n" \
+    "float sdf(vec2 p, vec4 r){" \
+    "\n#ifdef POLY\n" \
+    "if(npoly>.5) return sdpoly(p);" \
+    "\n#endif\n" \
+    "vec2 q=p-size*.5;" \
     "float rad=q.x<0.?(q.y<0.?r.x:r.w):(q.y<0.?r.y:r.z);" \
     "rad=clamp(rad,0.,min(size.x,size.y)*.5);" \
     "vec2 d=abs(q)-(size*.5-vec2(rad));" \
@@ -212,6 +229,8 @@ static bool program_init(struct program *p, unsigned bit, const char *vertex_sou
     p->origin = glGetUniformLocation(p->id, "origin");
     p->size = glGetUniformLocation(p->id, "size");
     p->radii = glGetUniformLocation(p->id, "radii");
+    p->npoly = glGetUniformLocation(p->id, "npoly");
+    p->poly = glGetUniformLocation(p->id, "poly[0]");
     p->border = glGetUniformLocation(p->id, "border");
     p->bcolor = glGetUniformLocation(p->id, "bcolor");
     p->glow = glGetUniformLocation(p->id, "glow");
@@ -295,6 +314,8 @@ void rediwm_scene_renderer_destroy(struct rediwm_scene_renderer *r) {
         glDeleteBuffers(1, &r->vertices);
         glDeleteProgram(r->shaped.id);
         glDeleteProgram(r->shaped_external.id);
+        glDeleteProgram(r->shaped_poly.id);
+        glDeleteProgram(r->shaped_poly_external.id);
         glDeleteProgram(r->blur.id);
         glDeleteTextures(1, &r->prefix_tex);
         glDeleteFramebuffers(1, &r->prefix_fbo);
@@ -310,6 +331,27 @@ void rediwm_scene_renderer_destroy(struct rediwm_scene_renderer *r) {
 bool rediwm_scene_renderer_enable_shapes(struct rediwm_scene_renderer *r) {
     assert(!r->active);
     return r->has_shapes;
+}
+
+// The polygon programs: the shaped ones again with POLY defined (scene_pass.h).
+bool rediwm_scene_renderer_enable_polygons(struct rediwm_scene_renderer *r) {
+    assert(!r->active);
+    if (r->polys_tried) return r->has_polys;
+    r->polys_tried = true;
+    if (!r->has_shapes) return false;
+    struct gl_state state;
+    if (!scene_pass_enter(r, &state)) return false;
+    r->has_polys = program_init(&r->shaped_poly, 64, shaped_vertex, "#define POLY 1\nuniform sampler2D tex;\n", shaped_fragment) &&
+        (!r->has_external || program_init(&r->shaped_poly_external, 128, shaped_vertex,
+            "#extension GL_OES_EGL_image_external : require\n#define POLY 1\nuniform samplerExternalOES tex;\n", shaped_fragment));
+    if (!r->has_polys) {
+        wlr_log(WLR_ERROR, "scene pass: polygon programs failed to build, outlines are not drawn");
+        glDeleteProgram(r->shaped_poly.id);
+        glDeleteProgram(r->shaped_poly_external.id);
+        r->shaped_poly.id = r->shaped_poly_external.id = 0;
+    }
+    scene_pass_leave(r, &state);
+    return r->has_polys;
 }
 
 bool rediwm_scene_renderer_enable_backdrops(struct rediwm_scene_renderer *r) {

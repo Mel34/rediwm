@@ -11,6 +11,7 @@ const theme = @import("ui").theme;
 const actions = @import("../config_runtime/actions.zig");
 const anim = @import("ui").anim;
 const border_glow = @import("../border_glow.zig");
+const window_shape = @import("ui").window_shape;
 const log = std.log.scoped(.toplevel);
 const chip_slot_px = Toplevel.chip_slot_px;
 
@@ -144,14 +145,22 @@ pub fn glowProbe(toplevel: *const Toplevel, lx: f64, ly: f64) ?border_glow.Probe
     if (!toplevel.hasServerDecorations() or toplevel.isMaximized() or toplevel.isFullscreen()) return null;
     const density = toplevel.chromeDensity();
     const local = toplevel.frameLocal(lx, ly);
-    return border_glow.probe(
+    const found = border_glow.probe(
         @floatFromInt(toplevel.chrome_width),
         @floatFromInt(toplevel.chrome_height),
         toplevel.cornerRadius(),
         @floatCast(local.x),
         @floatCast(local.y),
         theme.global.border_glow_reach * density,
-    );
+    ) orelse return null;
+    // A polygon outline: the highlight sits on the frame's bounding box, so it shows
+    // only where the outline runs along it (within a few px: a shallow step still
+    // lights). Where the nearest point of the box is cut away (a deep notch, a
+    // slanted corner) there is no edge there to light.
+    if (toplevel.shapePolygon(toplevel.chrome_width, toplevel.chrome_height)) |polygon| {
+        if (@abs(window_shape.sdPolygon(polygon, found.x, found.y)) > 4 * density) return null;
+    }
+    return found;
 }
 
 /// Shows the highlight of the frame's edge at `probe` (null: fades it out). Only
