@@ -35,15 +35,28 @@ pub fn build(b: *std.Build) void {
     const wayland = protocols.module(b);
     const xkbcommon = b.dependency("xkbcommon", .{}).module("xkbcommon");
     const pixman = b.dependency("pixman", .{}).module("pixman");
-    const wlroots = b.dependency("wlroots", .{}).module("wlroots");
+    // One header-backed module supplies every compositor wlroots binding.
+    const wlr_facade = b.createModule(.{
+        .root_source_file = b.path("src/wlr/wlr.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    wlr_facade.addImport("wayland", wayland);
+    wlr_facade.addImport("pixman", pixman);
+    wlr_facade.addImport("xkbcommon", xkbcommon);
+    wlr_facade.linkSystemLibrary("wlroots-0.20", .{});
 
-    wlroots.addImport("wayland", wayland);
-    wlroots.addImport("xkbcommon", xkbcommon);
-    wlroots.addImport("pixman", pixman);
+    // These public wlroots headers include protocol headers which wlroots
+    // does not install. Generate them from the same XML as our Zig bindings.
+    inline for (.{ "wlr-output-power-management-unstable-v1", "wlr-layer-shell-unstable-v1" }) |name| {
+        const run = b.addSystemCommand(&.{ "wayland-scanner", "server-header" });
+        run.addFileArg(b.path("protocol/" ++ name ++ ".xml"));
+        const header = run.addOutputFileArg(name ++ "-protocol.h");
+        wlr_facade.addIncludePath(header.dirname());
+    }
 
-    // Expose the wlroots include path from pkg-config to its @cImport calls.
-    wlroots.resolved_target = target;
-    wlroots.linkSystemLibrary("wlroots-0.20", .{});
+    const wlroots = wlr_facade;
 
     // Module roots enforce one-way dependencies: shared code cannot import Server.
     const memory_mod = b.createModule(.{ .root_source_file = b.path("src/memory/allocator.zig"), .target = target, .optimize = optimize });

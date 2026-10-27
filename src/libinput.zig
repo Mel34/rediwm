@@ -4,7 +4,7 @@
 // AGENTS.md, "Build and platform gotchas") so it's @cInclude'd directly rather than hand-declared.
 //
 // `wlr.InputDevice.getLibinputDevice()` returns a pointer to an opaque type
-// private to zig-wlroots' own bindings; since it carries no fields on either
+// from the wlroots facade's C import; since it carries no fields on either
 // side, a plain `@ptrCast` onto libinput.h's own `struct libinput_device*`
 // is safe and avoids needing to name that private type at all.
 const wlr = @import("wlroots");

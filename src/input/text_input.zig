@@ -56,9 +56,8 @@ pub fn destroy(self: *Self) void {
     gpa.destroy(self);
 }
 
-extern fn wlr_input_device_get_virtual_keyboard(device: *wlr.InputDevice) ?*wlr.VirtualKeyboardV1;
 pub fn isVirtual(device: *wlr.InputDevice) bool {
-    return wlr_input_device_get_virtual_keyboard(device) != null;
+    return device.getVirtualKeyboard() != null;
 }
 
 pub fn keyboardGrab(self: *Self, keyboard: *wlr.Keyboard) ?*wlr.InputMethodV2.KeyboardGrab {
@@ -67,7 +66,7 @@ pub fn keyboardGrab(self: *Self, keyboard: *wlr.Keyboard) ?*wlr.InputMethodV2.Ke
         input.open_wifi != null or input.open_battery != null or input.open_calendar != null or input.open_start_menu != null or (if (input.open_control_center) |cc| cc.hasKeyboardFocus() else false) or input.open_power_menu != null) return null;
     const method = self.method orelse return null;
     const grab = self.grab orelse return null;
-    if (wlr_input_device_get_virtual_keyboard(&keyboard.base)) |virtual| {
+    if (keyboard.base.getVirtualKeyboard()) |virtual| {
         // IMEs reinject unhandled keys with their own virtual keyboard.
         // Sending those back into the grab would create an infinite loop.
         if (virtual.resource.getClient() == method.resource.getClient()) return null;

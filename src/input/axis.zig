@@ -17,12 +17,12 @@ pub fn cursorAxis(
     event: *wlr.Pointer.event.Axis,
 ) void {
     const input: *Input = @fieldParentPtr("cursor_axis", listener);
-    if (input.blockedVirtual(event.device)) return;
-    if (input.zoom_device != event.device) {
+    if (input.blockedVirtual(&event.pointer.base)) return;
+    if (input.zoom_device != &event.pointer.base) {
         input.zoom_scroll.reset();
         input.wheel_debounce = .{ .{}, .{} };
     }
-    input.zoom_device = event.device;
+    input.zoom_device = &event.pointer.base;
     var delta = event.delta;
     var delta_discrete = event.delta_discrete;
     if (event.source == .wheel and delta_discrete != 0) {

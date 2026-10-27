@@ -21,7 +21,7 @@ pub fn cursorMotion(
     event: *wlr.Pointer.event.Motion,
 ) void {
     const input: *Input = @fieldParentPtr("cursor_motion", listener);
-    if (input.blockedVirtual(event.device)) return;
+    if (input.blockedVirtual(&event.pointer.base)) return;
     @import("../startup.zig").markFirstInput();
     if (input.server.idle) |im| im.notifyActivity(.pointer);
 
@@ -32,7 +32,7 @@ pub fn cursorMotion(
     dy *= mult;
 
     if (input.server.locker != null or input.server.polkit_dialog != null) {
-        input.cursor.move(event.device, dx, dy);
+        input.cursor.move(&event.pointer.base, dx, dy);
         input.lockClientMotion(event.time_msec);
         return;
     }
@@ -41,7 +41,7 @@ pub fn cursorMotion(
         if (input.server.screenshot_selector.output == null and input.isPanModifierHeld() and input.active_buttons == 0 and !input.server.world.mini_map.dragging and !input.cursorOverTaskbar()) {
             const inhibited = if (input.pan_session) |sess| sess.inhibited and sess.trigger == .super_key else false;
             if (!inhibited) {
-                input.startPan(.super_key, event.device);
+                input.startPan(.super_key, &event.pointer.base);
             }
         }
     }
@@ -50,7 +50,7 @@ pub fn cursorMotion(
         if (input.pan_session) |*sess| if (!sess.inhibited) {
             const prev_x = input.cursor.x;
             const prev_y = input.cursor.y;
-            input.cursor.move(event.device, dx, dy);
+            input.cursor.move(&event.pointer.base, dx, dy);
             const actual_dx = input.cursor.x - prev_x;
             const actual_dy = input.cursor.y - prev_y;
 
@@ -65,7 +65,7 @@ pub fn cursorMotion(
     }
 
     const allowed = input.pointer_constraints.clientMotion(event.time_msec, dx, dy, event.unaccel_dx, event.unaccel_dy) orelse return;
-    input.cursor.move(event.device, allowed.dx, allowed.dy);
+    input.cursor.move(&event.pointer.base, allowed.dx, allowed.dy);
     input.processCursorMotion(event.time_msec);
     input.pointer_constraints.sync();
 }
@@ -75,12 +75,12 @@ pub fn cursorMotionAbsolute(
     event: *wlr.Pointer.event.MotionAbsolute,
 ) void {
     const input: *Input = @fieldParentPtr("cursor_motion_absolute", listener);
-    if (input.blockedVirtual(event.device)) return;
+    if (input.blockedVirtual(&event.pointer.base)) return;
     if (input.server.idle) |im| im.notifyActivity(.pointer);
     var x: f64 = undefined;
     var y: f64 = undefined;
-    input.cursor.absoluteToLayoutCoords(event.device, event.x, event.y, &x, &y);
-    input.layoutMotion(event.device, x, y, event.time_msec);
+    input.cursor.absoluteToLayoutCoords(&event.pointer.base, event.x, event.y, &x, &y);
+    input.layoutMotion(&event.pointer.base, x, y, event.time_msec);
 }
 
 /// Absolute pointer motion to a layout point: pointer devices, and touch and

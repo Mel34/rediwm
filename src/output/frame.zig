@@ -10,7 +10,6 @@ const anim = @import("ui").anim;
 const glass = @import("../glass.zig");
 const stats = @import("../ipc/stats.zig");
 const wlr_color_transform_unref = Output.wlr_color_transform_unref;
-const wlr_output_state_set_color_transform = Output.wlr_output_state_set_color_transform;
 const log = std.log.scoped(.output);
 const CursorState = Output.CursorState;
 const syncLayout = Output.syncLayout;
@@ -20,9 +19,9 @@ const timestamp = Output.timestamp;
 pub fn commitFrameState(output: *Output, state: *wlr.Output.State) bool {
     if (output.color.pending) {
         var copy = state.*;
-        wlr_output_state_set_color_transform(&copy, output.color.transform);
+        copy.setColorTransform(output.color.transform);
         if (output.wlr_output.testState(&copy)) {
-            wlr_output_state_set_color_transform(state, output.color.transform);
+            state.setColorTransform(output.color.transform);
         } else {
             output.color.status = .rejected;
             output.color.pending = false;

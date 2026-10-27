@@ -20,19 +20,8 @@ const output_panels = @import("output/panels.zig");
 const output_wallpaper = @import("output/wallpaper.zig");
 const output_frame = @import("output/frame.zig");
 
-pub extern fn wlr_color_transform_init_lut_3x1d(
-    dim: usize,
-    r: [*]const u16,
-    g: [*]const u16,
-    b: [*]const u16,
-) ?*wlr.ColorTransform;
-
-pub extern fn wlr_color_transform_unref(tr: *wlr.ColorTransform) void;
-
-pub extern fn wlr_output_state_set_color_transform(
-    state: *wlr.Output.State,
-    tr: ?*wlr.ColorTransform,
-) void;
+pub const wlr_color_transform_init_lut_3x1d = wlr.color.transformInitLut3x1d;
+pub const wlr_color_transform_unref = wlr.color.transformUnref;
 
 pub const ColorKey = struct {
     temperature: u16,
@@ -239,7 +228,7 @@ pub fn create(server: *Server, wlr_output: *wlr.Output) !void {
         wlr_output.lockSoftwareCursors(true);
         log.info("{s}: software cursor ({s} virtual GPU)", .{ wlr_output.name, driver });
     }
-    output.vblank_timer =server.wl_server.getEventLoop().addTimer(*Output, handleVblank, output) catch null;
+    output.vblank_timer = server.wl_server.getEventLoop().addTimer(*Output, handleVblank, output) catch null;
     errdefer if (output.vblank_timer) |timer| timer.remove();
 
     // Layout entry and scene output are addons on `wlr_output`. On error the
