@@ -23,6 +23,10 @@ const kb_shortcuts_inhibit = @import("keyboard_shortcuts_inhibit.zig").Types(old
 pub const KeyboardShortcutsInhibitManagerV1 = kb_shortcuts_inhibit.KeyboardShortcutsInhibitManagerV1;
 pub const KeyboardShortcutsInhibitorV1 = kb_shortcuts_inhibit.KeyboardShortcutsInhibitorV1;
 
+const security_context = @import("security_context.zig");
+pub const SecurityContextManagerV1 = security_context.SecurityContextManagerV1;
+pub const SecurityContextV1State = security_context.SecurityContextV1State;
+
 // --- Not yet migrated: forwarded straight to zig-wlroots. ---
 //
 // Box/FBox/Edges are drafted and verified against the real headers in
@@ -91,7 +95,6 @@ pub const Scene = old.Scene;
 pub const ScreencopyFrameV1 = old.ScreencopyFrameV1;
 pub const ScreencopyManagerV1 = old.ScreencopyManagerV1;
 pub const Seat = old.Seat;
-pub const SecurityContextManagerV1 = old.SecurityContextManagerV1;
 pub const Session = old.Session;
 pub const SessionLockManagerV1 = old.SessionLockManagerV1;
 pub const SessionLockSurfaceV1 = old.SessionLockSurfaceV1;
