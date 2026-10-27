@@ -12,6 +12,13 @@ const output_power = @import("output_power.zig").Types(old.Output);
 pub const OutputPowerManagerV1 = output_power.OutputPowerManagerV1;
 pub const OutputPowerV1 = output_power.OutputPowerV1;
 
+const idle_notify = @import("idle_notify.zig").Types(old.Seat);
+pub const IdleNotifierV1 = idle_notify.IdleNotifierV1;
+
+const idle_inhibit = @import("idle_inhibit.zig").Types(old.Surface);
+pub const IdleInhibitManagerV1 = idle_inhibit.IdleInhibitManagerV1;
+pub const IdleInhibitorV1 = idle_inhibit.IdleInhibitorV1;
+
 // --- Not yet migrated: forwarded straight to zig-wlroots. ---
 //
 // Box/FBox/Edges are drafted and verified against the real headers in
@@ -52,9 +59,6 @@ pub const ExtOutputImageCaptureSourceManagerV1 = old.ExtOutputImageCaptureSource
 pub const ForeignToplevelHandleV1 = old.ForeignToplevelHandleV1;
 pub const ForeignToplevelManagerV1 = old.ForeignToplevelManagerV1;
 pub const FractionalScaleManagerV1 = old.FractionalScaleManagerV1;
-pub const IdleInhibitManagerV1 = old.IdleInhibitManagerV1;
-pub const IdleInhibitorV1 = old.IdleInhibitorV1;
-pub const IdleNotifierV1 = old.IdleNotifierV1;
 pub const InputDevice = old.InputDevice;
 pub const InputMethodManagerV2 = old.InputMethodManagerV2;
 pub const InputMethodV2 = old.InputMethodV2;
