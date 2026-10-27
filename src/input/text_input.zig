@@ -56,9 +56,8 @@ pub fn destroy(self: *Self) void {
     gpa.destroy(self);
 }
 
-extern fn wlr_input_device_get_virtual_keyboard(device: *wlr.InputDevice) ?*wlr.VirtualKeyboardV1;
 pub fn isVirtual(device: *wlr.InputDevice) bool {
-    return wlr_input_device_get_virtual_keyboard(device) != null;
+    return device.getVirtualKeyboard() != null;
 }
 
 pub fn keyboardGrab(self: *Self, keyboard: *wlr.Keyboard) ?*wlr.InputMethodV2.KeyboardGrab {
@@ -67,7 +66,7 @@ pub fn keyboardGrab(self: *Self, keyboard: *wlr.Keyboard) ?*wlr.InputMethodV2.Ke
         input.open_wifi != null or input.open_battery != null or input.open_calendar != null or input.open_start_menu != null or (if (input.open_control_center) |cc| cc.hasKeyboardFocus() else false) or input.open_power_menu != null) return null;
     const method = self.method orelse return null;
     const grab = self.grab orelse return null;
-    if (wlr_input_device_get_virtual_keyboard(&keyboard.base)) |virtual| {
+    if (keyboard.base.getVirtualKeyboard()) |virtual| {
         // IMEs reinject unhandled keys with their own virtual keyboard.
         // Sending those back into the grab would create an infinite loop.
         if (virtual.resource.getClient() == method.resource.getClient()) return null;
@@ -397,10 +396,7 @@ pub fn updatePopups(self: *Self) void {
                 y = layout.y;
                 scale *= self.server.world.camera.zoom();
             } else if (wlr.LayerSurfaceV1.tryFromWlrSurface(surface.getRootSurface()) == null) break :visible false;
-            // TextInputV3 hasn't migrated off zig-wlroots, so
-            // cursor_rectangle is still its own Box type; match it here
-            // instead of casting, since only .x/.y/.width are read below.
-            const rect = if (input.active_features.cursor_rectangle) input.current.cursor_rectangle else @TypeOf(input.current.cursor_rectangle){ .x = 0, .y = 0, .width = surface.current.width, .height = surface.current.height };
+            const rect = if (input.active_features.cursor_rectangle) input.current.cursor_rectangle else wlr.Box{ .x = 0, .y = 0, .width = surface.current.width, .height = surface.current.height };
             // Rectangle coordinates are client-controlled signed 32-bit values.
             // Zoom and adding the scene origin can exceed that range.
             const rx: i64 = @intFromFloat(@round(x + @as(f64, @floatFromInt(rect.x)) * scale));
@@ -418,10 +414,7 @@ pub fn updatePopups(self: *Self) void {
             const relative = wlr.Box{ .x = wireCoordinate(rx - px), .y = wireCoordinate(ry - py), .width = wireCoordinate(rw), .height = wireCoordinate(rh) };
             if (popup.last_rectangle == null or !std.meta.eql(popup.last_rectangle.?, relative)) {
                 var box = relative;
-                // InputPopupSurfaceV2 hasn't migrated off zig-wlroots; see
-                // wlr.zig's assertSameLayout(Box, old.Box) for why this
-                // cast is safe.
-                popup.popup.sendTextInputRectangle(@ptrCast(&box));
+                popup.popup.sendTextInputRectangle(&box);
                 popup.last_rectangle = relative;
             }
             break :visible true;

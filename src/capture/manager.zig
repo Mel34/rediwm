@@ -241,14 +241,11 @@ pub const Manager = struct {
     /// wlroots copies in its own commit listener, so refusing means
     /// disconnecting the client first, as `handleNewSession` does.
     pub fn guardScreencopy(mgr: *Manager, output: *wlr.Output) void {
-        // ScreencopyFrameV1 hasn't migrated off zig-wlroots; see wlr.zig's
-        // `zig_wlroots` note.
-        const old_output: *wlr.zig_wlroots.Output = @ptrCast(output);
         const refuse = mgr.server.polkit_dialog != null or mgr.server.locker != null;
         var copying = false;
         var it = mgr.screencopy.frames.safeIterator(.forward);
         while (it.next()) |frame| {
-            if (frame.output != old_output or !copyRequested(frame)) continue;
+            if (frame.output != output or !copyRequested(frame)) continue;
             if (refuse) {
                 // Destroying the client frees its other frames too.
                 frame.resource.getClient().destroy();
@@ -295,10 +292,9 @@ fn monotonicMs() i64 {
     return @as(i64, ts.sec) * 1000 + @divTrunc(ts.nsec, 1_000_000);
 }
 
-/// wlroots sets `buffer` on the copy request; zig-wlroots declares it non-null.
+/// wlroots sets `buffer` when the client requests a copy.
 fn copyRequested(frame: *wlr.ScreencopyFrameV1) bool {
-    const buffer: *const ?*wlr.Buffer = @ptrCast(&frame.buffer);
-    return buffer.* != null;
+    return frame.buffer != null;
 }
 
 /// Resolves a session's source back to the window it captures, if any
@@ -336,9 +332,7 @@ const Session = struct {
         tracked.* = .{
             .manager = manager,
             .resource = session.resource,
-            // ExtImageCaptureSourceV1 hasn't migrated off zig-wlroots; see
-            // wlr.zig's `zig_wlroots` note.
-            .output = @ptrCast(session.source.toOutput()),
+            .output = session.source.toOutput(),
             .window_id = if (findWindowSource(manager, session.source)) |ws| ws.window_id else null,
         };
         session.events.destroy.add(&tracked.destroy);

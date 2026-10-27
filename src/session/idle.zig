@@ -390,9 +390,7 @@ pub const IdleManager = struct {
                     return .{ .visible = false, .reason = "unmapped layer surface" };
                 }
                 if (layer.layer.output) |out| {
-                    // LayerSurfaceV1 hasn't migrated off zig-wlroots; see
-                    // LayerSurface.zig's create() for the same crossing.
-                    if (Output.fromWlr(@ptrCast(out))) |output| {
+                    if (Output.fromWlr(out)) |output| {
                         if (output.isLogicallyEnabled()) {
                             return .{ .visible = true, .reason = "visible layer surface" };
                         }

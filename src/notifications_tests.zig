@@ -39,8 +39,7 @@ test "notifications unit: replaces_id, urgency, DND, lock suppression" {
     server.outputs.init();
     server.input.cursor = &dummy_cursor;
 
-    // Backend hasn't migrated off zig-wlroots; see Server.zig's new_output.
-    const wlr_out: *wlr.Output = @ptrCast(try backend.headlessAddOutput(1280, 720));
+    const wlr_out = try backend.headlessAddOutput(1280, 720);
     var mode = wlr.Output.State.init();
     defer mode.finish();
     mode.setEnabled(true);

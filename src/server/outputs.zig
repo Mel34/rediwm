@@ -8,10 +8,8 @@ const Output = @import("../Output.zig");
 const geometry = @import("../geometry.zig");
 const log = std.log.scoped(.compositor);
 
-pub fn newOutput(listener: *wl.Listener(*wlr.zig_wlroots.Output), old_output: *wlr.zig_wlroots.Output) void {
+pub fn newOutput(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     const server: *Server = @fieldParentPtr("new_output", listener);
-    // Backend hasn't migrated off zig-wlroots; see Server.zig's new_output.
-    const wlr_output: *wlr.Output = @ptrCast(old_output);
 
     // wlroots' own `wlr_ext_image_capture_source_v1_create_with_scene_node`
     // (capture/manager.zig, stage 3 window capture) creates a private

@@ -226,8 +226,7 @@ test "OSD is noninteractive, stays above lock covers, rescales and releases its 
     server.overlay_tree = try fixture.nodes.tree.createSceneTree();
     server.lock_tree = try fixture.nodes.tree.createSceneTree();
     server.locker = null;
-    // Backend hasn't migrated off zig-wlroots; see Server.zig's new_output.
-    const output: *wlr.Output = @ptrCast(try backend.headlessAddOutput(1280, 720));
+    const output = try backend.headlessAddOutput(1280, 720);
     var mode = wlr.Output.State.init();
     defer mode.finish();
     mode.setEnabled(true);
@@ -282,8 +281,7 @@ test "OSD sound and brightness glides smoothly between levels" {
     server.overlay_tree = try fixture.nodes.tree.createSceneTree();
     server.lock_tree = try fixture.nodes.tree.createSceneTree();
     server.locker = null;
-    // Backend hasn't migrated off zig-wlroots; see Server.zig's new_output.
-    const output: *wlr.Output = @ptrCast(try backend.headlessAddOutput(1280, 720));
+    const output = try backend.headlessAddOutput(1280, 720);
     var mode = wlr.Output.State.init();
     defer mode.finish();
     mode.setEnabled(true);

@@ -9,3 +9,12 @@ pub const Edges = packed struct(u32) {
     right: bool = false,
     _: u28 = 0,
 };
+
+comptime {
+    const c = @import("c.zig").c;
+    if (@as(u32, @bitCast(Edges{ .top = true })) != c.WLR_EDGE_TOP or
+        @as(u32, @bitCast(Edges{ .bottom = true })) != c.WLR_EDGE_BOTTOM or
+        @as(u32, @bitCast(Edges{ .left = true })) != c.WLR_EDGE_LEFT or
+        @as(u32, @bitCast(Edges{ .right = true })) != c.WLR_EDGE_RIGHT)
+        @compileError("wlroots edge bit values changed");
+}

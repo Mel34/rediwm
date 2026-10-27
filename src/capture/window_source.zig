@@ -50,13 +50,6 @@ const PassShape = extern struct {
 };
 extern fn rediwm_scene_pass_add_texture_shaped(pass: *wlr.RenderPass, options: *const wlr.RenderPass.TextureOptions, shape: *const PassShape) void;
 
-// Not bound in the pinned zig-wlroots package; declared directly the same
-// way every other binding file in that package declares its extern fns.
-// Fills in the well-known CIE1931 xy chromaticities for a named primary set
-// so `wlr.RenderPass.TextureOptions.primaries` isn't left pointing at
-// uninitialized memory.
-extern fn wlr_color_primaries_from_named(out: *wlr.color.Primaries, named: wlr.color.NamedPrimaries) void;
-
 pub const WindowCaptureSource = struct {
     base: wlr.ExtImageCaptureSourceV1,
     manager: *@import("manager.zig").Manager,
@@ -204,7 +197,7 @@ pub const WindowCaptureSource = struct {
         if (self.swapchain == null or self.swap_width != geom.width or self.swap_height != geom.height) {
             if (self.swapchain) |sc| sc.destroy();
             self.swapchain = null;
-            const format = pickFormat(server.renderer);
+            const format = try pickFormat(server.renderer);
             self.swapchain = try wlr.Swapchain.create(server.allocator, geom.width, geom.height, @constCast(format));
             self.swap_width = geom.width;
             self.swap_height = geom.height;
@@ -242,7 +235,7 @@ pub const WindowCaptureSource = struct {
         });
 
         var primaries: wlr.color.Primaries = undefined;
-        wlr_color_primaries_from_named(&primaries, .srgb);
+        wlr.color.primariesFromNamed(&primaries, .srgb);
         var ctx: RenderCtx = .{
             .pass = pass,
             .renderer = server.renderer,
@@ -294,9 +287,7 @@ pub const WindowCaptureSource = struct {
         var luminance_multiplier: f32 = 1.0;
         const options: wlr.RenderPass.TextureOptions = .{
             .texture = texture,
-            // RenderPass hasn't migrated off zig-wlroots; see wlr.zig's
-            // assertSameLayout(FBox, old.FBox) for why this cast is safe.
-            .src_box = @bitCast(scene_buffer.src_box),
+            .src_box = scene_buffer.src_box,
             .dst_box = .{
                 .x = sx - ctx.off_x,
                 .y = sy - ctx.off_y,
@@ -338,13 +329,14 @@ pub const WindowCaptureSource = struct {
             log.warn("window capture source (window {d}): copy_frame called with no rendered buffer", .{self.window_id});
             return;
         };
-        dst_frame.copyBuffer(buf, self.manager.server.renderer);
+        // A failed copy reports failure and destroys the frame inside wlroots.
+        if (!dst_frame.copyBuffer(buf, self.manager.server.renderer)) return;
         var now = Output.timestamp();
         dst_frame.ready(.normal, &now);
     }
 };
 
-fn pickFormat(renderer: *wlr.Renderer) *const wlr.DrmFormat {
-    const set = renderer.getTextureFormats(renderer.render_buffer_caps).?;
-    return set.get(DRM_FORMAT_ARGB8888);
+fn pickFormat(renderer: *wlr.Renderer) !*const wlr.DrmFormat {
+    const set = renderer.getTextureFormats(renderer.render_buffer_caps) orelse return error.NoTextureFormats;
+    return set.get(DRM_FORMAT_ARGB8888) orelse error.UnsupportedCaptureFormat;
 }

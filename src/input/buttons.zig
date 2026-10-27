@@ -20,8 +20,8 @@ pub fn cursorButton(
     event: *wlr.Pointer.event.Button,
 ) void {
     const input: *Input = @fieldParentPtr("cursor_button", listener);
-    if (input.blockedVirtual(event.device)) return;
-    input.processButton(event.device, event.button, event.state, event.time_msec);
+    if (input.blockedVirtual(&event.pointer.base)) return;
+    input.processButton(&event.pointer.base, event.button, event.state, event.time_msec);
 }
 
 pub fn processButton(

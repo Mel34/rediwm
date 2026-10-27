@@ -94,9 +94,7 @@ fn unconstrainToOutput(server: *Server, xdg_popup: *wlr.XdgPopup) void {
         windowConstraintBox(server, toplevel, ox, oy)
     else
         layoutConstraintBox(server, ox, oy)) orelse return;
-    // XdgPopup hasn't migrated off zig-wlroots; see wlr.zig's
-    // assertSameLayout(Box, old.Box) for why this cast is safe.
-    xdg_popup.unconstrainFromBox(@ptrCast(&box));
+    xdg_popup.unconstrainFromBox(&box);
 }
 
 /// Popups of layer surfaces live in layout space, like the output box.

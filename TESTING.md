@@ -8,6 +8,10 @@ zig build test
 python3 tests/<name>.py
 ```
 
+`zig build test-wlroots` checks the complete exported wlroots API against the
+installed headers and tests embedded input-device lifecycles; it is included
+in `zig build test`.
+
 Run affected integration suites after building. Find suites and flags in
 [tests/](tests/) and build targets in [build/tests.zig](build/tests.zig).
 Compare failures with a clean HEAD worktree before calling them regressions.

@@ -240,8 +240,7 @@ test "lock covers new outputs and follows layout and mode changes without UI" {
     server.output_layout = output_layout;
     server.lock_tree = try fixture.nodes.tree.createSceneTree();
     for (0..2) |i| {
-        // Backend hasn't migrated off zig-wlroots; see Server.zig's new_output.
-        const output: *wlr.Output = @ptrCast(try backend.headlessAddOutput(1280, 720));
+        const output = try backend.headlessAddOutput(1280, 720);
         var state = wlr.Output.State.init();
         defer state.finish();
         state.setEnabled(true);

@@ -63,9 +63,7 @@ pub fn handleStateRequest(
             };
             const surface = toplevel.surface() orelse return .{ .err = "WindowNotVisible" };
             var src_box: wlr.FBox = undefined;
-            // Surface hasn't migrated off zig-wlroots; see wlr.zig's
-            // assertSameLayout(FBox, old.FBox) for why this cast is safe.
-            surface.getBufferSourceBox(@ptrCast(&src_box));
+            surface.getBufferSourceBox(&src_box);
 
             const geometry_box = toplevel.clientGeometry();
             const decorated = toplevel.hasServerDecorations();

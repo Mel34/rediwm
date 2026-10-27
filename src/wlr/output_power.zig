@@ -11,9 +11,7 @@
 //! future wlroots release that reorders or inserts a field fails the
 //! build instead of silently corrupting memory.
 //!
-//! `Output` still comes from the old zig-wlroots dependency: it hasn't
-//! migrated yet, so this file takes it as a parameter from wlr.zig
-//! rather than hardcoding which `Output` type is current.
+//! `Output` is supplied by wlr.zig and comes from the header-backed facade.
 const wl = @import("wayland").server.wl;
 const zwlr = @import("wayland").server.zwlr;
 const c = @import("c.zig").c;

@@ -110,9 +110,7 @@ fn handleRequestResize(
     const toplevel = adapter.window;
     const surface = adapter.xdg_toplevel.base.surface;
     if (!toplevel.server.input.seat.validatePointerGrabSerial(surface, event.serial)) return;
-    // XdgToplevel hasn't migrated off zig-wlroots; see wlr.zig's
-    // assertSameLayout(Edges, old.Edges) for why this cast is safe.
-    toplevel.server.input.startResize(toplevel, @bitCast(event.edges), null, 0x110);
+    toplevel.server.input.startResize(toplevel, event.edges, null, 0x110);
 }
 
 fn handleRequestMaximize(listener: *wl.Listener(void)) void {

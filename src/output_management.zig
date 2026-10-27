@@ -48,9 +48,7 @@ pub const Manager = struct {
         const config = wlr.OutputConfigurationV1.create() catch return;
         var it = self.server.outputs.iterator(.forward);
         while (it.next()) |output| {
-            // OutputConfigurationV1 hasn't migrated off zig-wlroots; see
-            // wlr.zig's `zig_wlroots` note.
-            const head = wlr.OutputConfigurationV1.Head.create(config, @ptrCast(output.wlr_output)) catch {
+            const head = wlr.OutputConfigurationV1.Head.create(config, output.wlr_output) catch {
                 config.destroy();
                 return;
             };
@@ -95,9 +93,7 @@ pub const Manager = struct {
         // Validate and backend-test everything before changing anything.
         var heads = config.heads.iterator(.forward);
         while (heads.next()) |head| {
-            // OutputConfigurationV1 hasn't migrated off zig-wlroots; see
-            // wlr.zig's `zig_wlroots` note.
-            const output = Output.fromWlr(@ptrCast(head.state.output)) orelse return false;
+            const output = Output.fromWlr(head.state.output) orelse return false;
             const p = diff(self.server, output, &head.state);
             if (isEmpty(p)) continue;
             p.validate() catch return refuse(output, "invalid settings");
@@ -105,9 +101,7 @@ pub const Manager = struct {
             if (!head.state.enabled or !output.wlr_output.enabled) continue;
             var state = wlr.Output.State.init();
             defer state.finish();
-            // OutputHeadV1 hasn't migrated off zig-wlroots; see wlr.zig's
-            // `zig_wlroots` note.
-            head.state.apply(@ptrCast(&state));
+            head.state.apply(&state);
             if (!output.wlr_output.testState(&state)) return refuse(output, "rejected by the backend");
         }
         if (!commit) return true;
@@ -115,9 +109,7 @@ pub const Manager = struct {
         for ([_]Phase{ .enable, .change, .disable }) |phase| {
             heads = config.heads.iterator(.forward);
             while (heads.next()) |head| {
-                // OutputConfigurationV1 hasn't migrated off zig-wlroots; see
-            // wlr.zig's `zig_wlroots` note.
-            const output = Output.fromWlr(@ptrCast(head.state.output)) orelse return false;
+                const output = Output.fromWlr(head.state.output) orelse return false;
                 const p = phase.select(diff(self.server, output, &head.state));
                 if (isEmpty(p)) continue;
                 output.applyAndPersist(p) catch |err| {
@@ -159,12 +151,9 @@ fn isEmpty(p: Patch) bool {
 }
 
 fn findHead(config: *wlr.OutputConfigurationV1, output: *wlr.Output) ?*wlr.OutputConfigurationV1.Head {
-    // OutputConfigurationV1 hasn't migrated off zig-wlroots; see wlr.zig's
-    // `zig_wlroots` note.
-    const old_output: *wlr.zig_wlroots.Output = @ptrCast(output);
     var it = config.heads.iterator(.forward);
     while (it.next()) |head| {
-        if (head.state.output == old_output) return head;
+        if (head.state.output == output) return head;
     }
     return null;
 }

@@ -20,13 +20,11 @@ output_destroy: wl.Listener(*wlr.Output) = .init(outputDestroyed),
 output_commit: wl.Listener(*wlr.Output.event.Commit) = .init(outputCommitted),
 
 pub fn create(server: *Server, layer: *wlr.LayerSurfaceV1) !void {
-    // LayerSurfaceV1 hasn't migrated off zig-wlroots, so layer.output is
-    // still zig-wlroots's own Output; cast both ways at this boundary.
-    const output: *wlr.Output = (if (layer.output) |o| @as(*wlr.Output, @ptrCast(o)) else null) orelse defaultOutput(server) orelse {
+    const output: *wlr.Output = layer.output orelse defaultOutput(server) orelse {
         layer.destroy();
         return;
     };
-    layer.output = @ptrCast(output);
+    layer.output = output;
     const self = try gpa.create(Self);
     errdefer gpa.destroy(self);
     const tree = try server.desktop_tree.createSceneTree();
@@ -72,8 +70,7 @@ pub fn arrange(self: *Self) void {
     };
     self.tree.node.reparent(parent);
     var full: wlr.Box = undefined;
-    // LayerSurfaceV1 hasn't migrated off zig-wlroots; see create()'s cast.
-    const wlr_output: ?*wlr.Output = @ptrCast(self.layer.output);
+    const wlr_output = self.layer.output;
     self.server.output_layout.getBox(wlr_output, &full);
     const output = Output.fromWlr(wlr_output.?);
     if (output) |out| if (out.idle_blanked) {
@@ -125,7 +122,7 @@ fn place(self: *Self, full: *const wlr.Box, usable: *wlr.Box) void {
 
     if (self.layer.surface.mapped and state.exclusive_zone > 0) {
         const zone = state.exclusive_zone;
-        const edge = wlr_layer_surface_v1_get_exclusive_edge(self.layer);
+        const edge = self.layer.getExclusiveEdge();
         if (edge.top) {
             usable.y +%= zone +% margin.top;
             usable.height -%= zone +% margin.top;
@@ -141,7 +138,6 @@ fn place(self: *Self, full: *const wlr.Box, usable: *wlr.Box) void {
         usable.height = @max(usable.height, 0);
     }
 }
-extern fn wlr_layer_surface_v1_get_exclusive_edge(surface: *wlr.LayerSurfaceV1) wlr.Edges;
 
 fn committed(listener: *wl.Listener(*wlr.Surface), _: *wlr.Surface) void {
     const self: *Self = @fieldParentPtr("commit", listener);

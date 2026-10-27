@@ -256,15 +256,13 @@ panel painting. The key rules:
   in comptime defaults.
 * `std.os.linux.*` return `-errno` in `usize` (`std.os.linux.errno`);
   `std.posix.system.*` are libc (`std.posix.errno`).
-* zig-wlroots: `ext.*`/`wp.*` types need the protocol in `build.zig`'s
-  scanner. `ForeignToplevelHandleV1.event.Fullscreen.output` and
-  `ScreencopyFrameV1.buffer` can be NULL: read through `*const ?*T`.
-  `wlr.Pointer` is 8 bytes short: embed it in an extern wrapper
-  (`input/virtual.zig`) or `wlr_pointer_init` overwrites the next field.
-  `src/wlr/` is migrating `wlr.*` off this hand-mirrored dependency onto an
-  in-tree `@cImport` facade, one subsystem at a time, to stop depending on
-  zig-wlroots's own release cadence; read `src/wlr/AGENTS.md` before adding
-  a new wlr type or forwarding one off `old`.
+* **wlroots bindings** live in `src/wlr/`, backed by one `@cImport` against
+  the installed headers; read `src/wlr/AGENTS.md` before extending them.
+  `ext.*`/`wp.*` Wayland types need their protocol in `build/protocols.zig`.
+  Nullable outputs/buffers are represented explicitly. Full layout checks
+  protect embedded input devices, so no extra Pointer padding is needed.
+  `zig build test-wlroots` validates every exported binding and C input-device
+  initialization; it also runs as part of `zig build test`.
 * Debug `main.gpa` is `DebugAllocator`: freed memory reads `0xaa…` (glibc
   `MALLOC_PERTURB_`: `0xa5…`), leaks print at exit in the compositor log. Free
   process-lifetime caches in `main.start`'s defers; state workers read during

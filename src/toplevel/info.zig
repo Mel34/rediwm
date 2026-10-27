@@ -121,9 +121,7 @@ pub fn surfaceScale(toplevel: *const Toplevel) f64 {
 pub fn clientSurfaceGeometry(toplevel: *const Toplevel) wlr.Box {
     if (toplevel.backend_gone) return .{ .x = 0, .y = 0, .width = 0, .height = 0 };
     return switch (toplevel.backend) {
-        // XdgSurface hasn't migrated off zig-wlroots; see wlr.zig's
-        // assertSameLayout(Box, old.Box) for why this cast is safe.
-        .xdg => |*adapter| @bitCast(adapter.xdg_toplevel.base.geometry),
+        .xdg => |*adapter| adapter.xdg_toplevel.base.geometry,
         .xwayland => |*adapter| blk: {
             if (adapter.xsurface.surface) |s| {
                 if (s.current.width > 0 and s.current.height > 0) {

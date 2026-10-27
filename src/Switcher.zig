@@ -218,9 +218,7 @@ fn updatePreview(card: *Card, tl: *@import("Toplevel.zig")) void {
     card.pw = 0;
     if (tl.surface()) |surface| {
         if (surface.current.transform == .normal) if (surface.buffer) |buffer| {
-            // Surface hasn't migrated off zig-wlroots; see wlr.zig's
-            // assertSameLayout(FBox, old.FBox) for why this cast is safe.
-            surface.getBufferSourceBox(@ptrCast(&card.source));
+            surface.getBufferSourceBox(&card.source);
             const sw: f32 = @floatFromInt(@max(1, surface.current.width));
             const sh: f32 = @floatFromInt(@max(1, surface.current.height));
             const fit = @min(208 / sw, 140 / sh);

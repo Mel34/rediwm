@@ -17,11 +17,6 @@
             .url = "https://www.leonerd.org.uk/code/libvterm/libvterm-0.3.3.tar.gz",
             .hash = "N-V-__8AAFwIBQAS1j3S14ozuJ18ebNtLQ-c5Kl6W4J7PoJt",
         },
-        // v0.20.1 is the current Zig 0.16-compatible release for wlroots 0.20.
-        .wlroots = .{
-            .url = "https://github.com/swaywm/zig-wlroots/archive/refs/tags/v0.20.1.tar.gz",
-            .hash = "wlroots-0.20.1-jmOlcqNVBAB3uB5oqBTzpRlwu-FmMyyZMVAWCe5kmcSt",
-        },
         .pixman = .{
             .url = "https://codeberg.org/ifreund/zig-pixman/archive/v0.3.0.tar.gz",
             .hash = "pixman-0.3.0-LClMnz2VAAAs7QSCGwLimV5VUYx0JFnX5xWU6HwtMuDX",

@@ -321,9 +321,7 @@ pub fn syncLayout(server: *Server) void {
     var layers = server.layer_surfaces.iterator(.forward);
     while (layers.next()) |layer| {
         if (!layer.layer.initialized) continue;
-        // LayerSurfaceV1 hasn't migrated off zig-wlroots; see
-        // LayerSurface.zig's create() for the same crossing.
-        const out = fromWlr(@ptrCast(layer.layer.output orelse continue)) orelse continue;
+        const out = fromWlr(layer.layer.output orelse continue) orelse continue;
         if (!out.idle_blanked and !out.user_disabled) layer.arrange();
     }
     recomputeWorldBounds(server);

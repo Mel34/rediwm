@@ -31,9 +31,7 @@
 //!   `commit_seq`/`presented` are read); `Damage`/`Precommit`/`Bind`
 //!   aren't defined at all since nothing connects those signals.
 //!
-//! `Backend`, `Renderer`, `Allocator`, `Buffer`, `ColorTransform` are
-//! still on the old zig-wlroots dependency, so this file takes them as
-//! parameters the same way output_power.zig took `Output`.
+//! Dependencies are supplied by wlr.zig from the same header-backed module.
 const std = @import("std");
 const wl = @import("wayland").server.wl;
 const pixman = @import("pixman");
@@ -218,6 +216,10 @@ pub fn Types(
 
                 pub fn setBuffer(state: *State, buffer: *Buffer) void {
                     c.wlr_output_state_set_buffer(@ptrCast(state), @ptrCast(buffer));
+                }
+
+                pub fn setColorTransform(state: *State, transform: ?*ColorTransform) void {
+                    c.wlr_output_state_set_color_transform(@ptrCast(state), @ptrCast(transform));
                 }
 
                 pub fn setDamage(state: *State, damage: *const pixman.Region32) void {

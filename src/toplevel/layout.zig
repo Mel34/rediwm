@@ -309,9 +309,7 @@ pub fn sendTiled(toplevel: *Toplevel, edges: wlr.Edges) void {
     if (toplevel.backend_gone) return;
     switch (toplevel.backend) {
         // wlroots asserts an xdg_wm_base of version 2 or later (Shell.zig).
-        // XdgToplevel hasn't migrated off zig-wlroots; see wlr.zig's
-        // assertSameLayout(Edges, old.Edges) for why this cast is safe.
-        .xdg => |*adapter| _ = adapter.xdg_toplevel.setTiled(@bitCast(edges)),
+        .xdg => |*adapter| _ = adapter.xdg_toplevel.setTiled(edges),
         .xwayland, .placeholder, .shell => {},
     }
 }

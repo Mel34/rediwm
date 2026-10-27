@@ -95,6 +95,10 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     const run_ipc_tests = b.addRunArtifact(ipc_tests);
 
     const test_step = b.step("test", "Run the project unit tests");
+    const wlroots_tests = b.addTest(.{ .root_module = wlroots });
+    const run_wlroots_tests = b.addRunArtifact(wlroots_tests);
+    test_step.dependOn(&run_wlroots_tests.step);
+    b.step("test-wlroots", "Check every exported wlroots binding against its C headers").dependOn(&run_wlroots_tests.step);
     const i18n_tests = b.addTest(.{ .root_module = i18n_mod });
     const run_i18n_tests = b.addRunArtifact(i18n_tests);
     test_step.dependOn(&run_i18n_tests.step);
