@@ -27,6 +27,13 @@ const security_context = @import("security_context.zig");
 pub const SecurityContextManagerV1 = security_context.SecurityContextManagerV1;
 pub const SecurityContextV1State = security_context.SecurityContextV1State;
 
+const fractional_scale = @import("fractional_scale.zig").Types(old.Surface);
+pub const FractionalScaleManagerV1 = fractional_scale.FractionalScaleManagerV1;
+
+const relative_pointer = @import("relative_pointer.zig").Types(old.Seat);
+pub const RelativePointerManagerV1 = relative_pointer.RelativePointerManagerV1;
+pub const RelativePointerV1 = relative_pointer.RelativePointerV1;
+
 // --- Not yet migrated: forwarded straight to zig-wlroots. ---
 //
 // Box/FBox/Edges are drafted and verified against the real headers in
@@ -66,7 +73,6 @@ pub const ExtImageCopyCaptureSessionV1 = old.ExtImageCopyCaptureSessionV1;
 pub const ExtOutputImageCaptureSourceManagerV1 = old.ExtOutputImageCaptureSourceManagerV1;
 pub const ForeignToplevelHandleV1 = old.ForeignToplevelHandleV1;
 pub const ForeignToplevelManagerV1 = old.ForeignToplevelManagerV1;
-pub const FractionalScaleManagerV1 = old.FractionalScaleManagerV1;
 pub const InputDevice = old.InputDevice;
 pub const InputMethodManagerV2 = old.InputMethodManagerV2;
 pub const InputMethodV2 = old.InputMethodV2;
@@ -88,7 +94,6 @@ pub const PointerConstraintsV1 = old.PointerConstraintsV1;
 pub const PointerGesturesV1 = old.PointerGesturesV1;
 pub const Presentation = old.Presentation;
 pub const PrimarySelectionDeviceManagerV1 = old.PrimarySelectionDeviceManagerV1;
-pub const RelativePointerManagerV1 = old.RelativePointerManagerV1;
 pub const RenderPass = old.RenderPass;
 pub const Renderer = old.Renderer;
 pub const Scene = old.Scene;
