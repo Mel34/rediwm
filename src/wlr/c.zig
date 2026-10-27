@@ -14,4 +14,5 @@ pub const c = @cImport({
     @cInclude("wlr/types/wlr_security_context_v1.h");
     @cInclude("wlr/types/wlr_fractional_scale_v1.h");
     @cInclude("wlr/types/wlr_relative_pointer_v1.h");
+    @cInclude("wlr/types/wlr_pointer_constraints_v1.h");
 });

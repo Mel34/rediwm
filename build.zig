@@ -53,6 +53,7 @@ pub fn build(b: *std.Build) void {
     const wlr_facade = b.createModule(.{ .root_source_file = b.path("src/wlr/wlr.zig") });
     wlr_facade.addImport("old", wlroots_dep);
     wlr_facade.addImport("wayland", wayland);
+    wlr_facade.addImport("pixman", pixman);
     wlr_facade.resolved_target = target;
     wlr_facade.linkSystemLibrary("wlroots-0.20", .{});
 

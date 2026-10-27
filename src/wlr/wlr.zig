@@ -34,6 +34,10 @@ const relative_pointer = @import("relative_pointer.zig").Types(old.Seat);
 pub const RelativePointerManagerV1 = relative_pointer.RelativePointerManagerV1;
 pub const RelativePointerV1 = relative_pointer.RelativePointerV1;
 
+const pointer_constraints = @import("pointer_constraints.zig").Types(old.Surface, old.Seat);
+pub const PointerConstraintsV1 = pointer_constraints.PointerConstraintsV1;
+pub const PointerConstraintV1 = pointer_constraints.PointerConstraintV1;
+
 // --- Not yet migrated: forwarded straight to zig-wlroots. ---
 //
 // Box/FBox/Edges are drafted and verified against the real headers in
@@ -89,8 +93,6 @@ pub const OutputHeadV1 = old.OutputHeadV1;
 pub const OutputLayout = old.OutputLayout;
 pub const OutputManagerV1 = old.OutputManagerV1;
 pub const Pointer = old.Pointer;
-pub const PointerConstraintV1 = old.PointerConstraintV1;
-pub const PointerConstraintsV1 = old.PointerConstraintsV1;
 pub const PointerGesturesV1 = old.PointerGesturesV1;
 pub const Presentation = old.Presentation;
 pub const PrimarySelectionDeviceManagerV1 = old.PrimarySelectionDeviceManagerV1;
