@@ -20,11 +20,13 @@ output_destroy: wl.Listener(*wlr.Output) = .init(outputDestroyed),
 output_commit: wl.Listener(*wlr.Output.event.Commit) = .init(outputCommitted),
 
 pub fn create(server: *Server, layer: *wlr.LayerSurfaceV1) !void {
-    const output = layer.output orelse defaultOutput(server) orelse {
+    // LayerSurfaceV1 hasn't migrated off zig-wlroots, so layer.output is
+    // still zig-wlroots's own Output; cast both ways at this boundary.
+    const output: *wlr.Output = (if (layer.output) |o| @as(*wlr.Output, @ptrCast(o)) else null) orelse defaultOutput(server) orelse {
         layer.destroy();
         return;
     };
-    layer.output = output;
+    layer.output = @ptrCast(output);
     const self = try gpa.create(Self);
     errdefer gpa.destroy(self);
     const tree = try server.desktop_tree.createSceneTree();
@@ -70,8 +72,10 @@ pub fn arrange(self: *Self) void {
     };
     self.tree.node.reparent(parent);
     var full: wlr.Box = undefined;
-    self.server.output_layout.getBox(self.layer.output, &full);
-    const output = Output.fromWlr(self.layer.output.?);
+    // LayerSurfaceV1 hasn't migrated off zig-wlroots; see create()'s cast.
+    const wlr_output: ?*wlr.Output = @ptrCast(self.layer.output);
+    self.server.output_layout.getBox(wlr_output, &full);
+    const output = Output.fromWlr(wlr_output.?);
     if (output) |out| if (out.idle_blanked) {
         full = out.cached_box;
     };

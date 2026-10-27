@@ -322,7 +322,8 @@ pub fn init(input: *Input, server: *Server) Server.CompositorError!void {
     input.seat.events.request_set_primary_selection.add(&input.request_set_primary_selection);
     errdefer input.request_set_primary_selection.link.remove();
 
-    input.cursor.attachOutputLayout(server.output_layout);
+    // Cursor hasn't migrated off zig-wlroots; see wlr.zig's `zig_wlroots` note.
+    input.cursor.attachOutputLayout(@ptrCast(server.output_layout));
     input.cursor_mgr.load(1) catch return error.XcursorCreateFailed;
     input.cursor.events.motion.add(&input.cursor_motion);
     input.cursor.events.motion_absolute.add(&input.cursor_motion_absolute);

@@ -15,4 +15,12 @@ pub const c = @cImport({
     @cInclude("wlr/types/wlr_fractional_scale_v1.h");
     @cInclude("wlr/types/wlr_relative_pointer_v1.h");
     @cInclude("wlr/types/wlr_pointer_constraints_v1.h");
+    @cInclude("wlr/types/wlr_output.h");
+    @cInclude("wlr/types/wlr_output_layout.h");
+    // isDrm/isWl/isX11/isHeadless are backend-specific predicates, declared
+    // in each backend's own header rather than wlr_output.h.
+    @cInclude("wlr/backend/drm.h");
+    @cInclude("wlr/backend/headless.h");
+    @cInclude("wlr/backend/wayland.h");
+    @cInclude("wlr/backend/x11.h");
 });

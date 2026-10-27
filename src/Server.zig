@@ -114,7 +114,10 @@ output_renderer: *scene_output_mod.Renderer = undefined,
 read_fence: ?*explicit_sync.ReadFence = null,
 
 output_layout: *wlr.OutputLayout,
-new_output: wl.Listener(*wlr.Output) = .init(newOutput),
+// Backend hasn't migrated off zig-wlroots yet, so its new_output signal
+// still emits zig-wlroots's own Output (see src/wlr/wlr.zig's
+// `zig_wlroots` note); server/outputs.zig's newOutput casts it back.
+new_output: wl.Listener(*wlr.zig_wlroots.Output) = .init(newOutput),
 
 shell: Shell,
 background_tree: *sn.Tree,
@@ -638,7 +641,9 @@ pub fn init(server: *Server, scale: ?f32, icon_theme_cfg: icon_theme.Config, io:
     } else {
         log.info("init: explicit sync unavailable (renderer/backend lack timelines or disabled)", .{});
     }
-    server.xdg_output_manager = wlr.XdgOutputManagerV1.create(server.wl_server, server.output_layout) catch return error.XdgOutputManagerCreateFailed;
+    // XdgOutputManagerV1 hasn't migrated off zig-wlroots; see wlr.zig's
+    // `zig_wlroots` note.
+    server.xdg_output_manager = wlr.XdgOutputManagerV1.create(server.wl_server, @ptrCast(server.output_layout)) catch return error.XdgOutputManagerCreateFailed;
     _ = wlr.Presentation.create(server.wl_server, server.backend, 2) catch return error.PresentationCreateFailed;
     server.capture_mgr = capture.Manager.create(server) catch |err| blk: {
         log.warn("init: could not create screen-capture manager, sharing disabled: {}", .{err});

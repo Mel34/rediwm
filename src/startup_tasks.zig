@@ -125,9 +125,10 @@ test "staged backends retain multi ownership and only start in their own stage" 
     _ = try display.headlessAddOutput(32, 32);
     _ = try input.headlessAddOutput(32, 32);
     const Observer = struct {
-        listener: wl.Listener(*wlr.Output) = .init(newOutput),
+        // Backend hasn't migrated off zig-wlroots; see Server.zig's new_output.
+        listener: wl.Listener(*wlr.zig_wlroots.Output) = .init(newOutput),
         count: usize = 0,
-        fn newOutput(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void {
+        fn newOutput(listener: *wl.Listener(*wlr.zig_wlroots.Output), _: *wlr.zig_wlroots.Output) void {
             const self: *@This() = @fieldParentPtr("listener", listener);
             self.count += 1;
         }

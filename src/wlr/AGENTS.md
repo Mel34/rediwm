@@ -46,16 +46,37 @@ header produce two incompatible Zig types.
 4. **Check who else takes or returns this type before wiring it into
    `wlr.zig`.** Zig's `extern struct`s are nominally typed: a function
    still on `old` that takes `*old.Box` will not accept a `*wlr.Box` built
-   from `c.zig`, even though the two are byte-for-byte identical. `Box`,
-   `FBox`, and `Edges` hit this — they're drafted in `box.zig`/`edges.zig`
-   and verified against the real headers, but `wlr.zig` still forwards
-   them to `old` because `OutputLayout.getBox`, `XdgToplevel.setTiled`,
-   and others haven't migrated yet. A type like that moves together with
-   (or after) every not-yet-migrated signature that references it, not
-   on its own. A protocol-generated header wlroots itself doesn't install
-   (anything under `wlr_types_*_v1.h` that `#include`s its own
-   `*-protocol.h`) needs that header generated at build time — see
+   from `c.zig`, even though the two are byte-for-byte identical. Add a
+   `comptime { assertSameLayout(NewType, old.OldType); }` next to the
+   migrated type's declaration in `wlr.zig` (see `Box`/`FBox`/`Edges`),
+   then `@ptrCast` (pointers) or `@bitCast` (value types passed by value,
+   e.g. `Edges`) at each of the handful of call sites that still cross
+   into an unmigrated function or signal — one line at each site, with a
+   comment pointing back at the assert. That assert is what makes the
+   cast provably safe, not a convention to trust blindly. This is almost
+   always cheaper than waiting for every referencing type to migrate
+   first: `Output`/`OutputLayout` crossed into `Backend` (the
+   `new_output` signal — see `wlr.zig`'s `zig_wlroots` re-export and
+   Server.zig/server/outputs.zig/startup_tasks.zig),
+   `ForeignToplevelHandleV1`, `Cursor`, `OutputConfigurationV1`,
+   `XdgSurface`/`XdgToplevel`, `LayerSurfaceV1`, `SessionLockSurfaceV1`,
+   and a few test files' direct `Backend.headlessAddOutput` calls — each
+   handled with one cast, not a bigger migration. Only wait when the
+   type is a signal/event *payload* type itself and nothing else, or the
+   crossing count looks larger than just migrating the other side too. A
+   protocol-generated header wlroots itself doesn't install (anything
+   under `wlr_types_*_v1.h` that `#include`s its own `*-protocol.h`)
+   needs that header generated at build time — see
    `output_power_protocol_header` in `build.zig` for the
    `wayland-scanner`-based pattern.
-5. Build Debug and `-Doptimize=ReleaseSafe`, run `zig build test`, per the
-   top-level AGENTS.md.
+5. Before trusting a signal's payload type, check who actually connects
+   to it (`grep` for `.events.<name>.add(`) rather than assuming from the
+   header comment. `wlr_output`'s `frame`/`description`/`destroy`
+   signals carry the output itself as payload by convention, with no
+   comment saying so and no dedicated event struct — only
+   `damage`/`precommit`/`bind` (which nothing in RediWM connects to) were
+   safe to leave as placeholder `wl.Signal(void)`.
+6. Build Debug and `-Doptimize=ReleaseSafe`, run `zig build test`, per the
+   top-level AGENTS.md. A pre-existing/environmental test failure doesn't
+   excuse skipping this: compare against a `git worktree` of the commit
+   before your change, per the top-level AGENTS.md, rather than assuming.

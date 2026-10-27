@@ -8,7 +8,7 @@
 //! until a type actually moves off it.
 const old = @import("old");
 
-const output_power = @import("output_power.zig").Types(old.Output);
+const output_power = @import("output_power.zig").Types(Output);
 pub const OutputPowerManagerV1 = output_power.OutputPowerManagerV1;
 pub const OutputPowerV1 = output_power.OutputPowerV1;
 
@@ -38,19 +38,40 @@ const pointer_constraints = @import("pointer_constraints.zig").Types(old.Surface
 pub const PointerConstraintsV1 = pointer_constraints.PointerConstraintsV1;
 pub const PointerConstraintV1 = pointer_constraints.PointerConstraintV1;
 
-// --- Not yet migrated: forwarded straight to zig-wlroots. ---
-//
-// Box/FBox/Edges are drafted and verified against the real headers in
-// box.zig/edges.zig, but NOT wired in here yet: Zig's extern structs are
-// nominally typed, and OutputLayout.getBox, XdgToplevel.setTiled, and
-// others still on `old` take/return *their* Box/Edges in their own
-// signatures. Swapping Box/Edges alone makes those calls a hard type
-// error. They migrate together with (or after) everything that
-// references them in a public signature -- see the migration-order note
-// in the plan. Until then they stay on `old` like everything else below.
-pub const Box = old.Box;
-pub const FBox = old.FBox;
-pub const Edges = old.Edges;
+const output_mod = @import("output.zig").Types(old.Backend, old.Renderer, old.Allocator, old.Buffer, old.ColorTransform);
+pub const Output = output_mod.Output;
+pub const OutputCursor = output_mod.OutputCursor;
+
+const output_layout_mod = @import("output_layout.zig").Types(Output);
+pub const OutputLayout = output_layout_mod.OutputLayout;
+
+// Box/FBox/Edges: OutputLayout.getBox was their main blocker (45 call
+// sites) and just migrated above. The remaining crossings
+// (Surface.getBufferSourceBox, XdgPopup.unconstrainFromBox,
+// InputPopupSurfaceV2.sendTextInputRectangle, XdgToplevel.setTiled) are
+// single-digit call counts against types that haven't migrated, each
+// handled with a `@ptrCast` at that one call site instead of waiting for
+// those types too -- see assertSameLayout(Box, old.Box) below, which is
+// exactly what makes that cast provably safe.
+pub const Box = @import("box.zig").Box;
+pub const FBox = @import("box.zig").FBox;
+pub const Edges = @import("edges.zig").Edges;
+
+comptime {
+    const assertSameLayout = @import("signal.zig").assertSameLayout;
+    assertSameLayout(Box, old.Box);
+    assertSameLayout(FBox, old.FBox);
+    assertSameLayout(Edges, old.Edges);
+}
+
+/// Backend, ForeignToplevelHandleV1 and anything else still on `old`
+/// that embeds `*wlr.Output` in its own signature (a signal payload, a
+/// method parameter) is pinned to zig-wlroots's own Output type, not
+/// ours, for exactly that crossing -- see Server.zig's `new_output`
+/// listener and foreign_toplevel.zig's `outputEnter`/`outputLeave` for
+/// the two places that needs a `@ptrCast`. Exposed here rather than
+/// scattered `@import("old")`s so every such crossing reads the same way.
+pub const zig_wlroots = old;
 
 pub const AddonSet = old.AddonSet;
 pub const Allocator = old.Allocator;
@@ -86,11 +107,8 @@ pub const LayerShellV1 = old.LayerShellV1;
 pub const LayerSurfaceV1 = old.LayerSurfaceV1;
 pub const LinuxDmabufV1 = old.LinuxDmabufV1;
 pub const LinuxDrmSyncobjManagerV1 = old.LinuxDrmSyncobjManagerV1;
-pub const Output = old.Output;
 pub const OutputConfigurationV1 = old.OutputConfigurationV1;
-pub const OutputCursor = old.OutputCursor;
 pub const OutputHeadV1 = old.OutputHeadV1;
-pub const OutputLayout = old.OutputLayout;
 pub const OutputManagerV1 = old.OutputManagerV1;
 pub const Pointer = old.Pointer;
 pub const PointerGesturesV1 = old.PointerGesturesV1;

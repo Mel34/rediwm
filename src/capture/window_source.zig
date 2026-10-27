@@ -294,7 +294,9 @@ pub const WindowCaptureSource = struct {
         var luminance_multiplier: f32 = 1.0;
         const options: wlr.RenderPass.TextureOptions = .{
             .texture = texture,
-            .src_box = scene_buffer.src_box,
+            // RenderPass hasn't migrated off zig-wlroots; see wlr.zig's
+            // assertSameLayout(FBox, old.FBox) for why this cast is safe.
+            .src_box = @bitCast(scene_buffer.src_box),
             .dst_box = .{
                 .x = sx - ctx.off_x,
                 .y = sy - ctx.off_y,

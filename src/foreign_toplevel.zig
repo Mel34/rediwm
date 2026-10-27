@@ -76,8 +76,10 @@ pub const Handle = struct {
             self.output
         else if (toplevel.currentOutput()) |o| o.wlr_output else null;
         if (output != self.output) {
-            if (self.output) |old| handle.outputLeave(old);
-            if (output) |new| handle.outputEnter(new);
+            // ForeignToplevelHandleV1 hasn't migrated off zig-wlroots; see
+            // Server.zig's new_output for the same kind of crossing.
+            if (self.output) |o| handle.outputLeave(@ptrCast(o));
+            if (output) |o| handle.outputEnter(@ptrCast(o));
             self.output = output;
         }
 

@@ -227,7 +227,9 @@ pub const ClientLock = struct {
 
     fn handleNewSurface(listener: *wl.Listener(*wlr.SessionLockSurfaceV1), lock_surface: *wlr.SessionLockSurfaceV1) void {
         const self: *ClientLock = @fieldParentPtr("new_surface", listener);
-        const output = Output.fromWlr(lock_surface.output) orelse return;
+        // SessionLockSurfaceV1 hasn't migrated off zig-wlroots; see
+        // wlr.zig's `zig_wlroots` note.
+        const output = Output.fromWlr(@ptrCast(lock_surface.output)) orelse return;
         const surface = gpa.create(Surface) catch return;
         const tree = output.lock_view.tree.createSceneSubsurfaceTree(lock_surface.surface) catch {
             gpa.destroy(surface);

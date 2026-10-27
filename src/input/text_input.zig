@@ -397,7 +397,10 @@ pub fn updatePopups(self: *Self) void {
                 y = layout.y;
                 scale *= self.server.world.camera.zoom();
             } else if (wlr.LayerSurfaceV1.tryFromWlrSurface(surface.getRootSurface()) == null) break :visible false;
-            const rect = if (input.active_features.cursor_rectangle) input.current.cursor_rectangle else wlr.Box{ .x = 0, .y = 0, .width = surface.current.width, .height = surface.current.height };
+            // TextInputV3 hasn't migrated off zig-wlroots, so
+            // cursor_rectangle is still its own Box type; match it here
+            // instead of casting, since only .x/.y/.width are read below.
+            const rect = if (input.active_features.cursor_rectangle) input.current.cursor_rectangle else @TypeOf(input.current.cursor_rectangle){ .x = 0, .y = 0, .width = surface.current.width, .height = surface.current.height };
             // Rectangle coordinates are client-controlled signed 32-bit values.
             // Zoom and adding the scene origin can exceed that range.
             const rx: i64 = @intFromFloat(@round(x + @as(f64, @floatFromInt(rect.x)) * scale));
@@ -415,7 +418,10 @@ pub fn updatePopups(self: *Self) void {
             const relative = wlr.Box{ .x = wireCoordinate(rx - px), .y = wireCoordinate(ry - py), .width = wireCoordinate(rw), .height = wireCoordinate(rh) };
             if (popup.last_rectangle == null or !std.meta.eql(popup.last_rectangle.?, relative)) {
                 var box = relative;
-                popup.popup.sendTextInputRectangle(&box);
+                // InputPopupSurfaceV2 hasn't migrated off zig-wlroots; see
+                // wlr.zig's assertSameLayout(Box, old.Box) for why this
+                // cast is safe.
+                popup.popup.sendTextInputRectangle(@ptrCast(&box));
                 popup.last_rectangle = relative;
             }
             break :visible true;

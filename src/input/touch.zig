@@ -106,7 +106,8 @@ fn mapDevice(self: *Self, device: *wlr.InputDevice) void {
             target = output;
         }
     }
-    self.input.cursor.mapInputToOutput(device, if (target) |t| t.wlr_output else null);
+    // Cursor hasn't migrated off zig-wlroots; see wlr.zig's `zig_wlroots` note.
+    self.input.cursor.mapInputToOutput(device, if (target) |t| @ptrCast(t.wlr_output) else null);
 }
 
 fn handleDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) void {

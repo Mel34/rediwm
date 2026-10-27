@@ -241,11 +241,14 @@ pub const Manager = struct {
     /// wlroots copies in its own commit listener, so refusing means
     /// disconnecting the client first, as `handleNewSession` does.
     pub fn guardScreencopy(mgr: *Manager, output: *wlr.Output) void {
+        // ScreencopyFrameV1 hasn't migrated off zig-wlroots; see wlr.zig's
+        // `zig_wlroots` note.
+        const old_output: *wlr.zig_wlroots.Output = @ptrCast(output);
         const refuse = mgr.server.polkit_dialog != null or mgr.server.locker != null;
         var copying = false;
         var it = mgr.screencopy.frames.safeIterator(.forward);
         while (it.next()) |frame| {
-            if (frame.output != output or !copyRequested(frame)) continue;
+            if (frame.output != old_output or !copyRequested(frame)) continue;
             if (refuse) {
                 // Destroying the client frees its other frames too.
                 frame.resource.getClient().destroy();
@@ -333,7 +336,9 @@ const Session = struct {
         tracked.* = .{
             .manager = manager,
             .resource = session.resource,
-            .output = session.source.toOutput(),
+            // ExtImageCaptureSourceV1 hasn't migrated off zig-wlroots; see
+            // wlr.zig's `zig_wlroots` note.
+            .output = @ptrCast(session.source.toOutput()),
             .window_id = if (findWindowSource(manager, session.source)) |ws| ws.window_id else null,
         };
         session.events.destroy.add(&tracked.destroy);
