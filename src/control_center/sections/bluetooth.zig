@@ -162,7 +162,7 @@ fn deviceList(s: *Section, cc: *panel.ControlCenter, a: A, enabled: bool) !W {
     var count: usize = 0;
     if (m) |manager| for (manager.devices[0..manager.count]) |*d| {
         if (!eq(u8, d.adapter.slice(), s.adapter_path.slice()) or (!s.nearby and !d.paired)) continue;
-        if (s.search_data.?.value.len > 0 and std.ascii.indexOfIgnoreCase(d.title(), s.search_data.?.value) == null and std.ascii.indexOfIgnoreCase(d.address.slice(), s.search_data.?.value) == null) continue;
+        if (s.search_data.?.value.len > 0 and std.ascii.findIgnoreCase(d.title(), s.search_data.?.value) == null and std.ascii.findIgnoreCase(d.address.slice(), s.search_data.?.value) == null) continue;
         const selected = eq(u8, d.path.slice(), s.selected.slice());
         s.rows[count] = d.path;
         const state = if (d.connected) i18n.tr("Connected") else if (d.blocked) i18n.tr("Blocked") else if (d.paired) i18n.tr("Not connected") else i18n.tr("Ready to pair");

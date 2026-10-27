@@ -1,4 +1,4 @@
-//! wlr.OutputLayout, backed by @cImport against
+//! wlr.OutputLayout, backed by translate-c against
 //! wlr/types/wlr_output_layout.h. `OutputLayout.Output` (the per-output
 //! layout entry) is declared only far enough to be a valid
 //! `wl.list.Head` element -- RediWM never calls `.get()` or walks

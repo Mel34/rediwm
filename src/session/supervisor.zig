@@ -261,7 +261,7 @@ fn descendants(allocator: std.mem.Allocator, root: Pid) !PidSet {
     var path_buf: [64]u8 = undefined;
     var dirents: [4096]u8 align(8) = undefined;
     while (pending.pop()) |pid| {
-        const task_path = try std.fmt.bufPrintZ(&path_buf, "/proc/{d}/task", .{pid});
+        const task_path = try std.fmt.bufPrintSentinel(&path_buf, "/proc/{d}/task", .{pid}, 0);
         const dir = sys.openZ(task_path, .{ .ACCMODE = .RDONLY, .DIRECTORY = true, .CLOEXEC = true }, 0) catch continue;
         defer sys.close(dir);
         while (true) {
@@ -274,7 +274,7 @@ fn descendants(allocator: std.mem.Allocator, root: Pid) !PidSet {
                 const name = std.mem.sliceTo(@as([*:0]const u8, @ptrCast(&entry.name)), 0);
                 if (name[0] == '.') continue;
                 var children_path: [96]u8 = undefined;
-                const file = std.fmt.bufPrintZ(&children_path, "/proc/{d}/task/{s}/children", .{ pid, name }) catch continue;
+                const file = std.fmt.bufPrintSentinel(&children_path, "/proc/{d}/task/{s}/children", .{ pid, name }, 0) catch continue;
                 const fd = sys.openZ(file, .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0) catch continue;
                 defer sys.close(fd);
                 const text = sys.readAll(allocator, fd) catch continue;
@@ -309,10 +309,10 @@ fn stopGroup(allocator: std.mem.Allocator, compositor: Pid, compositor_fd: i32, 
     awaitExit(allocator, &handles, compositor_fd, 2000);
 
     var status: u32 = 0;
-    const reaped = sys.retry(linux.wait4, .{ compositor, &status, linux.W.NOHANG, null }) catch 0;
+    const reaped = sys.retry(linux.wait4, .{ compositor, @as(*i32, @ptrCast(&status)), linux.W.NOHANG, null }) catch 0;
     for (handles.keys()) |pid| {
         var ignored: u32 = 0;
-        _ = linux.wait4(pid, &ignored, linux.W.NOHANG, null);
+        _ = linux.wait4(pid, @ptrCast(&ignored), linux.W.NOHANG, null);
     }
     if (reaped != compositor) {
         sys.diagnostic("killed compositor remains in kernel I/O; leaving it to logind teardown", .{});

@@ -37,7 +37,7 @@ pub fn init(path: []const u8, server: *Server) !ConfigWatcher {
     errdefer allocator.free(owned_path);
 
     const dir = std.fs.path.dirname(path) orelse ".";
-    const dir_z = try allocator.dupeZ(u8, dir);
+    const dir_z = try allocator.dupeSentinel(u8, dir, 0);
     errdefer allocator.free(dir_z);
 
     const fd = std.c.inotify_init1(linux.IN.NONBLOCK | linux.IN.CLOEXEC);

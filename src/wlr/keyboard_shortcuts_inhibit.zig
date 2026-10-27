@@ -1,5 +1,5 @@
 //! wlr.KeyboardShortcutsInhibitManagerV1 / wlr.KeyboardShortcutsInhibitorV1,
-//! backed by @cImport against wlr/types/wlr_keyboard_shortcuts_inhibit_v1.h.
+//! backed by translate-c against wlr/types/wlr_keyboard_shortcuts_inhibit_v1.h.
 const wl = @import("wayland").server.wl;
 const c = @import("c.zig").c;
 const assertSameLayout = @import("signal.zig").assertSameLayout;

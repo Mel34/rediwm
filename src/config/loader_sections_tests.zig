@@ -229,7 +229,7 @@ test "polkit defaults and strict configuration validation" {
         defer std.testing.allocator.free(content);
         try std.testing.expectError(error.InvalidConfig, parse(std.testing.allocator, content, "polkit-invalid"));
     }
-    const long_path = "[polkit]\nhelper_socket = \"/" ++ ("a" ** 107) ++ "\"\n";
+    const long_path = "[polkit]\nhelper_socket = \"/" ++ @as([107]u8, @splat('a')) ++ "\"\n";
     try std.testing.expectError(error.InvalidConfig, parse(std.testing.allocator, long_path, "polkit-overlong"));
 }
 

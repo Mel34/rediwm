@@ -2,10 +2,9 @@
 // share picker, the desktop): text through text.zig instead of Cairo's toy
 // font API, and the shared components (paint.zig, widgets/) through an
 // offscreen layer composited by Cairo, so its clip and transform still apply.
-// Each app has its own `@cImport` of cairo.h, so contexts cross as
-// `*anyopaque`.
+// Contexts cross as `*anyopaque`, keeping cairo types out of the interface.
 const std = @import("std");
-const c = @cImport(@cInclude("cairo.h"));
+const c = @import("c_gfx");
 const paint = @import("paint.zig");
 const theme = @import("theme.zig");
 const text = @import("text.zig");
@@ -364,7 +363,7 @@ test "a scrollbar thumb paints its look through cairo" {
     var hot = scrollbar.look(g, .{ .wide = 1, .accent = 1, .shine = 1 }, 8, palette);
     drawScrollbar(cr, hot);
     c.cairo_surface_flush(surface);
-    var expected = [_]u32{0} ** (40 * 60);
+    var expected = @as([40 * 60]u32, @splat(0));
     var renderer = paint.Renderer.init(&expected, 40, 60, 1.5);
     hot.rect.x += 0.25;
     hot.rect.y += 0.5;

@@ -6,15 +6,15 @@ test "all exported bindings match the installed headers" {
 }
 
 fn refAllDeclsRecursive(comptime T: type) void {
-    inline for (comptime std.meta.declarations(T)) |decl| {
-        const value = @field(T, decl.name);
+    inline for (comptime std.meta.declarations(T)) |decl_name| {
+        const value = @field(T, decl_name);
         if (@TypeOf(value) == type) {
             switch (@typeInfo(value)) {
                 .@"struct", .@"enum", .@"union", .@"opaque" => refAllDeclsRecursive(value),
                 else => {},
             }
         }
-        _ = &@field(T, decl.name);
+        _ = &@field(T, decl_name);
     }
 }
 

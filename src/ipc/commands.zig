@@ -7,13 +7,13 @@ pub const CommandId = blk: {
     @setEvalBranchQuota(100_000);
     var names: []const []const u8 = &.{};
     for (.{ protocol.Request, protocol.Action }) |T| {
-        for (std.meta.fields(T)) |field| {
-            if (T == protocol.Request and isInternalRequest(field.name)) continue;
+        for (@typeInfo(T).@"union".field_names) |field_name| {
+            if (T == protocol.Request and isInternalRequest(field_name)) continue;
             var exists = false;
-            for (names) |name| if (std.mem.eql(u8, name, field.name)) {
+            for (names) |name| if (std.mem.eql(u8, name, field_name)) {
                 exists = true;
             };
-            if (!exists) names = names ++ .{field.name};
+            if (!exists) names = names ++ .{field_name};
         }
     }
     break :blk @Enum(u16, .exhaustive, names, &std.simd.iota(u16, names.len));

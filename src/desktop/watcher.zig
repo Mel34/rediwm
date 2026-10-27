@@ -139,7 +139,7 @@ pub const Worker = struct {
         self.stopAndJoin();
         for (self.started[0..self.started_len]) |launch| {
             var status: u32 = 0;
-            _ = std.os.linux.wait4(launch.pid, &status, std.os.linux.W.NOHANG, null);
+            _ = std.os.linux.wait4(launch.pid, @ptrCast(&status), std.os.linux.W.NOHANG, null);
         }
         if (self.wake_worker >= 0) _ = c.close(self.wake_worker);
         if (self.wake_main >= 0) _ = c.close(self.wake_main);
@@ -386,7 +386,7 @@ pub const Worker = struct {
             defer c.free(real);
             const target = std.mem.span(real);
             for (app_dirs) |dir| {
-                const zdir = mem.dupeZ(u8, dir) catch continue;
+                const zdir = mem.dupeSentinel(u8, dir, 0) catch continue;
                 const canonical = c.realpath(zdir, null) orelse continue;
                 defer c.free(canonical);
                 const prefix = std.mem.span(canonical);
@@ -410,7 +410,7 @@ pub const Worker = struct {
             std.log.err("desktop directory: {}", .{err});
             return;
         };
-        const zdir = a.dupeZ(u8, self.dir) catch return;
+        const zdir = a.dupeSentinel(u8, self.dir, 0) catch return;
         defer a.free(zdir);
         const fd = c.inotify_init1(c.IN_NONBLOCK | c.IN_CLOEXEC);
         defer if (fd >= 0) {
@@ -628,7 +628,7 @@ pub const Worker = struct {
             .folder => {
                 var suffix: usize = 1;
                 while (true) : (suffix += 1) {
-                    const path = if (suffix == 1) try a.dupeZ(u8, cmd.path) else try std.fmt.allocPrintSentinel(a, "{s} ({d})", .{ cmd.path, suffix }, 0);
+                    const path = if (suffix == 1) try a.dupeSentinel(u8, cmd.path, 0) else try std.fmt.allocPrintSentinel(a, "{s} ({d})", .{ cmd.path, suffix }, 0);
                     const result = c.mkdir(path, 0o755);
                     if (result == 0) {
                         if (self.created_folder) |previous| a.free(previous.path);
@@ -641,30 +641,30 @@ pub const Worker = struct {
                 }
             },
             .trust => { // Allow Launching: the user's own `chmod u+x`.
-                const p = try a.dupeZ(u8, cmd.path);
+                const p = try a.dupeSentinel(u8, cmd.path, 0);
                 defer a.free(p);
                 var stat: c.struct_stat = undefined;
                 if (c.stat(p, &stat) != 0 or stat.st_mode & c.S_IFMT != c.S_IFREG or stat.st_uid != c.getuid()) return error.NotYourFile;
                 if (c.chmod(p, (stat.st_mode & 0o7777) | c.S_IXUSR) != 0) return error.PermissionChangeFailed;
             },
             .file => {
-                const p = try a.dupeZ(u8, cmd.path);
+                const p = try a.dupeSentinel(u8, cmd.path, 0);
                 defer a.free(p);
                 const fd = c.open(p, c.O_WRONLY | c.O_CREAT | c.O_EXCL | c.O_CLOEXEC, @as(c_uint, 0o644));
                 if (fd < 0) return error.CreateFailed;
                 _ = c.close(fd);
             },
             .rename, .move => { // No overwriting another desktop item.
-                const from = try a.dupeZ(u8, cmd.path);
+                const from = try a.dupeSentinel(u8, cmd.path, 0);
                 defer a.free(from);
-                const to = try a.dupeZ(u8, cmd.value);
+                const to = try a.dupeSentinel(u8, cmd.value, 0);
                 defer a.free(to);
                 if (c.renameat2(c.AT_FDCWD, from, c.AT_FDCWD, to, 1) != 0) return error.RenameFailed;
             },
             .link => {
-                const from = try a.dupeZ(u8, cmd.path);
+                const from = try a.dupeSentinel(u8, cmd.path, 0);
                 defer a.free(from);
-                const to = try a.dupeZ(u8, cmd.value);
+                const to = try a.dupeSentinel(u8, cmd.value, 0);
                 defer a.free(to);
                 if (c.symlink(from, to) != 0) return error.LinkFailed;
             },
@@ -690,7 +690,7 @@ fn executable(env: std.process.Environ, name: []const u8) bool {
     var paths = std.mem.splitScalar(u8, env.getPosix("PATH") orelse "", ':');
     while (paths.next()) |p| {
         var buf: [4096]u8 = undefined;
-        const z = std.fmt.bufPrintZ(&buf, "{s}/{s}", .{ p, name }) catch continue;
+        const z = std.fmt.bufPrintSentinel(&buf, "{s}/{s}", .{ p, name }, 0) catch continue;
         if (c.access(z, c.X_OK) == 0) return true;
     }
     return false;

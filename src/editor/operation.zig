@@ -130,7 +130,7 @@ pub fn executable(buf: []u8, name: []const u8) []const u8 {
     const n = c.readlink("/proc/self/exe", &path, path.len);
     if (n > 0 and n < path.len) {
         if (std.fs.path.dirname(path[0..@intCast(n)])) |dir| {
-            const sibling = std.fmt.bufPrintZ(buf, "{s}/{s}", .{ dir, name }) catch return name;
+            const sibling = std.fmt.bufPrintSentinel(buf, "{s}/{s}", .{ dir, name }, 0) catch return name;
             if (c.access(sibling, c.X_OK) == 0) return sibling;
         }
     }
@@ -169,7 +169,7 @@ pub const Operation = struct {
         errdefer if (owns) a.free(data);
         const self = try a.create(Operation);
         errdefer a.destroy(self);
-        const owned = try a.dupeZ(u8, path);
+        const owned = try a.dupeSentinel(u8, path, 0);
         errdefer a.free(owned);
         const fd = c.eventfd(0, c.EFD_CLOEXEC | c.EFD_NONBLOCK);
         if (fd < 0) return error.EventFailed;
@@ -197,7 +197,7 @@ pub const Operation = struct {
     fn canonical(self: *Operation) !void {
         const path = c.realpath(self.path, null) orelse return error.OpenFailed;
         defer c.free(path);
-        const owned = try a.dupeZ(u8, std.mem.span(path));
+        const owned = try a.dupeSentinel(u8, std.mem.span(path), 0);
         a.free(self.path);
         self.path = owned;
     }
@@ -273,7 +273,7 @@ pub const Operation = struct {
         } else if (c.renameat2(c.AT_FDCWD, temp, c.AT_FDCWD, self.path, c.RENAME_NOREPLACE) != 0) return error.FileChanged;
         if (c.stat(self.path, &st) != 0) return error.WriteFailed;
         self.stamp = Stamp.of(st);
-        const parent_z = try a.dupeZ(u8, parent);
+        const parent_z = try a.dupeSentinel(u8, parent, 0);
         defer a.free(parent_z);
         const dir = c.open(parent_z, c.O_RDONLY | c.O_DIRECTORY | c.O_CLOEXEC);
         if (dir >= 0) {
@@ -317,7 +317,7 @@ pub const Operation = struct {
         }
         const chosen = parsed.value.paths[0];
         if (!std.fs.path.isAbsolute(chosen) or std.mem.indexOfScalar(u8, chosen, 0) != null) return error.InvalidPath;
-        const owned = try a.dupeZ(u8, chosen);
+        const owned = try a.dupeSentinel(u8, chosen, 0);
         a.free(self.path);
         self.path = owned;
         // Capture the destination the user just approved, before returning to the UI.
@@ -331,7 +331,7 @@ pub const Operation = struct {
 
 test "atomic saves preserve permissions, reject stale files and follow symlink targets" {
     var template: [64:0]u8 = @splat(0);
-    _ = try std.fmt.bufPrintZ(&template, "/tmp/rediwm-editor-XXXXXX", .{});
+    _ = try std.fmt.bufPrintSentinel(&template, "/tmp/rediwm-editor-XXXXXX", .{}, 0);
     const dir = c.mkdtemp(&template) orelse return error.CreateFailed;
     defer _ = c.rmdir(dir);
     const path = try std.fmt.allocPrintSentinel(a, "{s}/note.txt", .{std.mem.span(dir)}, 0);
@@ -340,7 +340,7 @@ test "atomic saves preserve permissions, reject stale files and follow symlink t
     const link = try std.fmt.allocPrintSentinel(a, "{s}/link.txt", .{std.mem.span(dir)}, 0);
     defer a.free(link);
     defer _ = c.unlink(link);
-    var job: Operation = .{ .kind = .save, .tab_id = 1, .path = try a.dupeZ(u8, path), .bytes = try a.dupe(u8, "original"), .expected = null, .io = undefined, .fd = -1 };
+    var job: Operation = .{ .kind = .save, .tab_id = 1, .path = try a.dupeSentinel(u8, path, 0), .bytes = try a.dupe(u8, "original"), .expected = null, .io = undefined, .fd = -1 };
     defer a.free(job.path);
     defer a.free(job.bytes);
     try job.work();
@@ -358,7 +358,7 @@ test "atomic saves preserve permissions, reject stale files and follow symlink t
     try std.testing.expect(c.symlink(path, link) == 0);
     job.expected = Stamp.of(st);
     a.free(job.path);
-    job.path = try a.dupeZ(u8, link);
+    job.path = try a.dupeSentinel(u8, link, 0);
     try job.work();
     try std.testing.expect(c.lstat(link, &st) == 0 and st.st_mode & c.S_IFMT == c.S_IFLNK);
     const fd = c.open(path, c.O_RDONLY);
@@ -374,7 +374,7 @@ test "atomic saves preserve permissions, reject stale files and follow symlink t
 
 test "loading reads one buffer, keeps the BOM aside and refuses binary data early" {
     var template: [64:0]u8 = @splat(0);
-    _ = try std.fmt.bufPrintZ(&template, "/tmp/rediwm-editor-XXXXXX", .{});
+    _ = try std.fmt.bufPrintSentinel(&template, "/tmp/rediwm-editor-XXXXXX", .{}, 0);
     const dir = c.mkdtemp(&template) orelse return error.CreateFailed;
     defer _ = c.rmdir(dir);
     const path = try std.fmt.allocPrintSentinel(a, "{s}/big.txt", .{std.mem.span(dir)}, 0);
@@ -388,7 +388,7 @@ test "loading reads one buffer, keeps the BOM aside and refuses binary data earl
     try std.testing.expect(fd >= 0);
     try writeAll(fd, body.items);
     _ = c.close(fd);
-    var job: Operation = .{ .kind = .load, .tab_id = 1, .path = try a.dupeZ(u8, path), .bytes = "", .owns_bytes = false, .expected = null, .io = undefined, .fd = -1 };
+    var job: Operation = .{ .kind = .load, .tab_id = 1, .path = try a.dupeSentinel(u8, path, 0), .bytes = "", .owns_bytes = false, .expected = null, .io = undefined, .fd = -1 };
     defer a.free(job.path);
     defer if (job.document) |*d| d.deinit();
     try job.work();

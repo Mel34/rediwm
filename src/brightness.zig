@@ -4,10 +4,7 @@ const std = @import("std");
 const wl = @import("wayland").server.wl;
 const Child = @import("session/child.zig");
 const Server = @import("Server.zig");
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cInclude("fcntl.h");
-});
+const c = @import("c");
 const Brightness = @This();
 child: ?std.process.Child = null,
 timer: ?*wl.EventSource = null,

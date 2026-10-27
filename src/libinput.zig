@@ -1,16 +1,14 @@
 // Thin wrapper around the subset of libinput's device-config API the control
 // center's Input section needs (pointer accel speed, natural scroll,
 // tap-to-click). libinput.h is a clean, glib-free C API (unlike librsvg, see
-// AGENTS.md, "Build and platform gotchas") so it's @cInclude'd directly rather than hand-declared.
+// AGENTS.md, "Build and platform gotchas") so it's translated directly rather than hand-declared.
 //
 // `wlr.InputDevice.getLibinputDevice()` returns a pointer to an opaque type
 // from the wlroots facade's C import; since it carries no fields on either
 // side, a plain `@ptrCast` onto libinput.h's own `struct libinput_device*`
 // is safe and avoids needing to name that private type at all.
 const wlr = @import("wlroots");
-const c = @cImport({
-    @cInclude("libinput.h");
-});
+const c = @import("c_libinput");
 
 fn handle(device: *wlr.InputDevice) ?*c.libinput_device {
     const raw = device.getLibinputDevice() orelse return null;

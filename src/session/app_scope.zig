@@ -210,10 +210,10 @@ test "unit names escape like systemd and stay under the limit" {
     try std.testing.expectEqualStrings("app-rediwm-org.gnome.Nautilus-42.scope", unitName(42, "org.gnome.Nautilus").name());
     try std.testing.expectEqualStrings("app-rediwm-brave\\x2dbrowser-7.scope", unitName(7, "brave-browser").name());
     try std.testing.expectEqualStrings("app-rediwm-app-1.scope", unitName(1, "").name());
-    const long = unitName(2147483647, "x" ** 300);
+    const long = unitName(2147483647, &@as([300]u8, @splat('x')));
     try std.testing.expect(long.len <= max_unit);
     try std.testing.expect(std.mem.endsWith(u8, long.name(), "-2147483647.scope"));
-    const escaped = unitName(5, "-" ** 100);
+    const escaped = unitName(5, &@as([100]u8, @splat('-')));
     try std.testing.expect(escaped.len <= max_unit);
     try std.testing.expect(std.mem.endsWith(u8, escaped.name(), "\\x2d-5.scope"));
 }

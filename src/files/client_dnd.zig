@@ -135,7 +135,7 @@ pub fn startDropReceive(self: *Client, offer: *Offer, slot: ?usize, target: []co
 }
 
 pub fn canonicalPath(path: []const u8) ![]u8 {
-    const terminated = try a.dupeZ(u8, path);
+    const terminated = try a.dupeSentinel(u8, path, 0);
     defer a.free(terminated);
     var buffer: [4096]u8 = undefined;
     const resolved = c.realpath(terminated, &buffer) orelse return error.InvalidPath;

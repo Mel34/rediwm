@@ -50,7 +50,7 @@ pub fn add(ctx: Context) void {
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/cursor_theme_gen.zig"),
             .target = b.graph.host,
-            .optimize = .ReleaseSafe,
+            .optimize = .safe,
             .link_libc = true,
         }),
         .use_llvm = use_llvm,
@@ -58,12 +58,13 @@ pub fn add(ctx: Context) void {
     });
     cursorgen.root_module.linkSystemLibrary("librsvg-2.0", .{});
     cursorgen.root_module.linkSystemLibrary("cairo", .{});
+    cursorgen.root_module.addImport("c_gfx", support.cHeader(b, b.graph.host, .safe, b.path("src/c/gfx.h"), &support.gfx_libs));
     const cursorgen_run = b.addRunArtifact(cursorgen);
     cursorgen_run.addDirectoryArg(b.path("assets/cursors"));
     const cursor_themes = cursorgen_run.addOutputDirectoryArg("icons");
     // Cursor aliases are symlinks, which InstallDir drops; cp -a keeps them.
     const install_cursors = b.addSystemCommand(&.{ "sh", "-c", "mkdir -p \"$2\" && cp -a -T \"$1\" \"$2\"", "sh" });
     install_cursors.addDirectoryArg(cursor_themes);
-    install_cursors.addArg(b.getInstallPath(.prefix, "share/icons"));
+    install_cursors.addDirectoryArg(support.installed(.prefix, "share/icons"));
     b.getInstallStep().dependOn(&install_cursors.step);
 }

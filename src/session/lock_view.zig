@@ -236,7 +236,7 @@ pub fn paint(r: *ui.paint.Renderer, lock: *Lock, w: f32, h: f32, clock_24h: bool
     var date_buf: [96]u8 = @splat(0);
     var period: [16]u8 = @splat(0);
     var pattern: [256]u8 = undefined;
-    const date_pattern = std.fmt.bufPrintZ(&pattern, "{s}", .{i18n.trc("date", "%A, %B %-d")}) catch "%A, %B %-d";
+    const date_pattern = std.fmt.bufPrintSentinel(&pattern, "{s}", .{i18n.trc("date", "%A, %B %-d")}, 0) catch "%A, %B %-d";
     if (c.localtime_r(&raw, &tm) != null) {
         _ = c.strftime(&time_buf, time_buf.len, if (clock_24h) "%H:%M" else "%l:%M", &tm);
         if (!clock_24h) _ = c.strftime(&period, period.len, "%p", &tm);

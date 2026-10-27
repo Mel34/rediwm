@@ -26,9 +26,9 @@ pub const Allocator = extern struct {
     comptime {
         const Real = c.wlr_allocator;
         assertSameLayout(Allocator, Real);
-        for (@typeInfo(Allocator).@"struct".fields) |field| {
-            assertFieldOffset(Allocator, Real, field.name);
-            assertSameLayout(field.type, @FieldType(Real, field.name));
+        for (@typeInfo(Allocator).@"struct".field_names) |field_name| {
+            assertFieldOffset(Allocator, Real, field_name);
+            assertSameLayout(@FieldType(Allocator, field_name), @FieldType(Real, field_name));
         }
         const Events = @FieldType(Allocator, "events");
         assertFieldOffset(Events, @FieldType(Real, "events"), "destroy");

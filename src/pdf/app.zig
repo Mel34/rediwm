@@ -236,7 +236,7 @@ pub const App = struct {
         errdefer std.heap.page_allocator.destroy(secret);
         if (c.api.mlock(secret, secret.len) != 0) return error.PasswordMemoryFailed;
         errdefer _ = c.api.munlock(secret, secret.len);
-        const path = try a.dupeZ(u8, initial_path);
+        const path = try a.dupeSentinel(u8, initial_path, 0);
         errdefer a.free(path);
 
         var self = App{

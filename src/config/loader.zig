@@ -393,8 +393,8 @@ pub const Config = struct {
     }
 
     pub fn sandboxAllowGroups(self: *const Config, app_id: ?[]const u8, engine: ?[]const u8) sandbox_allow.GroupSet {
-        if (app_id == null) return sandbox_allow.GroupSet.initEmpty();
-        var set = sandbox_allow.GroupSet.initEmpty();
+        if (app_id == null) return sandbox_allow.GroupSet.empty;
+        var set = sandbox_allow.GroupSet.empty;
         for (self.sandbox_allow) |rule| {
             if (rule.app_id.len > 0 and std.mem.eql(u8, rule.app_id, app_id.?)) {
                 if (rule.engine == null or engine == null or std.mem.eql(u8, rule.engine.?, engine.?)) {

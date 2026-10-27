@@ -234,7 +234,7 @@ case "$FAMILY" in
     arch)
         deps="wayland wayland-protocols pixman libxkbcommon \
             freetype2 harfbuzz fontconfig librsvg cairo pango libinput poppler-glib libseccomp \
-            libarchive libwebp libpng libjpeg-turbo libpulse pipewire pam libcups mesa pkgconf git python readline gcc boost libtorrent-rasterbar json-glib \
+            libarchive libwebp libpng libjpeg-turbo libpulse pipewire pam libcups mesa pkgconf git readline gcc boost libtorrent-rasterbar json-glib \
             xorg-xwayland xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk"
         if [ "$PRIVATE_WLROOTS" = no ]; then
             deps="wlroots0.20 $deps"
@@ -249,7 +249,7 @@ case "$FAMILY" in
         fi
         ;;
     debian)
-        deps="build-essential meson ninja-build pkg-config git curl ca-certificates xz-utils python3 \
+        deps="build-essential meson ninja-build pkg-config git curl ca-certificates xz-utils \
             bison libexpat1-dev libffi-dev hwdata patchelf \
             libwayland-dev wayland-protocols libdrm-dev libxkbcommon-dev xkb-data libpixman-1-dev \
             libdisplay-info-dev libegl-dev libgles-dev libgbm-dev libinput-dev libseat-dev libudev-dev liblcms2-dev \
@@ -265,7 +265,7 @@ case "$FAMILY" in
             freetype-devel harfbuzz-devel fontconfig-devel librsvg2-devel cairo-devel pango-devel libinput-devel \
             libarchive-devel libwebp-devel libpng-devel libjpeg-turbo-devel pulseaudio-libs-devel pipewire-devel pam-devel cups-devel poppler-glib-devel libseccomp-devel \
             mesa-libEGL-devel mesa-libGLES-devel glibc-devel readline-devel gcc-c++ json-glib-devel \
-            pkgconf-pkg-config git python3 rb_libtorrent-devel \
+            pkgconf-pkg-config git rb_libtorrent-devel \
             xorg-x11-server-Xwayland \
             xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk"
         if [ "$PRIVATE_WLROOTS" = no ]; then
@@ -282,7 +282,7 @@ case "$FAMILY" in
             freetype2-devel harfbuzz-devel fontconfig-devel librsvg-devel cairo-devel pango-devel libinput-devel \
             libarchive-devel libwebp-devel libpng16-devel libjpeg8-devel libpulse-devel pipewire-devel pam-devel cups-devel libpoppler-glib-devel libseccomp-devel \
             Mesa-libEGL-devel Mesa-libGLESv2-devel glibc-devel readline-devel gcc-c++ json-glib-devel \
-            pkg-config git python3 libtorrent-rasterbar-devel \
+            pkg-config git libtorrent-rasterbar-devel \
             xwayland \
             xdg-desktop-portal xdg-desktop-portal-wlr xdg-desktop-portal-gtk"
         ;;
@@ -291,7 +291,7 @@ case "$FAMILY" in
             media-libs/freetype media-libs/harfbuzz media-libs/fontconfig gnome-base/librsvg x11-libs/cairo x11-libs/pango dev-libs/libinput \
             app-arch/libarchive media-libs/libwebp media-libs/libpng media-libs/libjpeg-turbo media-libs/libpulse media-video/pipewire sys-libs/pam net-print/cups \
             media-libs/mesa sys-libs/readline net-libs/libtorrent-rasterbar dev-libs/json-glib sys-devel/gcc \
-            virtual/pkgconfig dev-vcs/git dev-lang/python \
+            virtual/pkgconfig dev-vcs/git \
             x11-base/xwayland \
             sys-apps/xdg-desktop-portal gui-libs/xdg-desktop-portal-wlr sys-apps/xdg-desktop-portal-gtk"
         ;;

@@ -12,7 +12,6 @@ const data = @import("build/data.zig");
 const session_build = @import("build/session.zig");
 const tests = @import("build/tests.zig");
 const support = @import("build/support.zig");
-const usePrivateWlroots = support.usePrivateWlroots;
 const addBass = support.addBass;
 const addBassDsp = support.addBassDsp;
 const addGlass = support.addGlass;
@@ -24,14 +23,15 @@ const addCatalogInputs = support.addCatalogInputs;
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const use_llvm = b.option(bool, "llvm", "Use LLVM and LLD (default for optimized builds)") orelse (optimize != .Debug);
+    const use_llvm = b.option(bool, "llvm", "Use LLVM and LLD (default for optimized builds)") orelse (optimize != .debug);
     // Debug aid (TESTING.md): redraw every frame whole and log what the damage missed.
     const damage_audit = b.option(bool, "damage-audit", "Compare every frame with a full repaint and log the difference (slow)") orelse false;
     // Set by scripts/build-wlroots.sh builds on distros without wlroots 0.20
-    // (Debian/Ubuntu). Must be applied before anything runs pkg-config.
-    const wlroots_prefix = b.option([]const u8, "wlroots-prefix", "Use wlroots and its bundled dependencies from this private prefix (see scripts/build-wlroots.sh)");
-    if (wlroots_prefix) |prefix| usePrivateWlroots(b, prefix);
+    // (Debian/Ubuntu). pkg-config runs in zig build's own environment, so
+    // start it through scripts/with-wlroots.sh to find the prefix.
+    const wlroots_prefix = b.option([]const u8, "wlroots-prefix", "Use wlroots and its bundled dependencies from this private prefix (run through scripts/with-wlroots.sh)");
 
+    const c_headers = support.cHeaders(b, target, optimize);
     const wayland = protocols.module(b);
     const xkbcommon = b.dependency("xkbcommon", .{}).module("xkbcommon");
     const pixman = b.dependency("pixman", .{}).module("pixman");
@@ -46,6 +46,7 @@ pub fn build(b: *std.Build) void {
     wlr_facade.addImport("pixman", pixman);
     wlr_facade.addImport("xkbcommon", xkbcommon);
     wlr_facade.linkSystemLibrary("wlroots-0.20", .{});
+    const wlr_c = support.cTranslation(b, target, optimize, b.path("src/wlr/c.h"), &.{"wlroots-0.20"});
 
     // These public wlroots headers include protocol headers which wlroots
     // does not install. Generate them from the same XML as our Zig bindings.
@@ -53,14 +54,15 @@ pub fn build(b: *std.Build) void {
         const run = b.addSystemCommand(&.{ "wayland-scanner", "server-header" });
         run.addFileArg(b.path("protocol/" ++ name ++ ".xml"));
         const header = run.addOutputFileArg(name ++ "-protocol.h");
-        wlr_facade.addIncludePath(header.dirname());
+        wlr_c.addIncludePath(header.dirname());
     }
+    wlr_facade.addImport("wlr_c", b.createModule(.{ .root_source_file = wlr_c.getOutput() }));
 
     const wlroots = wlr_facade;
 
     // Module roots enforce one-way dependencies: shared code cannot import Server.
     const memory_mod = b.createModule(.{ .root_source_file = b.path("src/memory/allocator.zig"), .target = target, .optimize = optimize });
-    const i18n_tool = b.addExecutable(.{ .name = "i18n-tool", .root_module = b.createModule(.{ .root_source_file = b.path("tools/i18n.zig"), .target = b.graph.host, .optimize = .ReleaseSafe }) });
+    const i18n_tool = b.addExecutable(.{ .name = "i18n-tool", .root_module = b.createModule(.{ .root_source_file = b.path("tools/i18n.zig"), .target = b.graph.host, .optimize = .safe }) });
     const catalog_compile = b.addRunArtifact(i18n_tool);
     catalog_compile.setCwd(b.path("."));
     catalog_compile.addArg("compile");
@@ -79,6 +81,7 @@ pub fn build(b: *std.Build) void {
     ui_mod.addImport("i18n", i18n_mod);
     ui_mod.addImport("memory", memory_mod);
     ui_mod.addImport("wayland", wayland);
+    ui_mod.addImport("c_gfx", c_headers.gfx);
     ui_mod.linkSystemLibrary("xkbcommon", .{});
     addShellUi(b, ui_mod);
     ui_mod.addAnonymousImport("theme-rediwm-dark", .{ .root_source_file = b.path("assets/themes/rediwm-dark.toml") });
@@ -142,6 +145,9 @@ pub fn build(b: *std.Build) void {
     compositor.root_module.addImport("xkbcommon", xkbcommon);
     compositor.root_module.addImport("wlroots", wlroots);
     compositor.root_module.addImport("pixman", pixman);
+    compositor.root_module.addImport("c_pulse", c_headers.pulse);
+    compositor.root_module.addImport("c_libinput", c_headers.libinput);
+    compositor.root_module.addImport("c_png", c_headers.png);
     compositor.root_module.linkSystemLibrary("wayland-server", .{});
     compositor.root_module.linkSystemLibrary("cups", .{});
     compositor.root_module.addCSourceFile(.{ .file = b.path("src/printing/direct.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror", "-Wno-deprecated-declarations" } });
@@ -203,6 +209,7 @@ pub fn build(b: *std.Build) void {
         .dbus_mod = dbus_mod,
         .config_mod = config_mod,
         .protocol_mod = protocol_mod,
+        .c = c_headers,
     };
     const app = apps.add(ctx);
     const files = app.files;
@@ -249,6 +256,8 @@ pub fn build(b: *std.Build) void {
         module.addImport("i18n", i18n_mod);
         module.addImport("config", config_mod);
         module.addImport("memory", memory_mod);
+        module.addImport("c", c_headers.libc);
+        module.addImport("c_gfx", c_headers.gfx);
     }
     inline for (.{ compositor.root_module, ui_tests_module, dbus_tests.root_module, dbus_service.root_module, polkit_service.root_module, session_supervisor.root_module, session_tests.root_module, share_picker_tests.root_module, files_tests.root_module }) |module| {
         module.addImport("dbus", dbus_mod);
@@ -256,15 +265,16 @@ pub fn build(b: *std.Build) void {
 
     tests.addC(ctx, zig_tests.test_step);
 
-    const run_cmd = b.addRunArtifact(compositor);
+    // Autostart looks up `rediwm-desktop` / `rediwm-files` on PATH. Run the
+    // cached artifact with the installed bin directory first on PATH.
+    const run_cmd = b.addSystemCommand(&.{ "sh", "-c", "PATH=\"$0:$PATH\" exec \"$@\"" });
+    run_cmd.addDirectoryArg(support.installed(.bin, ""));
+    run_cmd.addArtifactArg(compositor);
     // The development run target is always nested in the current Wayland session.
     run_cmd.setEnvironmentVariable("WLR_BACKENDS", "wayland");
     run_cmd.setEnvironmentVariable("WLR_WL_OUTPUTS", "1");
-    // Autostart looks up `rediwm-desktop` / `rediwm-files` on PATH. The run
-    // artifact lives in the cache, so install the helpers and expose zig-out/bin.
     run_cmd.step.dependOn(b.getInstallStep());
-    run_cmd.addPathDir(b.exe_dir);
-    if (b.args) |args| run_cmd.addArgs(args);
+    run_cmd.addPassthruArgs();
     const run_step = b.step("run", "Run the nested compositor (pass a client command after --)");
     run_step.dependOn(&run_cmd.step);
 }

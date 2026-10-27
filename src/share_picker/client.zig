@@ -515,7 +515,7 @@ pub fn run(labels: []const []const u8) !sources.Decision {
     self.xdg_toplevel.setListener(*Client, Client.xdgToplevelEvent, &self);
     self.xdg_toplevel.setAppId("rediwm-share-picker");
     var title: [256]u8 = undefined;
-    self.xdg_toplevel.setTitle(std.fmt.bufPrintZ(&title, "{s}", .{i18n.tr("Share screen")}) catch "Share screen");
+    self.xdg_toplevel.setTitle(std.fmt.bufPrintSentinel(&title, "{s}", .{i18n.tr("Share screen")}, 0) catch "Share screen");
     self.xdg_toplevel.setMinSize(320, 200 + CSD_TITLEBAR_H);
 
     if (self.decoration_manager) |mgr| {

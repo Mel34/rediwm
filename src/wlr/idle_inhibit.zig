@@ -1,4 +1,4 @@
-//! wlr.IdleInhibitManagerV1 / wlr.IdleInhibitorV1, backed by @cImport
+//! wlr.IdleInhibitManagerV1 / wlr.IdleInhibitorV1, backed by translate-c
 //! against wlr/types/wlr_idle_inhibit_v1.h. `events.destroy` on the
 //! inhibitor type carries the surface, not the inhibitor itself (see
 //! wlr-protocols) -- that's not a mistake, wlroots really does type it

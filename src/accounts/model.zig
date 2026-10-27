@@ -1,11 +1,7 @@
 //! Unprivileged view of login -- accounts and local groups for Settings.
 const std = @import("std");
 const ws = @import("../session/wayland_sessions.zig");
-const c = @cImport({
-    @cInclude("pwd.h");
-    @cInclude("grp.h");
-    @cInclude("unistd.h");
-});
+const c = @import("c");
 
 pub const User = struct {
     name: []const u8,

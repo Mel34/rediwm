@@ -30,7 +30,7 @@ pub fn matchesPidChain(client_pid: i32, target_pid: i32) bool {
     var depth: usize = 0;
     while (depth < 5) : (depth += 1) {
         var path_buf: [64:0]u8 = undefined;
-        const path = std.fmt.bufPrintZ(&path_buf, "/proc/{d}/stat", .{cur_pid}) catch break;
+        const path = std.fmt.bufPrintSentinel(&path_buf, "/proc/{d}/stat", .{cur_pid}, 0) catch break;
         const fd = std.posix.openat(std.posix.AT.FDCWD, path, .{
             .ACCMODE = .RDONLY,
             .CLOEXEC = true,

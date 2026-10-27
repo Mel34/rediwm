@@ -21,7 +21,7 @@
   (no network sandbox, no systemd), which are harmless.
 * **`DEPENDS` is generated from the built binaries' `NEEDED` libraries**
   (`release-build.sh`), never hand-kept; only the extras (Xwayland, portals,
-  Python, Mesa drivers) are listed by hand. Libraries bundled in `lib/rediwm`
+  Mesa drivers) are listed by hand. Libraries bundled in `lib/rediwm`
   are excluded, and which ones get bundled depends on what the build container
   has installed, so never install the distro's own wlroots there.
 * **Releases always use the pinned, patched wlroots** from `build-wlroots.sh`,

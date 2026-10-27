@@ -4,11 +4,7 @@ const std = @import("std");
 const wlr = @import("wlroots");
 const sn = @import("node.zig");
 const i18n = @import("i18n");
-const c = @cImport({
-    @cInclude("langinfo.h");
-    @cInclude("locale.h");
-    @cInclude("time.h");
-});
+const c = @import("c");
 const Output = @import("Output.zig");
 const gpa = @import("main.zig").gpa;
 const PanelBuffer = @import("panel_buffer.zig").PanelBuffer;
@@ -195,7 +191,7 @@ fn localNow() c.struct_tm {
     return tm;
 }
 fn timeLocale(allocator: std.mem.Allocator, name: []const u8) c.locale_t {
-    const terminated = allocator.dupeZ(u8, name) catch return null;
+    const terminated = allocator.dupeSentinel(u8, name, 0) catch return null;
     defer allocator.free(terminated);
     // Locale objects are private to this paint. Reloading formats updates an
     // already-open calendar without changing libc's process-wide locale.

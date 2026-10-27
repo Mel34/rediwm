@@ -23,7 +23,7 @@ pub fn execute(identity: proc.Identity, kind: Kind) !void {
     // fdinfo identifies the task referred to by THIS pidfd, not whichever task
     // currently occupies /proc/PID. An exited pidfd reports Pid: -1.
     var path_buf: [64]u8 = undefined;
-    const path = try std.fmt.bufPrintZ(&path_buf, "/proc/self/fdinfo/{d}", .{pidfd});
+    const path = try std.fmt.bufPrintSentinel(&path_buf, "/proc/self/fdinfo/{d}", .{pidfd}, 0);
     var info_buf: [4096]u8 = undefined;
     const info = try proc.readAt(c.AT_FDCWD, path, &info_buf);
     var lines = std.mem.splitScalar(u8, info, '\n');

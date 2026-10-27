@@ -188,8 +188,8 @@ network_presence: taskbar_items.Presence = .{},
 blink_timer: ?*wl.EventSource = null,
 blink_dim: bool = false,
 
-clock_time: [16]u8 = [_]u8{0} ** 16,
-clock_date: [128]u8 = [_]u8{0} ** 128,
+clock_time: [16]u8 = @splat(0),
+clock_date: [128]u8 = @splat(0),
 clock_locale: c_time.locale_t = null,
 clock_minute: c_time.time_t = 0,
 // Layout and every tick ask for these; shaping them each time showed up in
@@ -215,7 +215,7 @@ pub const ChipFlat = taskbar_types.ChipFlat;
 
 // `wired` comes last so the IPC tray indices of the other icons stay put.
 pub const TrayKind = enum { volume, wifi, power, wired };
-pub const tray_count = std.meta.fields(TrayKind).len;
+pub const tray_count = @typeInfo(TrayKind).@"enum".field_names.len;
 
 pub const AppKind = enum { file_explorer, notes, terminal, settings, text_doc, browser, other };
 

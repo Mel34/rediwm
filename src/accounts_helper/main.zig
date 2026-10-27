@@ -4,19 +4,7 @@ const std = @import("std");
 const validation = @import("accounts_validation");
 const dm_config = @import("dm_config");
 const ws = @import("wayland_sessions");
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("pwd.h");
-    @cInclude("grp.h");
-    @cInclude("unistd.h");
-    @cInclude("sys/mman.h");
-    @cInclude("sys/stat.h");
-    @cInclude("fcntl.h");
-    @cInclude("errno.h");
-    @cInclude("stdio.h");
-    @cInclude("stdlib.h");
-});
+const c = @import("c");
 
 const Request = struct {
     op: []const u8,
@@ -159,7 +147,7 @@ fn perform(io: std.Io, caller_uid: u32, request: Request) !void {
 }
 
 fn lookupUser(name: []const u8) ?struct { uid: u32, gid: u32 } {
-    const z = a.dupeZ(u8, name) catch return null;
+    const z = a.dupeSentinel(u8, name, 0) catch return null;
     defer a.free(z);
     const pw = c.getpwnam(z);
     if (pw == null) return null;
@@ -194,7 +182,7 @@ fn adminGroup() ?[]const u8 {
 const GroupInfo = struct { gid: u32, members: [*c][*c]u8 };
 
 fn lookupGroup(name: []const u8) ?GroupInfo {
-    const z = a.dupeZ(u8, name) catch return null;
+    const z = a.dupeSentinel(u8, name, 0) catch return null;
     defer a.free(z);
     const group = c.getgrnam(z) orelse return null;
     return .{ .gid = group.*.gr_gid, .members = group.*.gr_mem };
@@ -336,7 +324,7 @@ fn localGroup(name: []const u8) bool {
 
 fn findTool(paths: []const []const u8) ![]const u8 {
     for (paths) |path| {
-        const z = try a.dupeZ(u8, path);
+        const z = try a.dupeSentinel(u8, path, 0);
         defer a.free(z);
         if (c.access(z, c.X_OK) == 0) return path;
     }

@@ -600,7 +600,7 @@ pub const Row = enum {
     taskbar,
     start_menu,
 };
-pub const row_count = std.meta.fields(Row).len;
+pub const row_count = @typeInfo(Row).@"enum".field_names.len;
 
 pub const groups = [_]struct { title: ?i18n.Message, rows: []const Row }{
     .{ .title = i18n.msg("Themes & colours"), .rows = &.{ .theme, .taskbar_theme, .theme_pack, .icon_theme, .dark_mode, .app_colors } },
@@ -615,7 +615,7 @@ pub const groups = [_]struct { title: ?i18n.Message, rows: []const Row }{
 
 comptime {
     // Every row is shown exactly once.
-    var seen = [_]bool{false} ** row_count;
+    var seen = @as([row_count]bool, @splat(false));
     for (groups) |group| for (group.rows) |row| {
         if (seen[@intFromEnum(row)]) @compileError("row in two groups: " ++ @tagName(row));
         seen[@intFromEnum(row)] = true;

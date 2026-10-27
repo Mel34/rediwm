@@ -38,7 +38,7 @@ pub fn open(self: *App, path: []const u8) void {
             return;
         }
     };
-    const owned = a.dupeZ(u8, path) catch return;
+    const owned = a.dupeSentinel(u8, path, 0) catch return;
     self.queue.append(a, owned) catch {
         a.free(owned);
         return;
@@ -72,7 +72,7 @@ pub fn sync(self: *App) void {
                 };
                 if (self.current().path != null or self.current().doc.text.items.len > 0 or self.current().doc.modified()) self.newTab() catch return;
                 const t = self.current();
-                const path = a.dupeZ(u8, job.path) catch return;
+                const path = a.dupeSentinel(u8, job.path, 0) catch return;
                 t.doc.deinit();
                 t.doc = job.document.?;
                 job.document = null;
@@ -86,7 +86,7 @@ pub fn sync(self: *App) void {
             },
             .save => if (self.findTab(job.tab_id)) |i| {
                 const t = self.tabs.items[i];
-                const path = a.dupeZ(u8, job.path) catch return;
+                const path = a.dupeSentinel(u8, job.path, 0) catch return;
                 if (t.path) |old| a.free(old);
                 t.path = path;
                 t.stamp = job.stamp;

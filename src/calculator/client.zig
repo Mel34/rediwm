@@ -836,7 +836,7 @@ pub fn run(init: std.process.Init) !void {
     self.surface.commit();
     if (self.activation) |activation| {
         if (init.minimal.environ.getPosix("XDG_ACTIVATION_TOKEN")) |token| {
-            const terminated = try a.dupeZ(u8, token);
+            const terminated = try a.dupeSentinel(u8, token, 0);
             defer a.free(terminated);
             activation.activate(terminated, self.surface);
         }

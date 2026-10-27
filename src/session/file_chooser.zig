@@ -9,14 +9,7 @@ const Server = @import("../Server.zig");
 const model = @import("../files/chooser.zig");
 const protocol = @import("file_chooser_protocol.zig");
 const settings = @import("settings_portal.zig");
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("sys/mman.h");
-    @cInclude("unistd.h");
-    @cInclude("fcntl.h");
-    @cInclude("signal.h");
-});
+const c = @import("c");
 const a = std.heap.c_allocator;
 const interface = "org.freedesktop.impl.portal.FileChooser";
 const Request = struct {

@@ -17,9 +17,9 @@ pub const Texture = extern struct {
         comptime {
             const Real = c.wlr_texture_read_pixels_options;
             assertSameLayout(ReadPixelsOptions, Real);
-            for (@typeInfo(ReadPixelsOptions).@"struct".fields) |field| {
-                assertFieldOffset(ReadPixelsOptions, Real, field.name);
-                assertSameLayout(field.type, @FieldType(Real, field.name));
+            for (@typeInfo(ReadPixelsOptions).@"struct".field_names) |field_name| {
+                assertFieldOffset(ReadPixelsOptions, Real, field_name);
+                assertSameLayout(@FieldType(ReadPixelsOptions, field_name), @FieldType(Real, field_name));
             }
         }
     };
@@ -48,9 +48,9 @@ pub const Texture = extern struct {
     comptime {
         const Real = c.wlr_texture;
         assertSameLayout(Texture, Real);
-        for (@typeInfo(Texture).@"struct".fields) |field| {
-            assertFieldOffset(Texture, Real, field.name);
-            assertSameLayout(field.type, @FieldType(Real, field.name));
+        for (@typeInfo(Texture).@"struct".field_names) |field_name| {
+            assertFieldOffset(Texture, Real, field_name);
+            assertSameLayout(@FieldType(Texture, field_name), @FieldType(Real, field_name));
         }
     }
 };

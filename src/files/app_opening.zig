@@ -42,7 +42,7 @@ pub fn previewSelected(self: *App) void {
     }
     if (!formats.candidate(item.path)) {
         if (!@import("../editor/formats.zig").candidate(item.path)) return;
-        if (self.editor_path == null) self.editor_path = self.allocator.dupeZ(u8, item.path) catch null;
+        if (self.editor_path == null) self.editor_path = self.allocator.dupeSentinel(u8, item.path, 0) catch null;
         return;
     }
     if (self.preview_return_fd != null) return;
@@ -99,7 +99,7 @@ pub fn launchImageList(self: *App, fd: c_int, index: usize) !void {
     const n = c.readlink("/proc/self/exe", &exe_buf, exe_buf.len);
     if (n > 0 and n < exe_buf.len) {
         if (std.fs.path.dirname(exe_buf[0..@intCast(n)])) |dir| {
-            const sibling = try std.fmt.bufPrintZ(&sibling_buf, "{s}/rediwm-images", .{dir});
+            const sibling = try std.fmt.bufPrintSentinel(&sibling_buf, "{s}/rediwm-images", .{dir}, 0);
             if (c.access(sibling, c.X_OK) == 0) executable = sibling;
         }
     }
@@ -159,7 +159,7 @@ pub fn openFile(self: *App, path: []const u8) void {
     const n = c.readlink("/proc/self/exe", &exe_buf, exe_buf.len);
     if (n > 0 and n < exe_buf.len) {
         if (std.fs.path.dirname(exe_buf[0..@intCast(n)])) |dir| {
-            if (std.fmt.bufPrintZ(&sibling_buf, "{s}/rediwm-pdf", .{dir})) |sibling| {
+            if (std.fmt.bufPrintSentinel(&sibling_buf, "{s}/rediwm-pdf", .{dir}, 0)) |sibling| {
                 if (c.access(sibling, c.X_OK) == 0) executable = sibling;
             } else |_| {}
         }
@@ -213,7 +213,7 @@ pub fn openExtracted(self: *App, path: []const u8, preview: bool) void {
     if (preview and image_formats.candidate(path)) {
         self.previewExtracted(path) catch self.setStatusNotice(tr("Could not open image viewer"), true);
     } else if (preview and @import("../editor/formats.zig").candidate(path)) {
-        if (self.editor_path == null) self.editor_path = self.allocator.dupeZ(u8, path) catch null;
+        if (self.editor_path == null) self.editor_path = self.allocator.dupeSentinel(u8, path, 0) catch null;
     } else if (!preview or isPdf(path)) self.openFile(path);
 }
 

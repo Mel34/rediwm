@@ -6,13 +6,7 @@ const std = @import("std");
 const wl = @import("wayland").server.wl;
 const Server = @import("../Server.zig");
 const chooser = @import("../files/chooser.zig");
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("sys/mman.h");
-    @cInclude("unistd.h");
-    @cInclude("fcntl.h");
-});
+const c = @import("c");
 
 const a = std.heap.c_allocator;
 /// A path in JSON; anything larger is not a result.

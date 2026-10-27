@@ -654,7 +654,7 @@ pub const Desktop = struct {
             _ = @import("../session/child.zig").watch(a, self.server.wl_server.getEventLoop(), launch.pid, null, null) catch {
                 _ = std.os.linux.kill(launch.pid, .KILL);
                 var status: u32 = 0;
-                while (std.os.linux.errno(std.os.linux.wait4(launch.pid, &status, 0, null)) == .INTR) {}
+                while (std.os.linux.errno(std.os.linux.wait4(launch.pid, @ptrCast(&status), 0, null)) == .INTR) {}
             };
         }
     }

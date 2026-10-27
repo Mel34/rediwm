@@ -1,4 +1,4 @@
-//! wlr.Output / wlr.OutputCursor, backed by @cImport against
+//! wlr.Output / wlr.OutputCursor, backed by translate-c against
 //! wlr/types/wlr_output.h. The single biggest type in the facade so far:
 //! see src/wlr/AGENTS.md for the general pattern and the top-level
 //! AGENTS.md's rendering/damage notes before changing anything here.

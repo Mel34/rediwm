@@ -95,11 +95,11 @@ test "dirsize: a hardlink pair is counted once" {
     defer a.free(f1);
     try writeTestFile(f1, "hardlink payload");
 
-    const f1_z = try a.dupeZ(u8, f1);
+    const f1_z = try a.dupeSentinel(u8, f1, 0);
     defer a.free(f1_z);
     const f2 = try std.fmt.allocPrint(a, "{s}/file2_hardlink.txt", .{tmp});
     defer a.free(f2);
-    const f2_z = try a.dupeZ(u8, f2);
+    const f2_z = try a.dupeSentinel(u8, f2, 0);
     defer a.free(f2_z);
 
     try std.testing.expect(c.link(f1_z, f2_z) == 0);

@@ -43,7 +43,7 @@ test "grid hit testing respects gutters, scrolling and responsive columns" {
     app.list_view = false;
     app.scroll_y = 0;
     var items: [20]ViewItem = undefined;
-    app.items = .{ .items = &items, .capacity = items.len };
+    app.items = .fromOwnedSlice(&items);
     try std.testing.expectEqual(@as(i32, 3), app.columns());
     try std.testing.expectEqual(@as(?usize, 0), app.itemAt(250, 158));
     try std.testing.expectEqual(@as(?usize, 1), app.itemAt(490, 158));

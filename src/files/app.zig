@@ -270,7 +270,7 @@ pub const App = struct {
 
     // Title notification
     title_changed: bool = true,
-    title_z: [256:0]u8 = [1:0]u8{0} ** 256,
+    title_z: [256:0]u8 = @splat(0),
 
     pub fn init(
         allocator: Allocator,

@@ -40,7 +40,7 @@ pub fn main(init: std.process.Init) void {
     @import("session/activation.zig").setSessionFdInheritance(init.minimal.environ, false);
     wlr.log.init(.debug, null);
     // Runs last, on a normal exit only: restarts exec and fatal paths exit.
-    defer if (@import("builtin").mode == .Debug) {
+    defer if (@import("builtin").mode == .debug) {
         if (@import("memory").deinit()) log.err("memory leaks reported above", .{});
     };
 

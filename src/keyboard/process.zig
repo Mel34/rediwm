@@ -171,7 +171,7 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
     if (keyboard.server.screenshot_selector.output != null and state == .pressed) {
         if (event_keycode < keyboard.screenshot_consumed.len) keyboard.screenshot_consumed[event_keycode] = true;
         for (xkb_state.keyGetSyms(keycode)) |sym| {
-            if (@intFromEnum(sym) == xkb.Keysym.Escape) keyboard.server.screenshot_selector.cancel();
+            if (sym == xkb.Keysym.Escape) keyboard.server.screenshot_selector.cancel();
         }
         return;
     }
@@ -230,8 +230,8 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
             }
             if (keyboard.server.switcher.active()) {
                 keyboard.stopSwitcherRepeat();
-                if (@intFromEnum(sym) == xkb.Keysym.Escape) keyboard.server.switcher.cancel();
-                if (@intFromEnum(sym) == xkb.Keysym.Return) keyboard.server.switcher.accept(keyboard.server);
+                if (sym == xkb.Keysym.Escape) keyboard.server.switcher.cancel();
+                if (sym == xkb.Keysym.Return) keyboard.server.switcher.accept(keyboard.server);
                 if (event_keycode < keyboard.switcher_consumed.len) keyboard.switcher_consumed[event_keycode] = true;
                 return;
             }
@@ -254,14 +254,14 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
     // keyboard; its release is ours too.
     if (state == .pressed and keyboard.server.input.dock_drag.reordering()) {
         for (xkb_state.keyGetSyms(keycode)) |sym| {
-            if (@intFromEnum(sym) != xkb.Keysym.Escape) continue;
+            if (sym != xkb.Keysym.Escape) continue;
             _ = keyboard.server.input.cancelDrag();
             keyboard.consuming_escape = true;
             return;
         }
     } else if (state == .released and keyboard.consuming_escape) {
         for (xkb_state.keyGetSyms(keycode)) |sym| {
-            if (@intFromEnum(sym) != xkb.Keysym.Escape) continue;
+            if (sym != xkb.Keysym.Escape) continue;
             keyboard.consuming_escape = false;
             return;
         }
@@ -295,7 +295,7 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
         if (state == .pressed) {
             if (event_keycode < keyboard.battery_consumed.len) keyboard.battery_consumed[event_keycode] = true;
             for (xkb_state.keyGetSyms(keycode)) |sym| {
-                switch (@intFromEnum(sym)) {
+                switch (sym) {
                     xkb.Keysym.Escape => {
                         popup.output.closeBattery();
                         return;
@@ -312,7 +312,7 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
     if (keyboard.server.input.open_calendar) |calendar| {
         if (state == .pressed) {
             for (xkb_state.keyGetSyms(keycode)) |sym| {
-                switch (@intFromEnum(sym)) {
+                switch (sym) {
                     xkb.Keysym.Escape => {
                         calendar.output.closeCalendar();
                         return;
@@ -329,7 +329,7 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
     if (keyboard.server.input.open_power_menu) |pm| {
         if (state == .pressed) {
             for (xkb_state.keyGetSyms(keycode)) |sym| {
-                switch (@intFromEnum(sym)) {
+                switch (sym) {
                     xkb.Keysym.Escape => if (Output.fromWlr(pm.wlr_output)) |output| output.closePowerMenu(),
                     xkb.Keysym.Left => pm.navigate(false),
                     xkb.Keysym.Right => pm.navigate(true),
@@ -365,7 +365,7 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
     if (keyboard.server.input.open_start_menu) |sm| {
         // Escape abandons an application dragged out of the menu, not the menu.
         if (state == .pressed and keyboard.server.input.dock_drag.active()) for (xkb_state.keyGetSyms(keycode)) |sym| {
-            if (@intFromEnum(sym) == xkb.Keysym.Escape) {
+            if (sym == xkb.Keysym.Escape) {
                 _ = keyboard.server.input.cancelDrag();
                 keyboard.consuming_escape = true;
                 return;
@@ -411,7 +411,7 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
     // inhibits it until the trigger is released. Either way the release is ours.
     if (state == .pressed) {
         for (xkb_state.keyGetSyms(keycode)) |sym| {
-            if (@intFromEnum(sym) == xkb.Keysym.Escape) {
+            if (sym == xkb.Keysym.Escape) {
                 const input = &keyboard.server.input;
                 if (input.cancelDrag()) {
                     keyboard.consuming_escape = true;
@@ -438,7 +438,7 @@ pub fn processKey(keyboard: *Keyboard, time_msec: u32, event_keycode: u32, state
     } else if (state == .released) {
         if (keyboard.consuming_escape) {
             for (xkb_state.keyGetSyms(keycode)) |sym| {
-                if (@intFromEnum(sym) == xkb.Keysym.Escape) {
+                if (sym == xkb.Keysym.Escape) {
                     keyboard.consuming_escape = false;
                     return;
                 }

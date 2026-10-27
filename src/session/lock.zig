@@ -31,12 +31,7 @@ const ImageBuffer = @import("../ImageBuffer.zig");
 const lock_account = @import("lock_account.zig");
 const lock_events = @import("lock_events.zig");
 const lock_input = @import("lock_input.zig");
-pub const c = @cImport({
-    @cInclude("time.h");
-    @cInclude("unistd.h");
-    @cInclude("sys/mman.h");
-    @cInclude("sys/prctl.h");
-});
+pub const c = @import("c");
 const text_field = ui.widgets.field;
 const SecretInput = ui.widgets.secret_input.Input;
 const Auth = opaque {};

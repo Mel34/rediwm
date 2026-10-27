@@ -99,8 +99,8 @@ pub const Settings = struct {
         defer if (path) |p| a.free(p);
         var self: Settings = .{ .env = env };
         errdefer self.deinit(a);
-        if (path) |p| self.config_path = try a.dupeZ(u8, p);
-        if (theme.resolvePath(env)) |p| self.theme_path = try a.dupeZ(u8, p);
+        if (path) |p| self.config_path = try a.dupeSentinel(u8, p, 0);
+        if (theme.resolvePath(env)) |p| self.theme_path = try a.dupeSentinel(u8, p, 0);
         return self;
     }
 
@@ -118,7 +118,7 @@ pub const Settings = struct {
             var parent = std.fs.path.dirname(maybe_path orelse continue) orelse continue;
             while (true) {
                 var buf: [4096]u8 = undefined;
-                const path = std.fmt.bufPrintZ(&buf, "{s}", .{parent}) catch break;
+                const path = std.fmt.bufPrintSentinel(&buf, "{s}", .{parent}, 0) catch break;
                 if (c.inotify_add_watch(fd, path, c.IN_CLOSE_WRITE | c.IN_MOVED_TO | c.IN_CREATE | c.IN_DELETE | c.IN_DELETE_SELF | c.IN_MOVE_SELF) >= 0) break;
                 parent = std.fs.path.dirname(parent) orelse break;
             }

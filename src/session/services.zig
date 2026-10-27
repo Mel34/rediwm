@@ -268,7 +268,7 @@ test "session helper tracking and bounded shutdown" {
     child.id = null; // ownership was transferred to the watcher
     try mgr.loop.dispatch(1000);
     var status: u32 = 0;
-    try std.testing.expectEqual(std.os.linux.E.CHILD, std.os.linux.errno(std.os.linux.wait4(pid, &status, std.os.linux.W.NOHANG, null)));
+    try std.testing.expectEqual(std.os.linux.E.CHILD, std.os.linux.errno(std.os.linux.wait4(pid, @ptrCast(&status), std.os.linux.W.NOHANG, null)));
 
     // Immediate exits are readable even if they occur before registration.
     var quick = try std.process.spawn(std.testing.io, .{ .argv = &.{ "/bin/sh", "-c", "exit 7" } });
@@ -278,5 +278,5 @@ test "session helper tracking and bounded shutdown" {
     quick.id = null;
     try mgr.loop.dispatch(1000);
     try std.testing.expectEqual(@as(usize, 0), mgr.countTracked());
-    try std.testing.expectEqual(std.os.linux.E.CHILD, std.os.linux.errno(std.os.linux.wait4(quick_pid, &status, std.os.linux.W.NOHANG, null)));
+    try std.testing.expectEqual(std.os.linux.E.CHILD, std.os.linux.errno(std.os.linux.wait4(quick_pid, @ptrCast(&status), std.os.linux.W.NOHANG, null)));
 }

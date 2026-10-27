@@ -145,8 +145,7 @@ pub fn keyRepeats(self: *const Lock, sym: xkb.Keysym, utf8: []const u8) bool {
     if (self.busy()) return false;
     if (self.focus == 0) return @import("../input/repeat_keys.zig").editing(sym, utf8);
     if (self.focus == focus_account or self.focus == focus_session) {
-        const value = @intFromEnum(sym);
-        return value == xkb.Keysym.Left or value == xkb.Keysym.Right;
+        return sym == xkb.Keysym.Left or sym == xkb.Keysym.Right;
     }
     return false;
 }
@@ -155,8 +154,7 @@ pub fn key(self: *Lock, sym: xkb.Keysym, utf8: []const u8, mods: wlr.Keyboard.Mo
     self.caps = mods.caps;
     self.caret_edit_ms = anim.nowMs();
     defer self.changed();
-    const value = @intFromEnum(sym);
-    if (value == xkb.Keysym.Escape) {
+    if (sym == xkb.Keysym.Escape) {
         self.clear();
         self.confirm = null;
         self.focus = 0;
@@ -167,13 +165,13 @@ pub fn key(self: *Lock, sym: xkb.Keysym, utf8: []const u8, mods: wlr.Keyboard.Mo
         return;
     }
     if (self.busy()) return;
-    switch (value) {
-        xkb.Keysym.Tab, xkb.Keysym.ISO_Left_Tab => self.moveFocus(mods.shift or value == xkb.Keysym.ISO_Left_Tab),
-        xkb.Keysym.Up, xkb.Keysym.Down => if (!self.prompting()) self.choose(focus_account, if (value == xkb.Keysym.Up) -1 else 1),
+    switch (sym) {
+        xkb.Keysym.Tab, xkb.Keysym.ISO_Left_Tab => self.moveFocus(mods.shift or sym == xkb.Keysym.ISO_Left_Tab),
+        xkb.Keysym.Up, xkb.Keysym.Down => if (!self.prompting()) self.choose(focus_account, if (sym == xkb.Keysym.Up) -1 else 1),
         xkb.Keysym.Left, xkb.Keysym.Right => if (self.focus == focus_account or self.focus == focus_session)
-            self.choose(self.focus, if (value == xkb.Keysym.Left) -1 else 1)
+            self.choose(self.focus, if (sym == xkb.Keysym.Left) -1 else 1)
         else if (self.focus == 0) {
-            if (value == xkb.Keysym.Left) self.field().left() else self.field().right();
+            if (sym == xkb.Keysym.Left) self.field().left() else self.field().right();
         },
         xkb.Keysym.Home => if (self.focus == 0) {
             self.input.cursor = 0;

@@ -212,7 +212,7 @@ fn saveApp(cc: *panel.ControlCenter, browser: bool, index: usize) !void {
     const value = values[index];
     if (browser) {
         if (value.len == 0) return;
-        const id = try gpa.dupeZ(u8, value);
+        const id = try gpa.dupeSentinel(u8, value, 0);
         defer gpa.free(id);
         const app = g_desktop_app_info_new(id) orelse return error.ApplicationUnavailable;
         defer g_object_unref(app);

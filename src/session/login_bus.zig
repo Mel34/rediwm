@@ -244,7 +244,7 @@ const Reply = struct {
     error_text: ?[]u8 = null,
     signature: []u8 = &.{},
     body: []u8 = &.{},
-    endian: std.builtin.Endian = .little,
+    endian: std.lang.Endian = .little,
 
     fn callback(owner: ?*anyopaque, _: *Connection, result: Connection.Failure!wire.Message) void {
         const self: *Reply = @ptrCast(@alignCast(owner.?));

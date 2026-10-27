@@ -1,4 +1,4 @@
-//! wlr.IdleNotifierV1, backed by @cImport against
+//! wlr.IdleNotifierV1, backed by translate-c against
 //! wlr/types/wlr_idle_notify_v1.h. Every field but `global` is
 //! WLR_PRIVATE in the real struct, so there's nothing else to redeclare
 //! or assert beyond it -- `global` is the struct's first field, so its

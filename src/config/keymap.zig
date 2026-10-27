@@ -21,7 +21,7 @@ pub fn compile(allocator: std.mem.Allocator, cfg: anytype) !*xkb.Keymap {
 fn name(a: std.mem.Allocator, value: []const u8) !?[*:0]const u8 {
     if (value.len == 0) return null;
     if (std.mem.indexOfScalar(u8, value, 0) != null) return error.InvalidKeymap;
-    return (try a.dupeZ(u8, value)).ptr;
+    return (try a.dupeSentinel(u8, value, 0)).ptr;
 }
 
 /// Preserve an explicitly bound active-layout symbol before trying layout zero.
@@ -113,12 +113,12 @@ test "configured layouts and layout-zero shortcuts preserve active bindings and 
     defer state.unref();
     _ = state.updateMask(0, 0, 0, 0, 0, 1);
     const active = state.keyGetSyms(28); // evdev KEY_T + 8
-    try std.testing.expectEqual(@as(u32, xkb.Keysym.Cyrillic_ie), @intFromEnum(active[0]));
+    try std.testing.expectEqual(@intFromEnum(xkb.Keysym.Cyrillic_ie), @intFromEnum(active[0]));
     const fallback = bindingSyms(&cfg, state, 28, @import("keybinds.zig").ModifierMask{ .logo = true });
-    try std.testing.expectEqual(@as(u32, xkb.Keysym.t), @intFromEnum(fallback[0]));
+    try std.testing.expectEqual(@intFromEnum(xkb.Keysym.t), @intFromEnum(fallback[0]));
     _ = state.updateMask(1, 0, 0, 0, 0, 1); // Shift
     const shifted = bindingSyms(&cfg, state, 28, @import("keybinds.zig").ModifierMask{ .logo = true, .shift = true });
-    try std.testing.expectEqual(@as(u32, xkb.Keysym.T), @intFromEnum(shifted[0]));
+    try std.testing.expectEqual(@intFromEnum(xkb.Keysym.T), @intFromEnum(shifted[0]));
 
     var explicit = try loader.parse(std.testing.allocator,
         \\[input]
@@ -130,7 +130,7 @@ test "configured layouts and layout-zero shortcuts preserve active bindings and 
     defer explicit.deinit();
     _ = state.updateMask(0, 0, 0, 0, 0, 1);
     const preferred = bindingSyms(&explicit, state, 28, @import("keybinds.zig").ModifierMask{ .logo = true });
-    try std.testing.expectEqual(@as(u32, xkb.Keysym.Cyrillic_ie), @intFromEnum(preferred[0]));
+    try std.testing.expectEqual(@intFromEnum(xkb.Keysym.Cyrillic_ie), @intFromEnum(preferred[0]));
 }
 
 test "invalid layout rejects config and empty layout compiles" {
@@ -161,12 +161,12 @@ test "Cyrillic-only keymaps keep Latin modifier shortcuts and Cyrillic text" {
         defer state.unref();
         const key = map.keyByName("AD05");
         for ([_]ModifierMask{ .{ .logo = true }, .{ .ctrl = true }, .{ .alt = true } }) |mods| {
-            try std.testing.expectEqual(@as(u32, xkb.Keysym.t), @intFromEnum(bindingSyms(&cfg, state, key, mods)[0]));
+            try std.testing.expectEqual(@intFromEnum(xkb.Keysym.t), @intFromEnum(bindingSyms(&cfg, state, key, mods)[0]));
         }
-        try std.testing.expectEqual(@as(u32, xkb.Keysym.Cyrillic_ie), @intFromEnum(state.keyGetSyms(key)[0]));
-        try std.testing.expectEqual(@as(u32, xkb.Keysym.Cyrillic_ie), @intFromEnum(bindingSyms(&cfg, state, key, ModifierMask{})[0]));
+        try std.testing.expectEqual(@intFromEnum(xkb.Keysym.Cyrillic_ie), @intFromEnum(state.keyGetSyms(key)[0]));
+        try std.testing.expectEqual(@intFromEnum(xkb.Keysym.Cyrillic_ie), @intFromEnum(bindingSyms(&cfg, state, key, ModifierMask{})[0]));
         _ = state.updateMask(1, 0, 0, 0, 0, 0);
-        try std.testing.expectEqual(@as(u32, xkb.Keysym.T), @intFromEnum(bindingSyms(&cfg, state, key, ModifierMask{ .logo = true, .shift = true })[0]));
+        try std.testing.expectEqual(@intFromEnum(xkb.Keysym.T), @intFromEnum(bindingSyms(&cfg, state, key, ModifierMask{ .logo = true, .shift = true })[0]));
     }
     var explicit = try loader.parse(std.testing.allocator,
         \\[input]
@@ -178,5 +178,5 @@ test "Cyrillic-only keymaps keep Latin modifier shortcuts and Cyrillic text" {
     defer explicit.deinit();
     const state = xkb.State.new(explicit.keyboard_keymap.?) orelse return error.InvalidKeymap;
     defer state.unref();
-    try std.testing.expectEqual(@as(u32, xkb.Keysym.Cyrillic_ie), @intFromEnum(bindingSyms(&explicit, state, 28, ModifierMask{ .logo = true })[0]));
+    try std.testing.expectEqual(@intFromEnum(xkb.Keysym.Cyrillic_ie), @intFromEnum(bindingSyms(&explicit, state, 28, ModifierMask{ .logo = true })[0]));
 }

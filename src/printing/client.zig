@@ -444,7 +444,7 @@ fn ueventSocket() c_int {
     var addr = std.mem.zeroes(c.struct_sockaddr_nl);
     addr.nl_family = c.AF_NETLINK;
     addr.nl_groups = 1;
-    if (c.bind(fd, @ptrCast(&addr), @sizeOf(c.struct_sockaddr_nl)) != 0) {
+    if (c.bind(fd, .{ .__sockaddr__ = @ptrCast(&addr) }, @sizeOf(c.struct_sockaddr_nl)) != 0) {
         _ = c.close(fd);
         return -1;
     }
@@ -456,7 +456,7 @@ fn drainUevents(fd: c_int) bool {
         var bytes: [8192]u8 = undefined;
         var sender: c.struct_sockaddr_nl = undefined;
         var len: c.socklen_t = @sizeOf(c.struct_sockaddr_nl);
-        const n = c.recvfrom(fd, &bytes, bytes.len, 0, @ptrCast(&sender), &len);
+        const n = c.recvfrom(fd, &bytes, bytes.len, 0, .{ .__sockaddr__ = @ptrCast(&sender) }, &len);
         if (n <= 0) break;
         if (sender.nl_pid != 0) continue;
         var words = std.mem.splitScalar(u8, bytes[0..@intCast(n)], 0);

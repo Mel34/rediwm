@@ -83,7 +83,7 @@ pub const State = struct {
     }
 
     pub fn init(a: std.mem.Allocator, path: []const u8, preview: ?icons.Entry) !State {
-        const owned = try a.dupeZ(u8, path);
+        const owned = try a.dupeSentinel(u8, path, 0);
         errdefer a.free(owned);
         // O_PATH pins the inode without reading a file, opening a device or
         // blocking on a FIFO. A symlink describes the link itself.
@@ -131,7 +131,7 @@ pub const State = struct {
             return;
         }
         var buf: [64]u8 = undefined;
-        const pinned = std.fmt.bufPrintZ(&buf, "/proc/self/fd/{d}", .{self.fd}) catch unreachable;
+        const pinned = std.fmt.bufPrintSentinel(&buf, "/proc/self/fd/{d}", .{self.fd}, 0) catch unreachable;
         if (c.chmod(pinned, (self.stat.st_mode & 0o7777) ^ permissionBit(index)) != 0) {
             self.message = tr("Could not change permissions");
             return;

@@ -418,7 +418,7 @@ pub const Catalog = struct {
     fn addWatch(self: *Catalog, dir: []const u8, mask: u32) void {
         if (self.watched_paths.contains(dir)) return;
         var zbuf: [std.posix.PATH_MAX]u8 = undefined;
-        const zdir = std.fmt.bufPrintZ(&zbuf, "{s}", .{dir}) catch return;
+        const zdir = std.fmt.bufPrintSentinel(&zbuf, "{s}", .{dir}, 0) catch return;
         const wd = std.c.inotify_add_watch(self.watch_fd, zdir.ptr, mask);
         if (wd < 0) return;
         const owned = self.allocator.dupe(u8, dir) catch return;

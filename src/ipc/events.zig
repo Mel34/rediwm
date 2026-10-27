@@ -165,7 +165,7 @@ fn hashWindowValue(hasher: *std.hash.Wyhash, value: anytype) void {
             hasher.update(&.{1});
             hashWindowValue(hasher, v);
         } else hasher.update(&.{0}),
-        .@"struct" => |info| inline for (info.fields) |field| hashWindowValue(hasher, @field(value, field.name)),
+        .@"struct" => |info| inline for (info.field_names) |name| hashWindowValue(hasher, @field(value, name)),
         .pointer => {
             std.hash.autoHash(hasher, value.len);
             hasher.update(value);

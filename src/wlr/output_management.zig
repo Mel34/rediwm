@@ -74,9 +74,9 @@ pub fn Types(comptime Output: type) type {
                 comptime {
                     const Real = c.wlr_output_head_v1_state;
                     assertSameLayout(State, Real);
-                    for (@typeInfo(State).@"struct".fields) |field| {
-                        assertFieldOffset(State, Real, field.name);
-                        assertSameLayout(field.type, @FieldType(Real, field.name));
+                    for (@typeInfo(State).@"struct".field_names) |field_name| {
+                        assertFieldOffset(State, Real, field_name);
+                        assertSameLayout(@FieldType(State, field_name), @FieldType(Real, field_name));
                     }
                 }
             };
@@ -89,9 +89,9 @@ pub fn Types(comptime Output: type) type {
 
             comptime {
                 const Real = c.wlr_output_head_v1;
-                for (@typeInfo(OutputHeadV1).@"struct".fields) |field| {
-                    assertFieldOffset(OutputHeadV1, Real, field.name);
-                    assertSameLayout(field.type, @FieldType(Real, field.name));
+                for (@typeInfo(OutputHeadV1).@"struct".field_names) |field_name| {
+                    assertFieldOffset(OutputHeadV1, Real, field_name);
+                    assertSameLayout(@FieldType(OutputHeadV1, field_name), @FieldType(Real, field_name));
                 }
             }
         };
@@ -110,9 +110,9 @@ pub fn Types(comptime Output: type) type {
 
                 comptime {
                     const Real = c.wlr_output_configuration_head_v1;
-                    for (@typeInfo(Head).@"struct".fields) |field| {
-                        assertFieldOffset(Head, Real, field.name);
-                        assertSameLayout(field.type, @FieldType(Real, field.name));
+                    for (@typeInfo(Head).@"struct".field_names) |field_name| {
+                        assertFieldOffset(Head, Real, field_name);
+                        assertSameLayout(@FieldType(Head, field_name), @FieldType(Real, field_name));
                     }
                 }
             };
@@ -144,9 +144,9 @@ pub fn Types(comptime Output: type) type {
             comptime {
                 const Real = c.wlr_output_configuration_v1;
                 assertSameLayout(OutputConfigurationV1, Real);
-                for (@typeInfo(OutputConfigurationV1).@"struct".fields) |field| {
-                    assertFieldOffset(OutputConfigurationV1, Real, field.name);
-                    assertSameLayout(field.type, @FieldType(Real, field.name));
+                for (@typeInfo(OutputConfigurationV1).@"struct".field_names) |field_name| {
+                    assertFieldOffset(OutputConfigurationV1, Real, field_name);
+                    assertSameLayout(@FieldType(OutputConfigurationV1, field_name), @FieldType(Real, field_name));
                 }
             }
         };

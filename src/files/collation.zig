@@ -1,12 +1,7 @@
 //! Private name collation. Keys are frozen with each listing so UI sorting
 //! never calls libc, changes the process locale or races a worker update.
 const std = @import("std");
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("locale.h");
-    @cInclude("string.h");
-});
+const c = @import("c");
 
 pub const Locale = struct {
     handle: c.locale_t,
@@ -50,7 +45,7 @@ pub const Locale = struct {
         // key instead of passing malformed multibyte sequences to libc.
         if (!std.unicode.utf8ValidateSlice(text) or std.mem.indexOfScalar(u8, text, 0) != null) return allocator.dupe(u8, text);
         var source_buffer: [1024]u8 = undefined;
-        const owned_source = if (text.len >= source_buffer.len) try allocator.dupeZ(u8, text) else null;
+        const owned_source = if (text.len >= source_buffer.len) try allocator.dupeSentinel(u8, text, 0) else null;
         defer if (owned_source) |owned| allocator.free(owned);
         const ztext: [:0]const u8 = owned_source orelse blk: {
             @memcpy(source_buffer[0..text.len], text);

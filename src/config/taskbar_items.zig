@@ -35,7 +35,7 @@ pub const Item = enum {
         return item == .wifi or item == .wired;
     }
 };
-pub const count = std.meta.fields(Item).len;
+pub const count = @typeInfo(Item).@"enum".field_names.len;
 
 /// What the network hardware offers right now; decides automatic items.
 pub const Presence = struct {
@@ -143,7 +143,7 @@ pub const Config = struct {
         if (raw.len < 2 or raw[0] != '[' or raw[raw.len - 1] != ']') return error.InvalidValue;
         var result: Config = .{};
         var order: [count]Item = undefined;
-        var seen = [_]bool{false} ** count;
+        var seen = @as([count]bool, @splat(false));
         var legacy = true;
         var tokens = std.mem.splitScalar(u8, raw[1 .. raw.len - 1], ',');
         var index: usize = 0;

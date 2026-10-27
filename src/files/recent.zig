@@ -71,7 +71,7 @@ pub fn read(a: Allocator, io: std.Io, env: std.process.Environ) ![]Entry {
         defer a.free(decoded);
         const date = g_bookmark_file_get_visited_date_time(bookmark, uri, null) orelse
             g_bookmark_file_get_modified_date_time(bookmark, uri, null);
-        const owned = try a.dupeZ(u8, decoded);
+        const owned = try a.dupeSentinel(u8, decoded, 0);
         errdefer a.free(owned);
         // Bookmark date getters return borrowed values.
         try entries.append(a, .{ .path = owned, .opened = if (date) |d| g_date_time_to_unix(d) else 0 });
@@ -88,9 +88,9 @@ pub fn record(a: Allocator, io: std.Io, env: std.process.Environ, opened: []cons
     defer g_bookmark_file_free(bookmark);
     const raw_uri = try clipboard.encodeLocalUri(a, opened);
     defer a.free(raw_uri);
-    const uri = try a.dupeZ(u8, raw_uri);
+    const uri = try a.dupeSentinel(u8, raw_uri, 0);
     defer a.free(uri);
-    const mime = try a.dupeZ(u8, mime_db.guess(opened));
+    const mime = try a.dupeSentinel(u8, mime_db.guess(opened), 0);
     defer a.free(mime);
     g_bookmark_file_set_mime_type(bookmark, uri, mime);
     g_bookmark_file_add_application(bookmark, uri, "RediWM Files", "rediwm-files %f");

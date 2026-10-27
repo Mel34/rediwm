@@ -54,7 +54,7 @@ pub fn dispatch(self: *Child) bool {
 fn reap(self: *Child) ?u32 {
     var status: u32 = 0;
     while (true) {
-        const rc = linux.wait4(self.pid, &status, linux.W.NOHANG, null);
+        const rc = linux.wait4(self.pid, @ptrCast(&status), linux.W.NOHANG, null);
         switch (linux.errno(rc)) {
             .INTR => continue,
             .SUCCESS => return if (rc == self.pid) status else null,

@@ -250,14 +250,19 @@ panel painting. The key rules:
   compositor imports). Parsing/persistence is `config/`, applying and reloads
   `config_runtime/`, shared raster code (`text`, `anim`, `sdf`, icons) `ui/`.
   `memory` owns the process allocator; executables own its shutdown.
-* ReleaseSafe's `_FORTIFY_SOURCE` breaks translate-c on `bits/fcntl2.h`: use
-  `std.os.linux` or `@cUndef("_FORTIFY_SOURCE")`. Never `@cInclude`
-  glib/gobject/gio/librsvg; hand-declare the ABI. No runtime `parseColor()`
-  in comptime defaults.
+* Zig 0.17 has no `@cImport`: the build translates header roots in `src/c/`
+  into modules (`support.cHeaders`): `c` (libc), `c_gfx` (libc, cairo,
+  freetype, harfbuzz, fontconfig, xkbcommon), `c_pulse`, `c_libinput`,
+  `c_png`, `c_archive`. Add a header to its root; a module links nothing, so
+  artifacts link their libraries. The roots undefine `_FORTIFY_SOURCE`
+  (fortified wrappers break translate-c in ReleaseSafe) and define
+  `_GNU_SOURCE`, so socket calls take `.{ .__sockaddr__ = @ptrCast(&addr) }`.
+  Never translate glib/gobject/gio/librsvg; hand-declare the ABI. No runtime
+  `parseColor()` in comptime defaults.
 * `std.os.linux.*` return `-errno` in `usize` (`std.os.linux.errno`);
   `std.posix.system.*` are libc (`std.posix.errno`).
-* **wlroots bindings** live in `src/wlr/`, backed by one `@cImport` against
-  the installed headers; read `src/wlr/AGENTS.md` before extending them.
+* **wlroots bindings** live in `src/wlr/`, backed by one translation of
+  the installed headers (`src/wlr/c.h`, module `wlr_c`); read `src/wlr/AGENTS.md` before extending them.
   `ext.*`/`wp.*` Wayland types need their protocol in `build/protocols.zig`.
   Nullable outputs/buffers are represented explicitly. Full layout checks
   protect embedded input devices, so no extra Pointer padding is needed.

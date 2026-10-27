@@ -37,6 +37,7 @@ pub fn add(ctx: Context) Apps {
     files.root_module.addImport("wayland", wayland);
     inline for (.{ "wayland-client", "wayland-cursor", "xkbcommon", "gio-2.0", "gdk-pixbuf-2.0", "gobject-2.0", "glib-2.0" }) |lib| files.root_module.linkSystemLibrary(lib, .{});
     files.root_module.linkSystemLibrary("libarchive", .{});
+    files.root_module.addImport("c_archive", ctx.c.archive);
     addThumbCodec(b, files.root_module);
     addVolumes(b, files.root_module);
     addFilesTerminal(b, files.root_module, false);
@@ -44,11 +45,11 @@ pub fn add(ctx: Context) Apps {
     b.getInstallStep().dependOn(&terminal_license.step);
     // Use the system C++ ABI, matching the distro's libtorrent-rasterbar.
     const torrents = b.addSystemCommand(&.{ "sh", "-c", "exec c++ -std=c++17 -Wall -Wextra -Werror -Wno-deprecated-declarations -Wno-missing-field-initializers $(pkg-config --cflags libtorrent-rasterbar gio-unix-2.0 json-glib-1.0) \"$@\" $(pkg-config --libs libtorrent-rasterbar gio-unix-2.0 json-glib-1.0)", "build-transfers" });
-    torrents.addArg(if (optimize == .Debug) "-O0" else "-O2");
+    torrents.addArg(if (optimize == .debug) "-O0" else "-O2");
     torrents.addArg("-g");
     torrents.addArg("-D_GLIBCXX_ASSERTIONS");
     torrents.addArg("-fstack-protector-strong");
-    if (optimize != .Debug) torrents.addArg("-D_FORTIFY_SOURCE=3");
+    if (optimize != .debug) torrents.addArg("-D_FORTIFY_SOURCE=3");
     inline for (.{ "helper.cpp", "helper_transfers.cpp", "helper_peers.cpp", "helper_tray.cpp" }) |part| torrents.addFileArg(b.path("src/files/torrent/" ++ part));
     torrents.addFileInput(b.path("src/files/torrent/helper.hpp"));
     torrents.addArg("-o");
@@ -69,9 +70,9 @@ pub fn add(ctx: Context) Apps {
     );
     b.getInstallStep().dependOn(&install_files.step);
     b.getInstallStep().dependOn(&install_files_desktop_entry.step);
-    const install_files_icon = b.addSystemCommand(&.{ "install", "-Dm644" });
+    const install_files_icon = b.addSystemCommand(&.{ "install", "-Dm644", "-t" });
+    install_files_icon.addDirectoryArg(support.installed(.prefix, "share/icons/hicolor/256x256/apps"));
     install_files_icon.addFileArg(b.path("assets/icons/redi-fm-icon.png"));
-    install_files_icon.addArg(b.getInstallPath(.prefix, "share/icons/hicolor/256x256/apps/redi-fm-icon.png"));
     b.getInstallStep().dependOn(&install_files_icon.step);
     // rediwm-files links neither wlroots-server nor libinput/libpulse, so it
     // can be built (and its dependencies checked) without the rest of this
@@ -104,7 +105,7 @@ pub fn add(ctx: Context) Apps {
     const bash_hook = b.addLibrary(.{
         .name = "rediwm-files-bash",
         .linkage = .dynamic,
-        .root_module = b.createModule(.{ .target = target, .optimize = .ReleaseFast, .link_libc = true, .sanitize_c = .off }),
+        .root_module = b.createModule(.{ .target = target, .optimize = .fast, .link_libc = true, .sanitize_c = .off }),
     });
     bash_hook.root_module.addCSourceFile(.{ .file = b.path("src/files/terminal/bash.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
     bash_hook.root_module.linkSystemLibrary("readline", .{});

@@ -212,7 +212,7 @@ pub const Pool = struct {
 
     pub fn startJob(self: *Pool, path: []const u8) !*Job {
         var path_buf: [4096]u8 = undefined;
-        const path_z = try std.fmt.bufPrintZ(&path_buf, "{s}", .{path});
+        const path_z = try std.fmt.bufPrintSentinel(&path_buf, "{s}", .{path}, 0);
 
         const root_fd = c.open(path_z, c.O_RDONLY | c.O_DIRECTORY | c.O_NOFOLLOW | c.O_CLOEXEC);
         if (root_fd < 0) {
@@ -334,7 +334,7 @@ fn walkDirectory(pool: *Pool, ctx: *WorkerContext, job: *Job, dir_fd: c_int, dep
 
     while (true) {
         if (job.cancelled.load(.acquire)) return;
-        const rc = linux.getdents64(dir_fd, buf.ptr, buf.len);
+        const rc = linux.getdents64(dir_fd, buf.ptr, @intCast(buf.len));
         const err = linux.errno(rc);
         if (err != .SUCCESS) {
             if (err != .NOENT and err != .BADF) {

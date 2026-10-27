@@ -33,7 +33,7 @@ test "scroll underlay paints beneath rows, which skip their own fill when told t
             r.fillRect(scroll.computed_x, scroll.computed_y, scroll.computed_width, 10, .{ .color = .{ 1, 0, 0, 1 } });
         }
     };
-    var pixels = [_]u32{0} ** (20 * 20);
+    var pixels = @as([20 * 20]u32, @splat(0));
     var r = Renderer.init(&pixels, 20, 20, 1);
     var row = Widget{
         .kind = .{ .row = .{ .selected = true, .underlay = true } },
@@ -73,7 +73,7 @@ test "scroll underlay paints beneath rows, which skip their own fill when told t
 }
 
 test "fillRect paints solid color inside a device-pixel buffer" {
-    var pixels = [_]u32{0} ** (10 * 10);
+    var pixels = @as([10 * 10]u32, @splat(0));
     var r = Renderer.init(&pixels, 10, 10, 1);
     r.fillRect(1, 1, 4, 4, .{ .color = .{ 1, 0, 0, 1 } });
     // Center of the fill should be fully opaque red; a corner outside it stays clear.
@@ -82,7 +82,7 @@ test "fillRect paints solid color inside a device-pixel buffer" {
 }
 
 test "fillRect respects the active clip rect" {
-    var pixels = [_]u32{0} ** (10 * 10);
+    var pixels = @as([10 * 10]u32, @splat(0));
     var r = Renderer.init(&pixels, 10, 10, 1);
     r.clip = .{ .x = 0, .y = 0, .w = 5, .h = 10 };
     r.fillRect(0, 0, 10, 10, .{ .color = .{ 1, 1, 1, 1 } });
@@ -92,7 +92,7 @@ test "fillRect respects the active clip rect" {
 
 test "replacement fills preserve alpha, rounded corners and damage clips" {
     for ([_]f32{ 1, 1.5 }) |scale| {
-        var pixels = [_]u32{0xffeeeeee} ** (30 * 30);
+        var pixels = @as([30 * 30]u32, @splat(0xffeeeeee));
         var r = Renderer.init(&pixels, 30, 30, scale);
         const style: RectStyle = .{ .color = .{ 0.4, 0.2, 0.1, 0.5 }, .radius = 4, .replace = true };
         r.fillRect(2, 2, 16, 16, style);
@@ -185,7 +185,7 @@ test "prototype button states retain neutral premultiplied fills" {
     const saved = theme.global;
     defer theme.global = saved;
     theme.global = .{};
-    var pixels = [_]u32{0} ** (30 * 30);
+    var pixels = @as([30 * 30]u32, @splat(0));
     var renderer = Renderer.init(&pixels, 30, 30, 1);
     const Callback = struct {
         fn call(_: ?*anyopaque, _: usize) void {}
@@ -382,12 +382,12 @@ test "smooth image sampling is exact at one to one, blends between pixels and sh
 
     // Shrinking a flat translucent image by 1.3 keeps its premultiplied colour,
     // also at the edge, where the footprint leaves the image.
-    const flat = [_]u32{0x80402010} ** 16;
+    const flat = @as([16]u32, @splat(0x80402010));
     const small: Image = .{ .pixels = &flat, .width = 4, .height = 4 };
     for ([_]f32{ 0.1, 0.5, 2, 3.9 }) |at| try std.testing.expectEqual(@as(u32, 0x80402010), boxSample(small, at, at, 1.3));
 
     // Placed 1:1 on a pixel boundary it reproduces the image.
-    var pixels = [_]u32{0} ** 16;
+    var pixels = @as([16]u32, @splat(0));
     var r = Renderer.init(&pixels, 4, 4, 1);
     r.drawImageSmooth(1, 1, 2, 2, 0, image);
     try std.testing.expectEqual(black, pixels[1 * 4 + 1]);

@@ -18,9 +18,9 @@ pub fn Types(comptime OutputLayout: type) type {
             height: i32,
 
             comptime {
-                for (@typeInfo(XdgOutputV1).@"struct".fields) |field| {
-                    assertFieldOffset(XdgOutputV1, c.wlr_xdg_output_v1, field.name);
-                    assertSameLayout(field.type, @FieldType(c.wlr_xdg_output_v1, field.name));
+                for (@typeInfo(XdgOutputV1).@"struct".field_names) |field_name| {
+                    assertFieldOffset(XdgOutputV1, c.wlr_xdg_output_v1, field_name);
+                    assertSameLayout(@FieldType(XdgOutputV1, field_name), @FieldType(c.wlr_xdg_output_v1, field_name));
                 }
             }
         };
@@ -40,9 +40,9 @@ pub fn Types(comptime OutputLayout: type) type {
 
             comptime {
                 const Real = c.wlr_xdg_output_manager_v1;
-                for (@typeInfo(XdgOutputManagerV1).@"struct".fields) |field| {
-                    assertFieldOffset(XdgOutputManagerV1, Real, field.name);
-                    assertSameLayout(field.type, @FieldType(Real, field.name));
+                for (@typeInfo(XdgOutputManagerV1).@"struct".field_names) |field_name| {
+                    assertFieldOffset(XdgOutputManagerV1, Real, field_name);
+                    assertSameLayout(@FieldType(XdgOutputManagerV1, field_name), @FieldType(Real, field_name));
                 }
                 const Events = @FieldType(XdgOutputManagerV1, "events");
                 assertFieldOffset(Events, @FieldType(Real, "events"), "destroy");

@@ -160,8 +160,9 @@ pub fn switchVt(keyboard: *Keyboard, syms: []const xkb.Keysym) bool {
     const session = keyboard.server.session orelse return false;
     for (syms) |sym| {
         const value = @intFromEnum(sym);
-        if (value < xkb.Keysym.XF86Switch_VT_1 or value > xkb.Keysym.XF86Switch_VT_12) continue;
-        session.changeVt(value - xkb.Keysym.XF86Switch_VT_1 + 1) catch log.warn("could not switch to VT {d}", .{value - xkb.Keysym.XF86Switch_VT_1 + 1});
+        const first = @intFromEnum(xkb.Keysym.XF86Switch_VT_1);
+        if (value < first or value > @intFromEnum(xkb.Keysym.XF86Switch_VT_12)) continue;
+        session.changeVt(value - first + 1) catch log.warn("could not switch to VT {d}", .{value - first + 1});
         return true;
     }
     return false;

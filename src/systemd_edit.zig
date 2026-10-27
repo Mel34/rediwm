@@ -4,10 +4,7 @@ const std = @import("std");
 const systemd = @import("systemd.zig");
 const gpa = @import("main.zig").gpa;
 const Child = @import("session/child.zig");
-const c = @cImport({
-    @cInclude("sys/socket.h");
-    @cInclude("unistd.h");
-});
+const c = @import("c");
 
 pub const Request = struct {
     client: *systemd.Client,

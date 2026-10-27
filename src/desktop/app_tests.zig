@@ -60,7 +60,7 @@ test "desktop shortcut picker searches, confirms separately and cancels without 
 
 test "desktop pointer motion repaints only when visible state changes" {
     var icons = [_]Icon{.{ .item = .{ .path = "", .name = "", .icon = null }, .cell = .{}, .born = 0 }};
-    var app = App{ .worker = undefined, .icons = .{ .items = &icons, .capacity = icons.len }, .dirty = false };
+    var app = App{ .worker = undefined, .icons = .fromOwnedSlice(&icons), .dirty = false };
     app.motion(200, 200);
     app.motion(300, 250);
     try std.testing.expect(!app.dirty);
@@ -198,7 +198,7 @@ test "icon group cache matches fresh pixels after visual and content changes" {
         icons[0].name_cache.deinit();
         icons[0].raster.deinit();
     }
-    var app = App{ .worker = undefined, .geometry = .{ .w = 200, .h = 240 }, .icons = .{ .items = &icons, .capacity = icons.len } };
+    var app = App{ .worker = undefined, .geometry = .{ .w = 200, .h = 240 }, .icons = .fromOwnedSlice(&icons) };
     defer app.edit_text.deinit(a);
     defer app.rename_editor.deinit();
     const ic = &icons[0];
@@ -230,8 +230,8 @@ test "icon group cache matches fresh pixels after visual and content changes" {
     try expectFreshIconPixels(&app, 200, 240, 1, 0, 1, 0, 1000);
     ic.replaceItem(try copyItem(.{ .path = "", .name = "Beta icon", .icon = null }));
     try expectFreshIconPixels(&app, 200, 240, 1, 0, 1, 0, 1000);
-    const blue = [_]u32{0xff2040e0} ** 4;
-    const red = [_]u32{0xffe04020} ** 4;
+    const blue = @as([4]u32, @splat(0xff2040e0));
+    const red = @as([4]u32, @splat(0xffe04020));
     for ([_]?@import("../icon_cache.zig").Entry{ .{ .pixels = &blue, .size = 2 }, .{ .pixels = &red, .size = 2 }, null }) |icon| {
         ic.replaceItem(try copyItem(.{ .path = "", .name = "Beta icon", .icon = icon }));
         try expectFreshIconPixels(&app, 200, 240, 1, 0, 1, 0, 1000);

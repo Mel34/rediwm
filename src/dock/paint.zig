@@ -19,7 +19,7 @@ pub fn hashValue(hasher: *std.hash.Wyhash, value: anytype) void {
             hasher.update(&.{1});
             hashValue(hasher, v);
         } else hasher.update(&.{0}),
-        .@"struct" => |info| inline for (info.fields) |field| hashValue(hasher, @field(value, field.name)),
+        .@"struct" => |info| inline for (info.field_names) |name| hashValue(hasher, @field(value, name)),
         .pointer => {
             hasher.update(std.mem.asBytes(&value.len));
             hasher.update(std.mem.sliceAsBytes(value));

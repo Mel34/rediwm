@@ -40,9 +40,9 @@ pub const RenderPass = opaque {
         comptime {
             const Real = c.wlr_render_texture_options;
             assertSameLayout(TextureOptions, Real);
-            for (@typeInfo(TextureOptions).@"struct".fields) |field| {
-                assertFieldOffset(TextureOptions, Real, field.name);
-                assertSameLayout(field.type, @FieldType(Real, field.name));
+            for (@typeInfo(TextureOptions).@"struct".field_names) |field_name| {
+                assertFieldOffset(TextureOptions, Real, field_name);
+                assertSameLayout(@FieldType(TextureOptions, field_name), @FieldType(Real, field_name));
             }
         }
     };
@@ -56,9 +56,9 @@ pub const RenderPass = opaque {
         comptime {
             const Real = c.wlr_render_rect_options;
             assertSameLayout(RectOptions, Real);
-            for (@typeInfo(RectOptions).@"struct".fields) |field| {
-                assertFieldOffset(RectOptions, Real, field.name);
-                assertSameLayout(field.type, @FieldType(Real, field.name));
+            for (@typeInfo(RectOptions).@"struct".field_names) |field_name| {
+                assertFieldOffset(RectOptions, Real, field_name);
+                assertSameLayout(@FieldType(RectOptions, field_name), @FieldType(Real, field_name));
             }
         }
     };

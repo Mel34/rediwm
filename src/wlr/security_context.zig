@@ -1,5 +1,5 @@
 //! wlr.SecurityContextManagerV1 / wlr.SecurityContextV1State, backed by
-//! @cImport against wlr/types/wlr_security_context_v1.h. Read
+//! translate-c against wlr/types/wlr_security_context_v1.h. Read
 //! src/global_filter.zig and the top-level AGENTS.md's security-context
 //! note before changing this: it's what hides privileged globals from
 //! sandboxed clients.

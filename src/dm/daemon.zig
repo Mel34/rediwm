@@ -14,10 +14,7 @@ const proto = @import("proto.zig");
 const dm_ipc = @import("dm_ipc");
 const ws = @import("wayland_sessions");
 
-const c = @cImport({
-    @cInclude("pwd.h");
-    @cInclude("sys/mman.h");
-});
+const c = @import("c");
 
 const log = std.log.scoped(.rediwm_dm);
 
@@ -39,7 +36,7 @@ fn defaultUserValidator(user: []const u8, range: ws.UidRange) bool {
     var pw: c.struct_passwd = undefined;
     var res: ?*c.struct_passwd = null;
     var name_buf: [256:0]u8 = undefined;
-    const name_z = std.fmt.bufPrintZ(&name_buf, "{s}", .{user}) catch return false;
+    const name_z = std.fmt.bufPrintSentinel(&name_buf, "{s}", .{user}, 0) catch return false;
     if (c.getpwnam_r(name_z.ptr, &pw, &buf, buf.len, &res) != 0 or res == null) return false;
     const shell = if (pw.pw_shell) |s| std.mem.span(s) else "";
     return ws.loginAccount(range, pw.pw_uid, shell);
@@ -226,7 +223,7 @@ pub const Daemon = struct {
         self.children.add(self.gpa, pid) catch |err| {
             _ = linux.kill(pid, .KILL);
             var status: u32 = 0;
-            while (linux.errno(linux.wait4(pid, &status, 0, null)) == .INTR) {}
+            while (linux.errno(linux.wait4(pid, @ptrCast(&status), 0, null)) == .INTR) {}
             reaped = true;
             return err;
         };
@@ -279,19 +276,19 @@ pub const Daemon = struct {
         for ([_]?[*:0]const u8{
             "rediwm-dm",
             "--worker",
-            (std.fmt.bufPrintZ(&ctrl_buf, "{d}", .{ctrl_fd}) catch linux.exit_group(1)).ptr,
+            (std.fmt.bufPrintSentinel(&ctrl_buf, "{d}", .{ctrl_fd}, 0) catch linux.exit_group(1)).ptr,
         }) |arg| {
             args[n] = arg;
             n += 1;
         }
         if (greeter_fd >= 0) {
             args[n] = "--greeter-fd";
-            args[n + 1] = (std.fmt.bufPrintZ(&greeter_buf, "{d}", .{greeter_fd}) catch linux.exit_group(1)).ptr;
+            args[n + 1] = (std.fmt.bufPrintSentinel(&greeter_buf, "{d}", .{greeter_fd}, 0) catch linux.exit_group(1)).ptr;
             n += 2;
         }
         if (self.confdir) |dir| {
             args[n] = "--confdir";
-            args[n + 1] = (std.fmt.bufPrintZ(&confdir_buf, "{s}", .{dir}) catch linux.exit_group(1)).ptr;
+            args[n + 1] = (std.fmt.bufPrintSentinel(&confdir_buf, "{s}", .{dir}, 0) catch linux.exit_group(1)).ptr;
             n += 2;
         }
         if (self.is_test) args[n] = "--test";

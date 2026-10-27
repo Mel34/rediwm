@@ -69,7 +69,7 @@ pub const Operation = struct {
     pub fn start(kind: Kind, io: std.Io, path: []const u8, im: ?Image, stamp: ?Stamp) !*Operation {
         const self = try a.create(Operation);
         errdefer a.destroy(self);
-        self.* = .{ .kind = kind, .path = try a.dupeZ(u8, path), .io = io, .stamp = stamp };
+        self.* = .{ .kind = kind, .path = try a.dupeSentinel(u8, path, 0), .io = io, .stamp = stamp };
         errdefer a.free(self.path);
         if (im) |image| self.image = .{ .pixels = try a.dupe(u32, image.pixels), .w = image.w, .h = image.h };
         errdefer if (self.image) |image| image.deinit();

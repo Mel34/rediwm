@@ -268,7 +268,7 @@ pub fn run(init: std.process.Init, paths: []const [:0]const u8, instance: *@impo
     // Initial commit to start xdg configuration sequence
     self.surface.commit();
 
-    var pending_token = try a.dupeZ(u8, initial_token);
+    var pending_token = try a.dupeSentinel(u8, initial_token, 0);
     defer a.free(pending_token);
     while (self.running) {
         self.app.sync();
@@ -299,7 +299,7 @@ pub fn run(init: std.process.Init, paths: []const [:0]const u8, instance: *@impo
         if (self.configured and self.applied_scale > 0 and pending_token.len > 0) {
             if (self.activation) |activation| activation.activate(pending_token, self.surface);
             a.free(pending_token);
-            pending_token = try a.dupeZ(u8, "");
+            pending_token = try a.dupeSentinel(u8, "", 0);
         }
 
         while (!display.prepareRead()) {
@@ -340,7 +340,7 @@ pub fn run(init: std.process.Init, paths: []const [:0]const u8, instance: *@impo
                     const req = parsed.value;
                     if (req.path.len == 0) self.app.newTab() catch {} else if (std.fs.path.isAbsolute(req.path) and std.mem.indexOfScalar(u8, req.path, 0) == null) self.app.open(req.path);
                     if (req.token.len > 0 and std.mem.indexOfScalar(u8, req.token, 0) == null) {
-                        const owned = try a.dupeZ(u8, req.token);
+                        const owned = try a.dupeSentinel(u8, req.token, 0);
                         a.free(pending_token);
                         pending_token = owned;
                     }

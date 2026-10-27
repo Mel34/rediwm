@@ -24,7 +24,7 @@ fn printUsage() void {
         \\  --marker <PATH>          Custom path for autologin marker file
         \\
     ;
-    const c = @cImport({ @cInclude("unistd.h"); });
+    const c = @import("c");
     _ = c.write(1, usage.ptr, usage.len);
 }
 

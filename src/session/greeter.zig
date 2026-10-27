@@ -7,11 +7,7 @@ const std = @import("std");
 const wl = @import("wayland").server.wl;
 const dm_ipc = @import("dm_ipc.zig");
 const ws = @import("wayland_sessions.zig");
-const c = @cImport({
-    @cInclude("pwd.h");
-    @cInclude("unistd.h");
-    @cInclude("sys/mman.h");
-});
+const c = @import("c");
 
 extern fn rediwm_secret_clear([*]u8, usize) void;
 

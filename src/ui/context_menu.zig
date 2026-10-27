@@ -1,6 +1,6 @@
 //! Shared context-menu appearance for Files, Editor and the desktop.
 const std = @import("std");
-const c = @cImport(@cInclude("cairo.h"));
+const c = @import("c_gfx");
 const ui = @import("cairo.zig");
 const theme = @import("theme.zig");
 const IconId = @import("layout.zig").IconId;

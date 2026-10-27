@@ -50,7 +50,7 @@ pub const Section = struct {
     }
 
     pub fn capture(s: *Section, cc: *panel.ControlCenter, keycode: u32, sym: xkb.Keysym, mods: wlr.Keyboard.ModifierMask) void {
-        switch (@intFromEnum(sym)) {
+        switch (sym) {
             xkb.Keysym.Escape => {
                 s.cancel();
                 cc.refresh();

@@ -1,7 +1,7 @@
-//! wlr.Box / wlr.FBox, backed by @cImport against wlr/util/box.h instead
+//! wlr.Box / wlr.FBox, backed by translate-c against wlr/util/box.h instead
 //! of a hand-mirrored extern struct. The four fields are redeclared here
 //! only so Zig's method-call sugar works on them (an alias to the
-//! @cImport type directly can't carry extra pub fns); the comptime
+//! translate-c type directly can't carry extra pub fns); the comptime
 //! asserts below keep that redeclaration honest against the real header.
 const c = @import("c.zig").c;
 const assertFieldOffset = @import("signal.zig").assertFieldOffset;

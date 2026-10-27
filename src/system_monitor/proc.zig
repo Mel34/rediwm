@@ -1,16 +1,6 @@
 //! Bounded Linux proc readers. No compositor, Wayland or UI dependencies.
 const std = @import("std");
-pub const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("unistd.h");
-    @cInclude("fcntl.h");
-    @cInclude("dirent.h");
-    @cInclude("pwd.h");
-    @cInclude("poll.h");
-    @cInclude("sys/eventfd.h");
-    @cInclude("time.h");
-});
+pub const c = @import("c");
 
 pub const Identity = struct {
     pid: i32,
@@ -69,7 +59,7 @@ pub fn readAt(dir: c_int, path: [*:0]const u8, buf: []u8) ![]const u8 {
 pub fn openProcess(pid: i32) !c_int {
     if (pid <= 0) return error.ProcessExited;
     var buf: [64]u8 = undefined;
-    const path = try std.fmt.bufPrintZ(&buf, "/proc/{d}", .{pid});
+    const path = try std.fmt.bufPrintSentinel(&buf, "/proc/{d}", .{pid}, 0);
     const fd = c.open(path, c.O_DIRECTORY | c.O_RDONLY | c.O_CLOEXEC | c.O_NOFOLLOW);
     if (fd < 0) return switch (std.posix.errno(fd)) {
         .ACCES, .PERM => error.PermissionDenied,

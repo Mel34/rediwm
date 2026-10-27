@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
 """Replace a live executable and restart twice, preserving PID and renewing IPC."""
-import importlib.util
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import time
-from unittest.mock import patch
 
 from ipc_client import ROOT, IPCClient, stop_process
 
 
 def run():
-    spec = importlib.util.spec_from_file_location('restart_session', ROOT / 'scripts/restart-session.py')
-    restart = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(restart)
+    restart = ROOT / 'zig-out/release-safe/bin/rediwm-restart'
     with tempfile.TemporaryDirectory(prefix='rediwm-restart-') as directory:
         tmp = Path(directory)
         binary = tmp / 'rediwm'
@@ -36,20 +32,21 @@ def run():
                     assert proc.poll() is None, 'compositor exited at startup'
                     assert time.monotonic() < deadline, 'IPC not ready'
                     time.sleep(.05)
-                with patch.object(restart, 'INSTALLED', binary), patch.dict(os.environ, env, clear=True):
-                    for _ in range(2):
-                        with IPCClient(env['REDIWM_SOCKET']) as previous:
-                            assert previous.request(query='version')
-                            staged = tmp / 'replacement'
-                            shutil.copy2(source, staged)
-                            staged.replace(binary)
-                            assert os.readlink(f'/proc/{proc.pid}/exe').endswith(' (deleted)')
-                            restart.main()
-                            assert proc.poll() is None, 'login process exited'
-                            assert Path(f'/proc/{proc.pid}/exe').stat().st_ino == binary.stat().st_ino
-                            assert previous.sock.recv(1) == b'', 'old client connection survived restart'
-                    with IPCClient(env['REDIWM_SOCKET']) as ipc:
-                        assert ipc.request(query='outputs'), 'output missing after restart'
+                for _ in range(2):
+                    with IPCClient(env['REDIWM_SOCKET']) as previous:
+                        assert previous.request(query='version')
+                        staged = tmp / 'replacement'
+                        shutil.copy2(source, staged)
+                        staged.replace(binary)
+                        assert os.readlink(f'/proc/{proc.pid}/exe').endswith(' (deleted)')
+                        result = subprocess.run([str(restart), str(binary), env['REDIWM_SOCKET']], env=env, capture_output=True, text=True, timeout=40)
+                        assert result.returncode == 0, result.stdout + result.stderr
+                        assert 'restarted successfully' in result.stdout, result.stdout
+                        assert proc.poll() is None, 'login process exited'
+                        assert Path(f'/proc/{proc.pid}/exe').stat().st_ino == binary.stat().st_ino
+                        assert previous.sock.recv(1) == b'', 'old client connection survived restart'
+                with IPCClient(env['REDIWM_SOCKET']) as ipc:
+                    assert ipc.request(query='outputs'), 'output missing after restart'
                 print('PASS: two atomic executable replacements; PID preserved, IPC renewed, output available')
             except BaseException:
                 log.flush()

@@ -2,11 +2,7 @@
 //! before sending an IPP notification. This watcher never opens the socket.
 const std = @import("std");
 const endpoint = @import("endpoint.zig");
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cInclude("sys/inotify.h");
-    @cInclude("unistd.h");
-});
+const c = @import("c");
 const A = std.mem.Allocator;
 
 pub const Watch = struct {
@@ -24,7 +20,7 @@ pub const Watch = struct {
         if (name.len == 0 or std.mem.eql(u8, name, "/")) return null;
         const basename = try a.dupe(u8, name);
         errdefer a.free(basename);
-        const directory = try a.dupeZ(u8, parent);
+        const directory = try a.dupeSentinel(u8, parent, 0);
         defer a.free(directory);
         const fd = c.inotify_init1(c.IN_CLOEXEC | c.IN_NONBLOCK);
         if (fd < 0) {

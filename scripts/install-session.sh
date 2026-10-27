@@ -37,7 +37,6 @@ done
 if [ "$restart" = yes ]; then
     echo "This update restarts RediWM and closes connected applications. Save your work first."
 fi
-command -v python3 >/dev/null
 if [ "$prebuilt" = no ]; then
     # Reserve 2 CPU cores for system responsiveness unless overridden by ZIG_JOBS
     if [ -z "${ZIG_JOBS:-}" ]; then
@@ -50,15 +49,18 @@ if [ "$prebuilt" = no ]; then
     fi
     cd "$repo_dir"
     # Set by install.sh when it built the private wlroots (see scripts/build-wlroots.sh).
-    wlroots_flag=${REDIWM_WLROOTS_PREFIX:+-Dwlroots-prefix=$REDIWM_WLROOTS_PREFIX}
-    as_user zig build -Doptimize=ReleaseSafe -j"$ZIG_JOBS" --prefix "$release_dir" $wlroots_flag
+    if [ -n "${REDIWM_WLROOTS_PREFIX:-}" ]; then
+        as_user sh scripts/with-wlroots.sh "$REDIWM_WLROOTS_PREFIX" zig build -Doptimize=ReleaseSafe -j"$ZIG_JOBS" --prefix "$release_dir" -Dwlroots-prefix="$REDIWM_WLROOTS_PREFIX"
+    else
+        as_user zig build -Doptimize=ReleaseSafe -j"$ZIG_JOBS" --prefix "$release_dir"
+    fi
 fi
-for binary in rediwm rediwm-msg rediwm-theme rediwm-files rediwm-images rediwm-monitor rediwm-editor rediwm-pdf rediwm-share-picker rediwm-dm rediwm-accounts-helper; do
+for binary in rediwm rediwm-msg rediwm-theme rediwm-files rediwm-images rediwm-monitor rediwm-editor rediwm-pdf rediwm-share-picker rediwm-dm rediwm-accounts-helper rediwm-restart; do
     test -x "$release_dir/bin/$binary"
 done
 as_root sh "$repo_dir/scripts/install-session-root.sh" "$repo_dir" "$release_dir" "$dm_flag"
 if [ "$restart" = no ]; then
     echo 'Installed ReleaseSafe. Running session left as-is.'
 else
-    as_user python3 "$repo_dir/scripts/restart-session.py"
+    as_user "$release_dir/bin/rediwm-restart"
 fi

@@ -41,7 +41,7 @@ pub fn openSave(self: *App) void {
     var suggested = false;
     for (0..10000) |n| {
         const name = if (n == 0) std.fmt.bufPrint(&name_buf, "{s}-edited.png", .{base}) catch "edited.png" else std.fmt.bufPrint(&name_buf, "{s}-edited-{d}.png", .{ base, n }) catch "edited.png";
-        const dest = std.fmt.bufPrintZ(&buf, "{s}/{s}", .{ dir, name }) catch {
+        const dest = std.fmt.bufPrintSentinel(&buf, "{s}/{s}", .{ dir, name }, 0) catch {
             self.message(tr("The filename is too long."));
             return;
         };
@@ -100,7 +100,7 @@ pub fn confirmDialog(self: *App) void {
                 self.message(tr("Enter a filename or an absolute path."));
                 return;
             };
-            const path = if (std.fs.path.isAbsolute(name)) a.dupeZ(u8, name) catch return else std.fmt.allocPrintSentinel(a, "{s}/{s}", .{ std.fs.path.dirname(self.paths[self.selected]) orelse ".", name }, 0) catch return;
+            const path = if (std.fs.path.isAbsolute(name)) a.dupeSentinel(u8, name, 0) catch return else std.fmt.allocPrintSentinel(a, "{s}/{s}", .{ std.fs.path.dirname(self.paths[self.selected]) orelse ".", name }, 0) catch return;
             defer a.free(path);
             self.operation = edit.Operation.start(.save, self.io, path, self.image, null) catch {
                 self.message(tr("Could not start saving."));

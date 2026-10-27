@@ -6,10 +6,7 @@ const proto = @import("proto.zig");
 const dm_ipc = @import("dm_ipc");
 const ws = @import("wayland_sessions");
 
-const c = @cImport({
-    @cInclude("sys/socket.h");
-    @cInclude("unistd.h");
-});
+const c = @import("c");
 
 test {
     _ = proto;

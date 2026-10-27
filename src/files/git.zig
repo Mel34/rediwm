@@ -307,7 +307,7 @@ pub fn switchBranch(mem: Allocator, io: std.Io, environ: std.process.Environ, di
 
 pub fn scan(mem: Allocator, io: std.Io, environ: std.process.Environ, dir: []const u8) !?Repository {
     var canonical: [std.fs.max_path_bytes]u8 = undefined;
-    const zdir = try mem.dupeZ(u8, dir);
+    const zdir = try mem.dupeSentinel(u8, dir, 0);
     defer mem.free(zdir);
     if (c.realpath(zdir, &canonical) == null) return null;
     const directory = try mem.dupe(u8, std.mem.sliceTo(&canonical, 0));

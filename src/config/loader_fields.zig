@@ -219,40 +219,40 @@ pub fn enumHint(comptime T: type) []const u8 {
 }
 
 pub fn fieldHint(comptime T: type, comptime rules: anytype, key: []const u8) []const u8 {
-    inline for (std.meta.fields(T)) |field| {
-        if (std.mem.eql(u8, key, field.name)) {
-            if (comptime @field(rules, field.name) == .enumeration) return comptime enumHint(field.type);
-            return comptime ruleHint(@field(rules, field.name));
+    inline for (@typeInfo(T).@"struct".field_names) |field_name| {
+        if (std.mem.eql(u8, key, field_name)) {
+            if (comptime @field(rules, field_name) == .enumeration) return comptime enumHint(@FieldType(T, field_name));
+            return comptime ruleHint(@field(rules, field_name));
         }
     }
     return "valid";
 }
 
 pub fn applyField(target: anytype, allocator: Allocator, comptime rules: anytype, key: []const u8, value: []const u8) !bool {
-    inline for (std.meta.fields(@TypeOf(target.*))) |field| {
-        const rule = comptime @field(rules, field.name);
-        if (rule != .derived and std.mem.eql(u8, key, field.name)) {
+    inline for (@typeInfo(@TypeOf(target.*)).@"struct".field_names) |field_name| {
+        const rule = comptime @field(rules, field_name);
+        if (rule != .derived and std.mem.eql(u8, key, field_name)) {
             switch (comptime rule) {
-                .taskbar_items => @field(target, field.name) = try TaskbarItems.parse(value),
-                .boolean => @field(target, field.name) = try parseBool(value),
-                .string => @field(target, field.name) = try parseString(allocator, value),
-                .string_list => @field(target, field.name) = try window_rules.parseStringOrArray(allocator, value),
-                .json_string_list => @field(target, field.name) = try std.json.parseFromSliceLeaky([]const []const u8, allocator, value, .{ .allocate = .alloc_always }),
-                .uint => |range| @field(target, field.name) = try parseU32Range(value, range.min, range.max),
-                .int => |range| @field(target, field.name) = try parseI32Range(value, range.min, range.max),
-                .output_scale => @field(target, field.name) = try parseOutputScale(value),
-                .output_transform => @field(target, field.name) = try output_transform.parse(value),
+                .taskbar_items => @field(target, field_name) = try TaskbarItems.parse(value),
+                .boolean => @field(target, field_name) = try parseBool(value),
+                .string => @field(target, field_name) = try parseString(allocator, value),
+                .string_list => @field(target, field_name) = try window_rules.parseStringOrArray(allocator, value),
+                .json_string_list => @field(target, field_name) = try std.json.parseFromSliceLeaky([]const []const u8, allocator, value, .{ .allocate = .alloc_always }),
+                .uint => |range| @field(target, field_name) = try parseU32Range(value, range.min, range.max),
+                .int => |range| @field(target, field_name) = try parseI32Range(value, range.min, range.max),
+                .output_scale => @field(target, field_name) = try parseOutputScale(value),
+                .output_transform => @field(target, field_name) = try output_transform.parse(value),
                 .float => |range| {
-                    const Float = if (@typeInfo(field.type) == .optional) @typeInfo(field.type).optional.child else field.type;
+                    const Float = if (@typeInfo(@FieldType(@TypeOf(target.*), field_name)) == .optional) @typeInfo(@FieldType(@TypeOf(target.*), field_name)).optional.child else @FieldType(@TypeOf(target.*), field_name);
                     const v = try std.fmt.parseFloat(Float, value);
                     if (!std.math.isFinite(v) or v < range.min or v > range.max or
                         (range.exclusive_min and v == range.min)) return error.InvalidValue;
-                    @field(target, field.name) = v;
+                    @field(target, field_name) = v;
                 },
                 .zoom_steps => try parseZoomSteps(target, value),
-                .accel_profile => @field(target, field.name) = try parseAccelProfile(value),
-                .accel_point => @field(target, field.name) = try parseVec2(value),
-                .enumeration => @field(target, field.name) = try parseEnum(field.type, value),
+                .accel_profile => @field(target, field_name) = try parseAccelProfile(value),
+                .accel_point => @field(target, field_name) = try parseVec2(value),
+                .enumeration => @field(target, field_name) = try parseEnum(@FieldType(@TypeOf(target.*), field_name), value),
                 .derived => unreachable,
             }
             return true;

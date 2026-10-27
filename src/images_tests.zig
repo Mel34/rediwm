@@ -65,7 +65,7 @@ test "streaming decoder enforces dimensions before full raster allocation" {
     // PPM exposes dimensions in its header, before any pixel data arrives.
     const header = "P6\n32769 1\n255\n";
     try std.testing.expectEqual(@as(isize, header.len), c.write(fd, header.ptr, header.len));
-    const raster = [_]u8{0} ** (32769 * 3);
+    const raster = @as([32769 * 3]u8, @splat(0));
     try std.testing.expectEqual(@as(isize, raster.len), c.write(fd, &raster, raster.len));
     try std.testing.expectError(error.ImageTooLarge, loader.load(std.mem.sliceTo(&path, 0), false));
 }

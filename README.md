@@ -53,7 +53,7 @@ Installing never replaces your login manager
 
 ## Building and running
 
-Requirements: Zig 0.16, wlroots 0.20, and the development files for Wayland,
+Requirements: Zig 0.17, wlroots 0.20, and the development files for Wayland,
 wayland-protocols, xkbcommon, pixman, FreeType, HarfBuzz, Fontconfig,
 librsvg/GdkPixbuf, PangoCairo, libinput, PAM, libpulse, libpipewire-0.3, Poppler GLib,
 libseccomp, libarchive, libjpeg, libpng, libwebp and GNU Readline. Files embeds

@@ -2,11 +2,12 @@
 //! artifact is assembled from.
 
 const std = @import("std");
+const CHeaders = @import("support.zig").CHeaders;
 
 pub const Context = struct {
     b: *std.Build,
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
+    optimize: std.lang.Optimize,
     use_llvm: bool,
     wlroots_prefix: ?[]const u8,
     i18n_tool: *std.Build.Step.Compile,
@@ -19,4 +20,5 @@ pub const Context = struct {
     dbus_mod: *std.Build.Module,
     config_mod: *std.Build.Module,
     protocol_mod: *std.Build.Module,
+    c: CHeaders,
 };

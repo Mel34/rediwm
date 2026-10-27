@@ -89,7 +89,7 @@ pub fn main(init: std.process.Init) !u8 {
 fn loginSession(arena: std.mem.Allocator, bus: *login_bus.Bus, runtime_env: ?[]const u8, env: *std.process.Environ.Map, lease: *?Publication) !void {
     const session = try bus.login(arena);
     const runtime = runtime_env orelse return error.NoRuntimeDir;
-    const runtime_z = try arena.dupeZ(u8, runtime);
+    const runtime_z = try arena.dupeSentinel(u8, runtime, 0);
     var info: linux.Statx = undefined;
     _ = try sys.check(linux.statx(linux.AT.FDCWD, runtime_z, 0, .{ .UID = true, .MODE = true }, &info));
     if (info.uid != linux.getuid() or info.mode & 0o077 != 0) {
@@ -112,7 +112,7 @@ fn makePath(arena: std.mem.Allocator, path: []const u8) !void {
     var end: usize = 1;
     while (end <= path.len) : (end += 1) {
         if (end != path.len and path[end] != '/') continue;
-        const partial = try arena.dupeZ(u8, path[0..end]);
+        const partial = try arena.dupeSentinel(u8, path[0..end], 0);
         switch (linux.errno(linux.mkdirat(linux.AT.FDCWD, partial, 0o700))) {
             .SUCCESS, .EXIST => {},
             else => |err| return sys.errnoError(err),

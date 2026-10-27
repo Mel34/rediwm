@@ -6,13 +6,7 @@ const protocol = @import("protocol.zig");
 const Client = @import("server.zig").Client;
 const Server = @import("../Server.zig");
 const gpa = @import("../main.zig").gpa;
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cInclude("sys/eventfd.h");
-    @cInclude("fcntl.h");
-    @cInclude("unistd.h");
-    @cInclude("time.h");
-});
+const c = @import("c");
 
 pub const Job = struct {
     arena: std.heap.ArenaAllocator,

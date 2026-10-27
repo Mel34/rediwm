@@ -3,12 +3,7 @@
 //! one response. Requests that carry a secret are encoded into a caller-owned
 //! buffer that is wiped after sending, so no heap copy of a password ever exists.
 const std = @import("std");
-const c = @cImport({
-    @cInclude("sys/socket.h");
-    @cInclude("sys/un.h");
-    @cInclude("unistd.h");
-    @cInclude("errno.h");
-});
+const c = @import("c");
 
 /// Protocol frames are small; anything larger is a protocol violation.
 pub const max_frame = 64 * 1024;
@@ -230,7 +225,7 @@ test "dm requests are framed JSON in native byte order" {
         (try encodeRequest(&out, .cancel))[4..],
     );
     // The largest password the UI accepts still fits after worst-case escaping.
-    const control = [_]u8{1} ** 511;
+    const control = @as([511]u8, @splat(1));
     _ = try encodeRequest(&out, .{ .answer = &control });
 }
 

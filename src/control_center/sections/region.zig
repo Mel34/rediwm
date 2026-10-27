@@ -9,17 +9,7 @@ const gpa = @import("../../main.zig").gpa;
 const config = @import("config");
 const wl = @import("wayland").server.wl;
 const Child = @import("../../session/child.zig");
-const c = @cImport({
-    @cDefine("_GNU_SOURCE", "1");
-    @cUndef("_FORTIFY_SOURCE");
-    @cInclude("locale.h");
-    @cInclude("langinfo.h");
-    @cInclude("time.h");
-    @cInclude("stdio.h");
-    @cInclude("monetary.h");
-    @cInclude("fcntl.h");
-    @cInclude("unistd.h");
-});
+const c = @import("c");
 
 const days = [_]i18n.Message{ i18n.msg("Sunday"), i18n.msg("Monday"), i18n.msg("Tuesday"), i18n.msg("Wednesday"), i18n.msg("Thursday"), i18n.msg("Friday"), i18n.msg("Saturday") };
 
@@ -114,7 +104,7 @@ fn localeReady(_: c_int, _: wl.EventMask, cc: *panel.ControlCenter) c_int {
     while (lines.next()) |line| {
         const name = std.mem.trim(u8, line, " \t\r");
         if (name.len == 0 or std.mem.eql(u8, name, "POSIX") or std.mem.eql(u8, name, "C") or std.mem.startsWith(u8, name, "C.")) continue;
-        const z = a.dupeZ(u8, name) catch continue;
+        const z = a.dupeSentinel(u8, name, 0) catch continue;
         const locale = c.newlocale(c.LC_ALL_MASK, z, null) orelse continue;
         c.freelocale(locale);
         s.locales.append(a, z) catch break;
@@ -184,7 +174,7 @@ fn catalogForLocale(value: []const u8) ?[]const u8 {
 fn localeHint(a: std.mem.Allocator, cc: *panel.ControlCenter) ![]const u8 {
     const selected = i18n.resolve(cc.server.config.region.language, cc.server.environ);
     const canonical = catalogForLocale(selected) orelse return tr("Reopen running apps to use the selected language.");
-    const name = try a.dupeZ(u8, if (std.mem.indexOfScalar(u8, selected, '_') != null) selected else canonical);
+    const name = try a.dupeSentinel(u8, if (std.mem.indexOfScalar(u8, selected, '_') != null) selected else canonical, 0);
     if (c.newlocale(c.LC_MESSAGES_MASK, name, null)) |locale| {
         c.freelocale(locale);
         return tr("Reopen running apps to use the selected language.");
@@ -238,7 +228,7 @@ fn localeName(cc: *panel.ControlCenter, category: []const u8) []const u8 {
 }
 
 fn localeLabel(a: std.mem.Allocator, name: []const u8, item: c.nl_item) ![]const u8 {
-    const name_z = try a.dupeZ(u8, name);
+    const name_z = try a.dupeSentinel(u8, name, 0);
     const locale = c.newlocale(c.LC_ALL_MASK, name_z, null) orelse return name;
     defer c.freelocale(locale);
     const value = std.mem.span(c.nl_langinfo_l(item, locale));
@@ -260,7 +250,7 @@ fn timezone(a: std.mem.Allocator, cc: *panel.ControlCenter) ![]const u8 {
 }
 
 fn previews(a: std.mem.Allocator, prefs: config.loader.RegionConfig) !W {
-    const name = try a.dupeZ(u8, prefs.formats);
+    const name = try a.dupeSentinel(u8, prefs.formats, 0);
     const locale = c.newlocale(c.LC_ALL_MASK, name, null) orelse return text(tr("Regional formats are unavailable for this session."), 12, true);
     defer c.freelocale(locale);
     // Fixed examples make format changes easy to compare, with no preview timer.

@@ -31,8 +31,8 @@ pub const Profile = enum {
     performance,
 
     pub fn parse(text: []const u8) ?Profile {
-        inline for (std.meta.fields(Profile)) |field| {
-            if (std.mem.eql(u8, text, wireName(@enumFromInt(field.value)))) return @enumFromInt(field.value);
+        for (std.meta.tags(Profile)) |profile| {
+            if (std.mem.eql(u8, text, wireName(profile))) return profile;
         }
         return null;
     }
@@ -58,10 +58,10 @@ pub const Profile = enum {
 /// daemon offers at least balanced and power-saver; an empty set means the
 /// Profiles list has not arrived, so all three are assumed.
 pub fn next(active: Profile, available: std.EnumSet(Profile)) Profile {
-    const choices = if (available.count() == 0) std.EnumSet(Profile).initFull() else available;
+    const choices = if (available.count() == 0) std.EnumSet(Profile).full else available;
     var candidate = active;
-    for (0..std.meta.fields(Profile).len) |_| {
-        candidate = @enumFromInt((@intFromEnum(candidate) + 1) % std.meta.fields(Profile).len);
+    for (0..@typeInfo(Profile).@"enum".field_names.len) |_| {
+        candidate = @enumFromInt((@intFromEnum(candidate) + 1) % @typeInfo(Profile).@"enum".field_names.len);
         if (choices.contains(candidate)) return candidate;
     }
     return active;
@@ -79,7 +79,7 @@ pub const Manager = struct {
     /// forged PropertiesChanged cannot move the OSD.
     service_owner: ?[]u8 = null,
     active: ?Profile = null,
-    available: std.EnumSet(Profile) = .initEmpty(),
+    available: std.EnumSet(Profile) = .empty,
     closing: bool = false,
 
     pub fn create(server: *Server, allocator: std.mem.Allocator) !*Manager {
@@ -274,7 +274,7 @@ pub const Manager = struct {
         if (self.service_owner) |old| self.allocator.free(old);
         self.service_owner = null;
         self.active = null;
-        self.available = .initEmpty();
+        self.available = .empty;
         const name = unique orelse return;
         self.service_owner = self.allocator.dupe(u8, name) catch null;
     }
@@ -386,7 +386,7 @@ fn parseProperties(reader: *wire.Reader) !Update {
         if (std.mem.eql(u8, name, "ActiveProfile") and std.mem.eql(u8, sig, "s")) {
             update.active = Profile.parse(try entries.string());
         } else if (std.mem.eql(u8, name, "Profiles") and std.mem.eql(u8, sig, "aa{sv}")) {
-            var set: std.EnumSet(Profile) = .initEmpty();
+            var set: std.EnumSet(Profile) = .empty;
             var profiles = try entries.array(4);
             while (profiles.offset < profiles.bytes.len) {
                 var fields = try profiles.array(8);
@@ -413,13 +413,13 @@ test "profiles round-trip their wire names" {
 }
 
 test "cycling wraps and skips profiles the daemon lacks" {
-    var all: std.EnumSet(Profile) = .initFull();
+    var all: std.EnumSet(Profile) = .full;
     try std.testing.expectEqual(Profile.balanced, next(.power_saver, all));
     try std.testing.expectEqual(Profile.performance, next(.balanced, all));
     try std.testing.expectEqual(Profile.power_saver, next(.performance, all));
     all.remove(.performance);
     try std.testing.expectEqual(Profile.power_saver, next(.balanced, all));
-    try std.testing.expectEqual(Profile.performance, next(.balanced, .initEmpty()));
+    try std.testing.expectEqual(Profile.performance, next(.balanced, .empty));
 }
 
 test "properties parse the active profile and the offered set" {

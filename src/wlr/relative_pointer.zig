@@ -1,5 +1,5 @@
 //! wlr.RelativePointerManagerV1 / wlr.RelativePointerV1, backed by
-//! @cImport against wlr/types/wlr_relative_pointer_v1.h.
+//! translate-c against wlr/types/wlr_relative_pointer_v1.h.
 //! RelativePointerV1 is not referenced by name anywhere in RediWM, but
 //! its layout still has to be right: the manager's `relative_pointers`
 //! list and `events.new_relative_pointer` signal are typed in terms of

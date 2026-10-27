@@ -1,6 +1,6 @@
 //! Safety net for the facade's one necessary hand-declared shape: the
 //! `events` block of a wlr struct, where a field has to be retyped from
-//! @cImport's raw `wl_signal` to zig-wayland's `wl.Signal(T)` to get
+//! translate-c's raw `wl_signal` to zig-wayland's `wl.Signal(T)` to get
 //! `.add()`/`.get()`/`.emit()` for free. That retyping is safe only
 //! because `struct wl_signal` is just one `wl_list` (two pointers) and
 //! always will be -- these asserts turn any future drift (a struct

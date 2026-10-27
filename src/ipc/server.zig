@@ -372,7 +372,7 @@ fn detectSandbox(pid: i32, client_fd: c_int, allocator: std.mem.Allocator) ?Sand
     defer if (pidfd >= 0) closeFd(pidfd);
 
     var proc_buf: [64]u8 = undefined;
-    const proc_path = std.fmt.bufPrintZ(&proc_buf, "/proc/{d}", .{pid}) catch return null;
+    const proc_path = std.fmt.bufPrintSentinel(&proc_buf, "/proc/{d}", .{pid}, 0) catch return null;
 
     const proc_fd = c.open(proc_path.ptr, .{ .ACCMODE = .RDONLY, .DIRECTORY = true, .CLOEXEC = true });
     if (proc_fd < 0) return null;

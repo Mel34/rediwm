@@ -2,9 +2,7 @@
 //! tinting happens at paint time, so hover/selection never rerasterizes SVGs.
 const std = @import("std");
 const IconId = @import("layout.zig").IconId;
-const c = @cImport({
-    @cInclude("cairo.h");
-});
+const c = @import("c_gfx");
 /// The start-button logo; not an `IconId` glyph because it keeps its own colours.
 pub const redi_logo = @embedFile("redi-logo");
 /// The Settings app's colour icon (`settings_icon_name`), for when neither the
@@ -43,7 +41,7 @@ const Entry = struct { id: IconId, mask: Mask };
 var cache: [64]?Entry = @splat(null);
 var next: usize = 0;
 
-var overrides: [std.meta.fields(IconId).len]?[]u8 = @splat(null);
+var overrides: [@typeInfo(IconId).@"enum".field_names.len]?[]u8 = @splat(null);
 var pack_root: []const u8 = "";
 var source_mutex: std.posix.system.pthread_mutex_t = .{};
 

@@ -266,7 +266,7 @@ pub fn finishEdit(self: *App) void {
 pub fn choiceEntry(self: *App, index: usize) ?@import("dotdesktop.zig").parser.AppEntry {
     var n: usize = 0;
     for (self.catalog) |entry| {
-        if (self.edit_text.items.len > 0 and std.ascii.indexOfIgnoreCase(entry.name, self.edit_text.items) == null) continue;
+        if (self.edit_text.items.len > 0 and std.ascii.findIgnoreCase(entry.name, self.edit_text.items) == null) continue;
         if (n == index) return entry;
         n += 1;
     }

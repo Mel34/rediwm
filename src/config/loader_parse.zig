@@ -60,7 +60,7 @@ pub fn parse(allocator: Allocator, bytes: []const u8, path: []const u8) !Config 
     var current_sandbox_allow: SandboxAllowRule = .{};
     var have_current_sandbox_allow = false;
     var section: Section = .none;
-    var target_flags: [anim.Target.count]anim_cfg.TargetFlags = [_]anim_cfg.TargetFlags{.{}} ** anim.Target.count;
+    var target_flags: [anim.Target.count]anim_cfg.TargetFlags = @splat(.{});
     var line_no: usize = 0;
 
     var lines = std.mem.splitScalar(u8, bytes, '\n');

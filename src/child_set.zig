@@ -36,7 +36,7 @@ pub fn next(self: *Set) ?Exit {
         _ = self.entries.swapRemove(i);
         var status: u32 = 0;
         while (true) {
-            const result = linux.wait4(entry.pid, &status, linux.W.NOHANG, null);
+            const result = linux.wait4(entry.pid, @ptrCast(&status), linux.W.NOHANG, null);
             switch (linux.errno(result)) {
                 .INTR => continue,
                 .SUCCESS => return .{ .pid = entry.pid, .status = if (result == entry.pid) status else null },

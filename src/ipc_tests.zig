@@ -239,11 +239,11 @@ test "IPC registry covers public variants and all routes" {
     @setEvalBranchQuota(200_000);
     const registry = protocol.commands;
     inline for (.{ protocol.Request, protocol.Action }) |T| {
-        inline for (std.meta.fields(T)) |field| {
-            if (comptime T == protocol.Request and registry.isInternalRequest(field.name)) continue;
+        inline for (@typeInfo(T).@"union".field_names) |field_name| {
+            if (comptime T == protocol.Request and registry.isInternalRequest(field_name)) continue;
             var count: usize = 0;
             inline for (registry.specs) |s| {
-                if (comptime std.mem.eql(u8, @tagName(s.id), field.name)) count += 1;
+                if (comptime std.mem.eql(u8, @tagName(s.id), field_name)) count += 1;
             }
             try std.testing.expectEqual(@as(usize, 1), count);
         }
@@ -297,7 +297,7 @@ test "every v1 command parses" {
 }
 
 fn encodeWithFailingAllocator(allocator: std.mem.Allocator) !void {
-    const pixels = [_]u32{0xff123456} ** 16;
+    const pixels = @as([16]u32, @splat(0xff123456));
     const bytes = try @import("screenshot/encode.zig").encodePng(allocator, 4, 4, &pixels, 4);
     defer allocator.free(bytes);
     try std.testing.expect(bytes.len > 20);

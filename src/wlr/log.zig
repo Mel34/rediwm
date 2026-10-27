@@ -14,7 +14,7 @@ pub const Importance = enum(c_int) {
 
 const wlr_log_init = abi.bind(fn (
     verbosity: Importance,
-    callback: ?*const fn (importance: Importance, fmt: [*:0]const u8, args: *std.builtin.VaList) callconv(.c) void,
+    callback: ?*const fn (importance: Importance, fmt: [*:0]const u8, args: *std.lang.VaList) callconv(.c) void,
 ) callconv(.c) void, c.wlr_log_init);
 pub const init = wlr_log_init;
 

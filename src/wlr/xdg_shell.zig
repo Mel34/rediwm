@@ -432,19 +432,20 @@ pub const XdgSurface = extern struct {
 /// translate-c gives anonymous unions generated field names. Match these by
 /// position and validate each alternative instead of baking that name in.
 fn assertWithAnonymousUnion(comptime T: type, comptime C: type) void {
-    const real = @typeInfo(C).@"struct".fields;
-    for (@typeInfo(T).@"struct".fields, 0..) |field, index| {
-        const actual = real[index];
-        if (@offsetOf(T, field.name) != @offsetOf(C, actual.name))
-            @compileError("XDG field offset changed: " ++ @typeName(T) ++ "." ++ field.name);
-        abi.assertValue(field.type, actual.type);
-        if (@typeInfo(field.type) == .@"union") {
-            const fields = @typeInfo(field.type).@"union".fields;
-            const alternatives = @typeInfo(actual.type).@"union".fields;
-            if (fields.len != alternatives.len) @compileError("XDG union alternatives changed");
-            for (fields, alternatives) |ours, theirs| abi.assertValue(ours.type, theirs.type);
-        } else if (!@import("std").mem.eql(u8, field.name, actual.name)) {
-            @compileError("XDG field changed: " ++ field.name);
+    const real = @typeInfo(C).@"struct";
+    for (@typeInfo(T).@"struct".field_names, @typeInfo(T).@"struct".field_types, 0..) |name, FieldType, index| {
+        const actual_name = real.field_names[index];
+        const Actual = real.field_types[index];
+        if (@offsetOf(T, name) != @offsetOf(C, actual_name))
+            @compileError("XDG field offset changed: " ++ @typeName(T) ++ "." ++ name);
+        abi.assertValue(FieldType, Actual);
+        if (@typeInfo(FieldType) == .@"union") {
+            const ours = @typeInfo(FieldType).@"union".field_types;
+            const theirs = @typeInfo(Actual).@"union".field_types;
+            if (ours.len != theirs.len) @compileError("XDG union alternatives changed");
+            for (ours, theirs) |Ours, Theirs| abi.assertValue(Ours, Theirs);
+        } else if (!@import("std").mem.eql(u8, name, actual_name)) {
+            @compileError("XDG field changed: " ++ name);
         }
     }
 }

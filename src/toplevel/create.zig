@@ -257,17 +257,17 @@ pub fn createPlaceholder(
     const body_color = col.Straight.fromRgba(theme.global.window_bg).premultiply();
     const body_rect = try col.createRect(nodes.content_tree, init_w, init_h, body_color);
 
-    const desktop_id = try gpa.dupeZ(u8, entry.id);
+    const desktop_id = try gpa.dupeSentinel(u8, entry.id, 0);
     errdefer gpa.free(desktop_id);
-    const name = try gpa.dupeZ(u8, entry.name);
+    const name = try gpa.dupeSentinel(u8, entry.name, 0);
     errdefer gpa.free(name);
-    const app_id = try gpa.dupeZ(u8, if (entry.startup_wm_class) |wmc| wmc else entry.id);
+    const app_id = try gpa.dupeSentinel(u8, if (entry.startup_wm_class) |wmc| wmc else entry.id, 0);
     errdefer gpa.free(app_id);
-    const startup_wm_class = if (entry.startup_wm_class) |wmc| try gpa.dupeZ(u8, wmc) else null;
+    const startup_wm_class = if (entry.startup_wm_class) |wmc| try gpa.dupeSentinel(u8, wmc, 0) else null;
     errdefer if (startup_wm_class) |wmc| gpa.free(wmc);
-    const icon = if (entry.icon) |ico| try gpa.dupeZ(u8, ico) else null;
+    const icon = if (entry.icon) |ico| try gpa.dupeSentinel(u8, ico, 0) else null;
     errdefer if (icon) |ico| gpa.free(ico);
-    const token = if (token_str) |tok| try gpa.dupeZ(u8, tok) else null;
+    const token = if (token_str) |tok| try gpa.dupeSentinel(u8, tok, 0) else null;
     errdefer if (token) |tok| gpa.free(tok);
 
     toplevel.* = .{

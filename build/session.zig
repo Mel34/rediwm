@@ -34,6 +34,19 @@ pub fn add(ctx: Context) Session {
     if (wlroots_prefix != null) session_supervisor.root_module.addRPathSpecial("$ORIGIN/../lib/rediwm");
     b.installArtifact(session_supervisor);
 
+    const restart = b.addExecutable(.{
+        .name = "rediwm-restart",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/session_restart.zig"),
+            .target = target,
+            .optimize = optimize,
+            .link_libc = true,
+        }),
+        .use_llvm = use_llvm,
+        .use_lld = use_llvm,
+    });
+    b.installArtifact(restart);
+
     const child_set_mod = b.createModule(.{ .root_source_file = b.path("src/child_set.zig"), .target = target, .optimize = optimize });
     const dm_ipc_mod = b.createModule(.{
         .root_source_file = b.path("src/session/dm_ipc.zig"),
@@ -46,6 +59,9 @@ pub fn add(ctx: Context) Session {
         .optimize = optimize,
     });
 
+    dm_ipc_mod.addImport("c", ctx.c.libc);
+    ws_mod.addImport("c", ctx.c.libc);
+
     const dm = b.addExecutable(.{
         .name = "rediwm-dm",
         .root_module = b.createModule(.{
@@ -57,6 +73,7 @@ pub fn add(ctx: Context) Session {
         .use_llvm = use_llvm,
         .use_lld = use_llvm,
     });
+    dm.root_module.addImport("c", ctx.c.libc);
     dm.root_module.addImport("child_set", child_set_mod);
     dm.root_module.addImport("dm_ipc", dm_ipc_mod);
     dm.root_module.addImport("wayland_sessions", ws_mod);
@@ -75,6 +92,7 @@ pub fn add(ctx: Context) Session {
         .use_llvm = use_llvm,
         .use_lld = use_llvm,
     });
+    accounts_helper.root_module.addImport("c", ctx.c.libc);
     accounts_helper.root_module.addImport("wayland_sessions", ws_mod);
     accounts_helper.root_module.addImport("accounts_validation", b.createModule(.{
         .root_source_file = b.path("src/accounts/validation.zig"),

@@ -385,7 +385,7 @@ pub const Worker = struct {
                     defer if (recent_path) |p| self.allocator.free(p);
                     var watch_path = if (recent_path) |p| std.fs.path.dirname(p).? else if (cur_archive_len > 0) std.fs.path.dirname(cur_dir[0..cur_archive_len]) orelse "/" else watched_dir.?;
                     while (true) {
-                        const zp = std.fmt.bufPrintZ(&zpath_buf, "{s}", .{watch_path}) catch break;
+                        const zp = std.fmt.bufPrintSentinel(&zpath_buf, "{s}", .{watch_path}, 0) catch break;
                         inotify_wd = c.inotify_add_watch(
                             inotify_fd,
                             zp,
@@ -413,7 +413,7 @@ pub const Worker = struct {
                 if (inotify_fd >= 0) {
                     if (snap.repository) |repo| {
                         for (repo.watch_paths, 0..) |path, i| {
-                            const zp = snap.arena.allocator().dupeZ(u8, path) catch continue;
+                            const zp = snap.arena.allocator().dupeSentinel(u8, path, 0) catch continue;
                             next_watches[i] = c.inotify_add_watch(inotify_fd, zp, c.IN_CREATE | c.IN_DELETE | c.IN_MOVED_FROM | c.IN_MOVED_TO | c.IN_CLOSE_WRITE | c.IN_DELETE_SELF | c.IN_MOVE_SELF);
                         }
                     }
@@ -506,7 +506,7 @@ pub const Worker = struct {
         const mem = snap.arena.allocator();
         snap.dir = try mem.dupe(u8, path);
         const source = path[0..archive_len];
-        const zsource = try mem.dupeZ(u8, source);
+        const zsource = try mem.dupeSentinel(u8, source, 0);
         var stat: c.struct_stat = undefined;
         if (c.stat(zsource, &stat) != 0) return error.OpenArchiveFailed;
         if (cache.path == null or !std.mem.eql(u8, cache.path.?, source) or

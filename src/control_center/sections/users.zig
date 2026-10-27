@@ -8,11 +8,7 @@ const validation = @import("../../accounts/validation.zig");
 const ui = @import("ui");
 const W = ui.layout.Widget;
 const gpa = @import("../../main.zig").gpa;
-const c = @cImport({
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("sys/socket.h");
-    @cInclude("unistd.h");
-});
+const c = @import("c");
 const secret_input = ui.widgets.secret_input;
 extern fn rediwm_polkit_secret_new() ?*anyopaque;
 extern fn rediwm_polkit_secret_free(*anyopaque) void;

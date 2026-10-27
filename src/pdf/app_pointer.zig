@@ -171,7 +171,7 @@ pub fn handleButton(self: *App, button: u32, pressed: bool) void {
                         .goto_page => |target| self.goToPage(target),
                         .uri => |u| {
                             if (!std.mem.startsWith(u8, u, "http://") and !std.mem.startsWith(u8, u, "https://")) return;
-                            const copy = a.dupeZ(u8, u) catch return;
+                            const copy = a.dupeSentinel(u8, u, 0) catch return;
                             if (self.clipboard_text) |old| a.free(old);
                             self.clipboard_text = copy;
                             self.clipboard_request = true;
@@ -244,7 +244,7 @@ pub fn updateSelection(self: *App) void {
     const text = content.text orelse return;
     const selected = range.text(text);
     if (selected.len == 0) return;
-    self.selected_text = a.dupeZ(u8, selected) catch return;
+    self.selected_text = a.dupeSentinel(u8, selected, 0) catch return;
     self.selection_range = range;
     self.selection_active = true;
     self.dirty = true;

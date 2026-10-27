@@ -73,6 +73,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     ui_tests_module.linkSystemLibrary("libinput", .{});
     ui_tests_module.linkSystemLibrary("png16", .{});
     ui_tests_module.linkSystemLibrary("libpulse", .{});
+    inline for (.{ .{ "c_pulse", ctx.c.pulse }, .{ "c_libinput", ctx.c.libinput }, .{ "c_png", ctx.c.png } }) |entry| ui_tests_module.addImport(entry[0], entry[1]);
     ui_tests_module.linkSystemLibrary("xcb", .{});
     addBass(b, ui_tests_module);
     // Fake PAM is linked only into unit tests; the compositor always uses libpam.
@@ -91,6 +92,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     });
     ipc_tests_module.addImport("protocol", protocol_mod);
     ipc_tests_module.linkSystemLibrary("png16", .{});
+    ipc_tests_module.addImport("c_png", ctx.c.png);
     const ipc_tests = b.addTest(.{ .root_module = ipc_tests_module });
     const run_ipc_tests = b.addRunArtifact(ipc_tests);
 
@@ -111,6 +113,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
         .optimize = optimize,
         .link_libc = true,
     }) });
+    monitor_tests.root_module.addImport("c", ctx.c.libc);
     const run_monitor_tests = b.addRunArtifact(monitor_tests);
     const monitor_test_step = b.step("test-monitor", "Test System Monitor collection, process identity and model");
     monitor_test_step.dependOn(&run_monitor_tests.step);
@@ -121,6 +124,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
         .optimize = optimize,
         .link_libc = true,
     }) });
+    printing_tests.root_module.addImport("c", ctx.c.libc);
     printing_tests.root_module.addImport("dbus", dbus_mod);
     printing_tests.root_module.addImport("i18n", i18n_mod);
     printing_tests.root_module.addImport("wayland", wayland);
@@ -189,7 +193,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     polkit_service.root_module.addCSourceFile(.{ .file = b.path("src/polkit/native.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
     polkit_service.root_module.linkSystemLibrary("pthread", .{});
     const polkit_manual = b.addRunArtifact(polkit_service);
-    if (b.args) |args| polkit_manual.addArgs(args);
+    polkit_manual.addPassthruArgs();
     b.step("run-polkit-test-agent", "Run the noninstalled polkit test agent (-- --terminal for manual authentication)").dependOn(&polkit_manual.step);
     const polkit_integration = b.addSystemCommand(&.{"python3"});
     polkit_integration.addFileArg(b.path("tests/polkit.py"));
@@ -245,6 +249,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
         .optimize = optimize,
         .link_libc = true,
     }) });
+    dm_tests.root_module.addImport("c", ctx.c.libc);
     dm_tests.root_module.addImport("child_set", child_set_mod);
     dm_tests.root_module.addImport("dm_ipc", dm_ipc_mod);
     dm_tests.root_module.addImport("wayland_sessions", ws_mod);
@@ -299,7 +304,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     const run_lock_tests = b.addRunArtifact(lock_tests);
     const lock_step = b.step("test-lock", "Test lock isolation, password editing, rendering, PAM outcomes and the rediwm-dm greeter");
     lock_step.dependOn(&run_lock_tests.step);
-    const auth_tests = b.addExecutable(.{ .name = "auth-tests", .root_module = b.createModule(.{ .target = target, .optimize = .Debug, .link_libc = true }) });
+    const auth_tests = b.addExecutable(.{ .name = "auth-tests", .root_module = b.createModule(.{ .target = target, .optimize = .debug, .link_libc = true }) });
     auth_tests.root_module.addCSourceFile(.{ .file = b.path("tests/auth_test.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
     const run_auth_tests = b.addRunArtifact(auth_tests);
     lock_step.dependOn(&run_auth_tests.step);
@@ -329,15 +334,17 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     files_tests.root_module.linkSystemLibrary("gio-2.0", .{});
     inline for (.{ "gdk-pixbuf-2.0", "gobject-2.0", "glib-2.0" }) |lib| files_tests.root_module.linkSystemLibrary(lib, .{});
     files_tests.root_module.linkSystemLibrary("libarchive", .{});
+    files_tests.root_module.addImport("c_archive", ctx.c.archive);
     addThumbCodec(b, files_tests.root_module);
     addVolumes(b, files_tests.root_module);
     addFilesTerminal(b, files_tests.root_module, true);
     const run_files_tests = b.addRunArtifact(files_tests);
     test_step.dependOn(&run_files_tests.step);
     b.step("test-files", "Test Files editing, navigation, transfers and layout").dependOn(&run_files_tests.step);
-    const terminal_integration = b.addSystemCommand(&.{"python3"});
+    const terminal_integration = b.addSystemCommand(&.{"env"});
+    terminal_integration.addPrefixedDirectoryArg("REDIWM_TEST_BIN=", support.installed(.bin, ""));
+    terminal_integration.addArg("python3");
     terminal_integration.addFileArg(b.path("tests/files_terminal.py"));
-    terminal_integration.setEnvironmentVariable("REDIWM_TEST_BIN", b.getInstallPath(.bin, ""));
     terminal_integration.step.dependOn(b.getInstallStep());
     const terminal_tests = b.step("test-files-terminal", "Test the Files terminal against isolated PTYs and a headless compositor");
     terminal_tests.dependOn(&run_files_tests.step);
@@ -360,7 +367,7 @@ pub fn addC(ctx: Context, test_step: *std.Build.Step) void {
     const optimize = ctx.optimize;
     const gpu_timing_tests = b.addExecutable(.{
         .name = "gpu-timing-tests",
-        .root_module = b.createModule(.{ .target = target, .optimize = .Debug, .link_libc = true }),
+        .root_module = b.createModule(.{ .target = target, .optimize = .debug, .link_libc = true }),
     });
     gpu_timing_tests.root_module.addCSourceFile(.{ .file = b.path("src/gpu_timing_test.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
     inline for (.{ "wlroots-0.20", "wayland-server", "pixman-1", "egl", "glesv2" }) |lib| {
@@ -372,7 +379,7 @@ pub fn addC(ctx: Context, test_step: *std.Build.Step) void {
 
     const node_tests = b.addExecutable(.{
         .name = "node-tests",
-        .root_module = b.createModule(.{ .target = target, .optimize = .Debug, .link_libc = true }),
+        .root_module = b.createModule(.{ .target = target, .optimize = .debug, .link_libc = true }),
     });
     node_tests.root_module.addCSourceFile(.{ .file = b.path("src/node_test.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
     node_tests.root_module.addCSourceFile(.{ .file = b.path("src/node.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
@@ -385,7 +392,7 @@ pub fn addC(ctx: Context, test_step: *std.Build.Step) void {
 
     const projection_tests = b.addExecutable(.{
         .name = "projection-tests",
-        .root_module = b.createModule(.{ .target = target, .optimize = .Debug, .link_libc = true }),
+        .root_module = b.createModule(.{ .target = target, .optimize = .debug, .link_libc = true }),
     });
     projection_tests.root_module.addCSourceFile(.{ .file = b.path("src/projection_test.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
     projection_tests.root_module.addCSourceFile(.{ .file = b.path("src/scene_damage.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
@@ -400,7 +407,7 @@ pub fn addC(ctx: Context, test_step: *std.Build.Step) void {
 
     const glass_tests = b.addExecutable(.{
         .name = "glass-tests",
-        .root_module = b.createModule(.{ .target = target, .optimize = .Debug, .link_libc = true }),
+        .root_module = b.createModule(.{ .target = target, .optimize = .debug, .link_libc = true }),
     });
     glass_tests.root_module.addCSourceFile(.{ .file = b.path("src/glass_test.c"), .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Werror" } });
     inline for (.{ "wlroots-0.20", "wayland-server", "pixman-1", "egl", "glesv2" }) |lib| {

@@ -490,7 +490,7 @@ pub fn taskbar(comptime token: TaskbarToken) @FieldType(Theme, @tagName(token)) 
 /// holds, so nothing else of `t` (its strings in particular) is kept.
 pub fn taskbarTokens(t: Theme) Theme {
     var out: Theme = .{};
-    inline for (std.meta.fields(TaskbarToken)) |field| @field(out, field.name) = @field(t, field.name);
+    inline for (@typeInfo(TaskbarToken).@"enum".field_names) |field_name| @field(out, field_name) = @field(t, field_name);
     return out;
 }
 
@@ -498,8 +498,8 @@ pub fn taskbarTokens(t: Theme) Theme {
 /// compare as `writeTaskbarInto` stores them, so a saved and reloaded theme
 /// still equals the preset it came from.
 pub fn taskbarTokensEql(a: Theme, b: Theme) bool {
-    inline for (std.meta.fields(TaskbarToken)) |field| {
-        if (!sameWritten(@field(a, field.name), @field(b, field.name))) return false;
+    inline for (@typeInfo(TaskbarToken).@"enum".field_names) |field_name| {
+        if (!sameWritten(@field(a, field_name), @field(b, field_name))) return false;
     }
     return true;
 }
@@ -535,19 +535,19 @@ pub const RadiusPreset = enum { sharp, default, round };
 /// Whether a token is one the Sharp/Default/Round presets rescale. The
 /// taskbar's corner radius is a shape of its own (its square default has
 /// nothing to scale), so a preset must neither reset nor be undone by it.
-fn presetRadius(comptime field: std.builtin.Type.StructField) bool {
-    if (field.type != f32) return false;
-    if (!std.mem.startsWith(u8, field.name, "radius") and !std.mem.endsWith(u8, field.name, "_radius")) return false;
-    return !std.mem.eql(u8, field.name, "taskbar_radius");
+fn presetRadius(comptime name: []const u8) bool {
+    if (@FieldType(Theme, name) != f32) return false;
+    if (!std.mem.startsWith(u8, name, "radius") and !std.mem.endsWith(u8, name, "_radius")) return false;
+    return !std.mem.eql(u8, name, "taskbar_radius");
 }
 
 pub fn applyRadiusPreset(t: *Theme, preset: RadiusPreset) void {
     @setEvalBranchQuota(10000);
     const defaults: Theme = .{};
-    inline for (std.meta.fields(Theme)) |field| {
-        if (comptime presetRadius(field)) {
-            const base = @field(defaults, field.name);
-            @field(t, field.name) = switch (preset) {
+    inline for (@typeInfo(Theme).@"struct".field_names) |field_name| {
+        if (comptime presetRadius(field_name)) {
+            const base = @field(defaults, field_name);
+            @field(t, field_name) = switch (preset) {
                 .sharp => @min(base, 4),
                 .default => base,
                 .round => base * 1.3,
@@ -564,9 +564,9 @@ pub fn radiusPreset(t: Theme) ?RadiusPreset {
         var candidate: Theme = .{};
         applyRadiusPreset(&candidate, preset);
         var matches = true;
-        inline for (std.meta.fields(Theme)) |field| {
-            if (comptime presetRadius(field)) {
-                if (@abs(@field(t, field.name) - @field(candidate, field.name)) > 0.001) matches = false;
+        inline for (@typeInfo(Theme).@"struct".field_names) |field_name| {
+            if (comptime presetRadius(field_name)) {
+                if (@abs(@field(t, field_name) - @field(candidate, field_name)) > 0.001) matches = false;
             }
         }
         if (matches) return preset;

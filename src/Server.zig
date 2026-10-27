@@ -1013,7 +1013,7 @@ pub const IconNameCache = struct {
         filled: bool = false,
     };
 
-    entries: [capacity]Entry = [_]Entry{.{}} ** capacity,
+    entries: [capacity]Entry = @splat(.{}),
     generation: u64 = 0,
     primed: bool = false,
 

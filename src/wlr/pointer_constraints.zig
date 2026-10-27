@@ -1,5 +1,5 @@
 //! wlr.PointerConstraintsV1 / wlr.PointerConstraintV1, backed by
-//! @cImport against wlr/types/wlr_pointer_constraints_v1.h.
+//! translate-c against wlr/types/wlr_pointer_constraints_v1.h.
 const std = @import("std");
 const wl = @import("wayland").server.wl;
 const zwp = @import("wayland").server.zwp;

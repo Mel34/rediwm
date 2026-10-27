@@ -155,9 +155,9 @@ pub const Applications = struct {
         const a = self.arena.allocator();
         const owned = try a.alloc([:0]const u8, paths.len);
         for (paths, 0..) |path, i| {
-            owned[i] = try a.dupeZ(u8, path);
+            owned[i] = try a.dupeSentinel(u8, path, 0);
             const kind = mime_db.guess(owned[i]);
-            if (i == 0) self.content_type = try a.dupeZ(u8, kind) else if (!std.mem.eql(u8, self.content_type, kind)) self.same_type = false;
+            if (i == 0) self.content_type = try a.dupeSentinel(u8, kind, 0) else if (!std.mem.eql(u8, self.content_type, kind)) self.same_type = false;
         }
         self.paths = owned;
         const default = if (self.same_type) g_app_info_get_default_for_type(self.content_type, 0) else null;
@@ -252,7 +252,7 @@ extern fn g_app_info_get_id(app: *anyopaque) ?[*:0]const u8;
 /// Launch through the same MIME default that Open With displays. A URI-based
 /// launch can pick the handler for file:// instead of the file's content type.
 pub fn launchDefault(path: []const u8) !void {
-    const filename = try std.heap.c_allocator.dupeZ(u8, path);
+    const filename = try std.heap.c_allocator.dupeSentinel(u8, path, 0);
     defer std.heap.c_allocator.free(filename);
     var kind: TypeZ = undefined;
     const content_type = kind.set(mime_db.guess(filename)) orelse return error.NoDefaultApplication;
@@ -266,7 +266,7 @@ pub fn launchDefault(path: []const u8) !void {
 
 /// Keep the bundled PDF viewer fallback, but honor an explicit alternative.
 pub fn hasAlternativeDefault(path: []const u8, bundled_id: []const u8) bool {
-    const filename = std.heap.c_allocator.dupeZ(u8, path) catch return false;
+    const filename = std.heap.c_allocator.dupeSentinel(u8, path, 0) catch return false;
     defer std.heap.c_allocator.free(filename);
     var kind: TypeZ = undefined;
     const content_type = kind.set(mime_db.guess(filename)) orelse return false;

@@ -1,13 +1,13 @@
-//! wlr.OutputPowerManagerV1 / wlr.OutputPowerV1, backed by @cImport
+//! wlr.OutputPowerManagerV1 / wlr.OutputPowerV1, backed by translate-c
 //! against wlr/types/wlr_output_power_management_v1.h.
 //!
 //! The struct bodies are hand-redeclared (unlike most future subsystems,
-//! which can usually alias the @cImport type directly) only because
+//! which can usually alias the translate-c type directly) only because
 //! `events.*` needs to be retyped from the real `wl_signal` to
 //! zig-wayland's `wl.Signal(T)` to get `.add()`/`.get()`/`.emit()` for
 //! consumers -- the same reason zig-wlroots hand-declared this struct.
 //! The comptime block below is the difference: it checks every
-//! redeclared field's offset against the real @cImport'd struct, so a
+//! redeclared field's offset against the real translated struct, so a
 //! future wlroots release that reorders or inserts a field fails the
 //! build instead of silently corrupting memory.
 //!

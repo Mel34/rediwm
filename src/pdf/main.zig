@@ -244,7 +244,7 @@ pub fn run(init: std.process.Init.Minimal) !void {
         return error.ExpectedDocument;
     }
     const raw = std.mem.span(args[i]);
-    const initial_path = try a.dupeZ(u8, raw);
+    const initial_path = try a.dupeSentinel(u8, raw, 0);
     defer a.free(initial_path);
     const document_fd = c.rediwm_pdf_open_document(initial_path.ptr);
     if (document_fd < 0) return error.CannotOpenRegularFile;

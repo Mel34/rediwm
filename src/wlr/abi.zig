@@ -6,7 +6,7 @@ pub fn bind(comptime F: type, comptime function: anytype) F {
     @setEvalBranchQuota(100000);
     comptime assertFunction(F, @TypeOf(function));
     const signature = @typeInfo(F).@"fn";
-    const params = signature.params;
+    const params = signature.param_types;
     const Return = signature.return_type.?;
     // Actual function declarations preserve Zig's method-call syntax. A cast
     // function pointer alone would require a second implicit dereference.
@@ -17,62 +17,62 @@ pub fn bind(comptime F: type, comptime function: anytype) F {
             }
         }.call,
         1 => struct {
-            fn call(a0: params[0].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0);
             }
         }.call,
         2 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1);
             }
         }.call,
         3 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2);
             }
         }.call,
         4 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3);
             }
         }.call,
         5 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4);
             }
         }.call,
         6 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?, a5: params[5].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?, a5: params[5].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4, a5);
             }
         }.call,
         7 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?, a5: params[5].type.?, a6: params[6].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?, a5: params[5].?, a6: params[6].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4, a5, a6);
             }
         }.call,
         8 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?, a5: params[5].type.?, a6: params[6].type.?, a7: params[7].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?, a5: params[5].?, a6: params[6].?, a7: params[7].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4, a5, a6, a7);
             }
         }.call,
         9 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?, a5: params[5].type.?, a6: params[6].type.?, a7: params[7].type.?, a8: params[8].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?, a5: params[5].?, a6: params[6].?, a7: params[7].?, a8: params[8].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4, a5, a6, a7, a8);
             }
         }.call,
         10 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?, a5: params[5].type.?, a6: params[6].type.?, a7: params[7].type.?, a8: params[8].type.?, a9: params[9].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?, a5: params[5].?, a6: params[6].?, a7: params[7].?, a8: params[8].?, a9: params[9].?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
             }
         }.call,
         11 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?, a5: params[5].type.?, a6: params[6].type.?, a7: params[7].type.?, a8: params[8].type.?, a9: params[9].type.?, a10: params[10].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?, a5: params[5].?, a6: params[6].?, a7: params[7].?, a8: params[8].?, a9: params[9].?, a10: params[10].type.?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
             }
         }.call,
         12 => struct {
-            fn call(a0: params[0].type.?, a1: params[1].type.?, a2: params[2].type.?, a3: params[3].type.?, a4: params[4].type.?, a5: params[5].type.?, a6: params[6].type.?, a7: params[7].type.?, a8: params[8].type.?, a9: params[9].type.?, a10: params[10].type.?, a11: params[11].type.?) callconv(.c) Return {
+            fn call(a0: params[0].?, a1: params[1].?, a2: params[2].?, a3: params[3].?, a4: params[4].?, a5: params[5].?, a6: params[6].?, a7: params[7].?, a8: params[8].?, a9: params[9].?, a10: params[10].type.?, a11: params[11].type.?) callconv(.c) Return {
                 return @as(*const F, @ptrCast(&function))(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
             }
         }.call,
@@ -83,10 +83,9 @@ pub fn bind(comptime F: type, comptime function: anytype) F {
 fn assertFunction(comptime A: type, comptime B: type) void {
     const a = @typeInfo(A).@"fn";
     const b = @typeInfo(B).@"fn";
-    if (!std.meta.eql(a.calling_convention, b.calling_convention) or
-        a.is_var_args != b.is_var_args or a.params.len != b.params.len)
+    if (!std.meta.eql(a.attrs, b.attrs) or a.param_types.len != b.param_types.len)
         @compileError("C function signature changed: " ++ @typeName(A) ++ " / " ++ @typeName(B));
-    for (a.params, b.params) |ap, bp| assertValue(ap.type.?, bp.type.?);
+    for (a.param_types, b.param_types) |ap, bp| assertValue(ap.?, bp.?);
     assertValue(a.return_type.?, b.return_type.?);
 }
 
@@ -155,21 +154,21 @@ fn assertSize(comptime A: type, comptime B: type) void {
 /// objects allocated or passed by value by the compositor.
 pub fn assertFields(comptime A: type, comptime B: type) void {
     @setEvalBranchQuota(100000);
-    const fields = @typeInfo(A).@"struct".fields;
+    const info = @typeInfo(A).@"struct";
     // zig-wayland wraps wl_list in a typed Head with one embedded Link.
-    if (fields.len == 1 and std.mem.eql(u8, fields[0].name, "link") and
+    if (info.field_names.len == 1 and std.mem.eql(u8, info.field_names[0], "link") and
         @hasField(B, "prev") and @hasField(B, "next"))
     {
         if (@offsetOf(A, "link") != 0) @compileError("Wayland list wrapper moved");
-        assertValue(fields[0].type, B);
+        assertValue(info.field_types[0], B);
         return;
     }
-    for (fields) |field| {
-        if (!@hasField(B, field.name))
-            @compileError("C field missing: " ++ @typeName(B) ++ "." ++ field.name);
-        if (@offsetOf(A, field.name) != @offsetOf(B, field.name))
-            @compileError("C field offset changed: " ++ @typeName(A) ++ "." ++ field.name);
-        assertValue(field.type, @FieldType(B, field.name));
+    for (info.field_names, info.field_types) |name, FieldType| {
+        if (!@hasField(B, name))
+            @compileError("C field missing: " ++ @typeName(B) ++ "." ++ name);
+        if (@offsetOf(A, name) != @offsetOf(B, name))
+            @compileError("C field offset changed: " ++ @typeName(A) ++ "." ++ name);
+        assertValue(FieldType, @FieldType(B, name));
     }
 }
 

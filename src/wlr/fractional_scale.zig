@@ -1,4 +1,4 @@
-//! wlr.FractionalScaleManagerV1, backed by @cImport against
+//! wlr.FractionalScaleManagerV1, backed by translate-c against
 //! wlr/types/wlr_fractional_scale_v1.h.
 const wl = @import("wayland").server.wl;
 const c = @import("c.zig").c;

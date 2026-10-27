@@ -37,14 +37,14 @@ pub fn load(allocator: Allocator, io: Io, path: []const u8) !Theme {
 pub fn keysOf(comptime T: type) []const []const u8 {
     const keys = comptime blk: {
         var count: usize = 0;
-        for (std.meta.fields(Theme)) |field| if (field.type == T) {
+        for (@typeInfo(Theme).@"struct".field_names) |field_name| if (@FieldType(Theme, field_name) == T) {
             count += 1;
         };
         var names: [count][]const u8 = undefined;
         var i: usize = 0;
-        for (std.meta.fields(Theme)) |field| {
-            if (field.type == T) {
-                names[i] = field.name;
+        for (@typeInfo(Theme).@"struct".field_names) |field_name| {
+            if (@FieldType(Theme, field_name) == T) {
+                names[i] = field_name;
                 i += 1;
             }
         }
@@ -230,7 +230,7 @@ pub fn appendColor(allocator: Allocator, buf: *std.ArrayList(u8), key: []const u
 }
 
 pub fn knownKey(key: []const u8) bool {
-    inline for (std.meta.fields(Theme)) |field| if (std.mem.eql(u8, key, field.name)) return true;
+    inline for (@typeInfo(Theme).@"struct".field_names) |field_name| if (std.mem.eql(u8, key, field_name)) return true;
     return std.mem.eql(u8, key, "taskbar_height");
 }
 
@@ -292,14 +292,14 @@ pub fn writeDiff(allocator: Allocator, buf: *std.ArrayList(u8), t: Theme, defaul
 pub fn writeTaskbarInto(allocator: Allocator, buf: *std.ArrayList(u8), t: Theme) !void {
     const defaults: Theme = .{};
     try buf.appendSlice(allocator, "[taskbar_theme]\n");
-    inline for (std.meta.fields(TaskbarToken)) |field| {
-        const value = @field(t, field.name);
+    inline for (@typeInfo(TaskbarToken).@"enum".field_names) |field_name| {
+        const value = @field(t, field_name);
         if (comptime @TypeOf(value) == bool) {
-            if (value != @field(defaults, field.name)) try appendLine(allocator, buf, "{s} = {}\n", .{ field.name, value });
+            if (value != @field(defaults, field_name)) try appendLine(allocator, buf, "{s} = {}\n", .{ field_name, value });
         } else if (comptime @TypeOf(value) == ?[4]f32) {
-            if (value) |color| try appendColor(allocator, buf, field.name, color);
-        } else if (!std.meta.eql(quantize(value), quantize(@field(defaults, field.name)))) {
-            try appendColor(allocator, buf, field.name, value);
+            if (value) |color| try appendColor(allocator, buf, field_name, color);
+        } else if (!std.meta.eql(quantize(value), quantize(@field(defaults, field_name)))) {
+            try appendColor(allocator, buf, field_name, value);
         }
     }
 }
