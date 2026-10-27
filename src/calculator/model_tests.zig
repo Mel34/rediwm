@@ -72,7 +72,6 @@ test "calculator continues from results and starts fresh on numeric entry" {
     var model: Model = .{};
     enter(&model, "200+10%");
     try expectResult(&model, "220");
-    try expectResult(&model, "220"); // A repeated equals keeps the result.
     enter(&model, "-5%");
     try expectResult(&model, "209");
     enter(&model, "1/10000000000");
@@ -83,6 +82,64 @@ test "calculator continues from results and starts fresh on numeric entry" {
     try expectResult(&model, "0.3");
     enter(&model, "*10");
     try expectResult(&model, "3");
+}
+
+test "calculator repeats the final operation with precedence and percentages" {
+    const cases = [_][4][]const u8{
+        .{ "2+3", "5", "8", "11" },
+        .{ "10-2", "8", "6", "4" },
+        .{ "3*2", "6", "12", "24" },
+        .{ "16/2", "8", "4", "2" },
+        .{ "2+3*4", "14", "26", "38" },
+        .{ "(2+3)*4", "20", "80", "320" },
+        .{ "20-5-2", "13", "11", "9" },
+        .{ "2*(3+4)", "14", "98", "686" },
+        .{ "2*-3", "-6", "18", "-54" },
+        .{ "200+10%", "220", "242", "266.2" },
+        .{ "200-10%", "180", "162", "145.8" },
+        .{ "200*10%", "20", "2", "0.2" },
+        .{ "200/10%", "2000", "20000", "200000" },
+        .{ "200+(5+5)%", "220", "242", "266.2" },
+        .{ "7", "7", "7", "7" },
+        .{ "5%", "0.05", "0.05", "0.05" },
+    };
+    for (cases) |case| {
+        var model: Model = .{};
+        enter(&model, case[0]);
+        errdefer std.debug.print("expression: {s}\n", .{case[0]});
+        for (case[1..]) |expected| try expectResult(&model, expected);
+    }
+    var model: Model = .{};
+    enter(&model, "2+3");
+    try expectResult(&model, "5");
+    try expectResult(&model, "8");
+    try std.testing.expectEqualStrings("5+3", model.history[0..model.history_len]);
+}
+
+test "calculator resets repeated equals when entering or editing a calculation" {
+    var model: Model = .{};
+    enter(&model, "2+3");
+    try expectResult(&model, "5");
+    enter(&model, "7");
+    try expectResult(&model, "7");
+    try expectResult(&model, "7");
+    enter(&model, "*2");
+    try expectResult(&model, "14");
+    try expectResult(&model, "28");
+    model.backspace();
+    try expectResult(&model, "2");
+    try expectResult(&model, "2");
+    enter(&model, "+3");
+    try expectResult(&model, "5");
+    model.negate();
+    try expectResult(&model, "-5");
+    try expectResult(&model, "-5");
+    model.clear();
+    model.equals();
+    try std.testing.expectEqualStrings("", model.display());
+    enter(&model, "4");
+    try expectResult(&model, "4");
+    try expectResult(&model, "4");
 }
 
 test "calculator sign toggle handles numbers, percentages and groups" {

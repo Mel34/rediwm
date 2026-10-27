@@ -76,7 +76,7 @@ def run(scale):
                     ("(2+3)*4", "20"), ("0.1+0.2", "0.3"),
                 ]
                 references = {"0": zero}
-                for expected in dict.fromkeys(value for _, value in cases):
+                for expected in dict.fromkeys([value for _, value in cases] + ["5", "8", "11", "110.25", "115.7625"]):
                     clear()
                     ipc.type_text(expected)
                     wait_for(lambda: not same(zero, readout()), "numeric entry was not painted")
@@ -87,6 +87,14 @@ def run(scale):
                     ipc.key_down_up(28)  # Enter
                     wait_for(lambda: same(references[expected], readout()),
                              f"{expression} did not display {expected}")
+
+                clear()
+                ipc.type_text("2+3=")
+                wait_for(lambda: same(references["5"], readout()), "equals key failed")
+                ipc.type_text("=")
+                wait_for(lambda: same(references["8"], readout()), "repeated equals key failed")
+                ipc.key_down_up(28)
+                wait_for(lambda: same(references["11"], readout()), "repeated Enter failed")
 
                 def click_button(row, column):
                     b = box()
@@ -100,6 +108,10 @@ def run(scale):
                     click_button(row, column)  # 100+5%=
                 ipc.move_cursor(0, 0)
                 wait_for(lambda: same(references["105"], readout()), "keypad percentage failed")
+                for expected in ("110.25", "115.7625"):
+                    click_button(4, 3)
+                    ipc.move_cursor(0, 0)
+                    wait_for(lambda: same(references[expected], readout()), "keypad repeated equals failed")
 
                 clear()
                 ipc.type_text("200+10%")

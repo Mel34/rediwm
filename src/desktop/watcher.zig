@@ -292,7 +292,8 @@ pub const Worker = struct {
             .{ .kind = .home, .name = i18n.tr("Home"), .path = home, .glyph = .home },
             .{ .kind = .trash, .name = i18n.tr("Trash"), .path = trash_files, .glyph = .trash_can },
         };
-        for (entries) |e| try list.append(mem, .{ .path = try mem.dupe(u8, e.path), .name = e.name, .icon = icons.get(self.theme_cfg, self.io, if (e.kind == .home) "user-home" else "user-trash", size) orelse builtinIcon(e.glyph, size, self.theme_cfg.generation), .folder = true, .cell = config.lookup(mem, saved, e.path), .builtin = e.kind });
+        // Only a pack's own artwork replaces the glyph, as in the Files sidebar; an installed theme's user-home is a folder.
+        for (entries) |e| try list.append(mem, .{ .path = try mem.dupe(u8, e.path), .name = e.name, .icon = icons.getPack(self.theme_cfg, self.io, if (e.kind == .home) "user-home" else "user-trash", size) orelse builtinIcon(e.glyph, size, self.theme_cfg.generation), .folder = true, .cell = config.lookup(mem, saved, e.path), .builtin = e.kind });
     }
     fn scan(self: *Worker) !*Snapshot {
         _ = c.pthread_mutex_lock(&self.mutex);

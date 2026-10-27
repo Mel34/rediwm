@@ -62,8 +62,11 @@ Xwayland, `foot`, `brightnessctl`, `gio`/`xdg-open`, `git` (optional).
 
 Printer support uses an existing CUPS server (`cups`).
 
-Run from a checkout, `scripts/install.sh` builds that checkout (dependencies,
-then `install-session.sh` with the arguments you give it).
+Run from a checkout, or invoke its `scripts/install.sh` by path, to build the
+files currently in that checkout, including uncommitted edits and new files
+(dependencies, then `install-session.sh` with the arguments you give it).
+Source builds also reuse an existing `REDIWM_SRC_DIR` as-is; update it manually
+when you want newer upstream changes. The installer never resets local source.
 
 ```sh
 zig build run -- foot                     # nested in your current Wayland session

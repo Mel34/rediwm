@@ -306,8 +306,8 @@ pub const Section = struct {
     items_placeholder_body: [3][3]Widget = undefined,
     /// Rows follow `order`; `syncItems` hands each well its run of them.
     item_rows: [taskbar_items.count]Widget = undefined,
-    /// Grip, label, visibility toggle.
-    item_controls: [taskbar_items.count][3]Widget = undefined,
+    /// Grip, label, section selector, visibility toggle.
+    item_controls: [taskbar_items.count][4]Widget = undefined,
     item_drag: ?struct { index: usize, press_y: f32, moved: bool = false, items: taskbar_items.Config } = null,
     item_focus: ?taskbar_items.Item = null,
     start_menu_section_children: [9]Widget = undefined,

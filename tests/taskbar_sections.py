@@ -97,6 +97,13 @@ def run():
                             return zone
                 for name, expected in (('start', 0), ('windows', 0), ('capture', 2), ('tray', 2), ('clock', 2), ('power', 2), ('wifi', 2), ('wired', 2)):
                     assert zone_of(name) == expected, name
+                # Each row's Left/Center/Right buttons move the item like a drop.
+                for zone, fraction in ((0, 1 / 6), (1, 0.5), (2, 5 / 6)):
+                    segmented = ui.scroll_into_view('taskbar_wired_section')['global_box']
+                    ipc.click_at(int(segmented['x'] + segmented['width'] * fraction), int(segmented['y'] + segmented['height'] / 2))
+                    ipc.wait_for_panel_settled('control_center')
+                    assert zone_of('wired') == zone, f'wired moved to {zones[zone]} by its buttons'
+                    assert f'{zones[zone]}:wired' in [entry.lstrip('-~') for entry in tomllib.loads(cfg.read_text())['compositor']['taskbar_items']]
                 for name in ('wifi', 'wired'):
                     assert not ui.scroll_into_view(f'taskbar_{name}_visible')['on'], f'{name} is off without its hardware'
                 toggle = ui.scroll_into_view('taskbar_capture_visible')

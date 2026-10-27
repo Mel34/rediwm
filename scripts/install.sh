@@ -60,8 +60,21 @@ while [ "$n" -gt 0 ]; do
         *) set -- "$@" "$arg" ;;
     esac
 done
-# Running from a checkout means the user wants that checkout built.
-if [ -f ./build.zig.zon ] && grep -q '\.name = \.rediwm,' ./build.zig.zon 2>/dev/null; then
+# Build the working files, including uncommitted edits and new files. Also
+# recognize an installer invoked by path from outside the checkout.
+is_source_dir() {
+    [ -f "$1/build.zig.zon" ] && grep -q '\.name = \.rediwm,' "$1/build.zig.zon" 2>/dev/null
+}
+LOCAL_SRC_DIR=""
+if is_source_dir .; then
+    LOCAL_SRC_DIR=$(pwd)
+elif [ -f "$0" ]; then
+    script_repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+    if is_source_dir "$script_repo"; then
+        LOCAL_SRC_DIR=$script_repo
+    fi
+fi
+if [ -n "$LOCAL_SRC_DIR" ]; then
     BUILD=yes
 fi
 
@@ -304,17 +317,13 @@ default_ref() {
     echo "$ref"
 }
 
-if [ -f ./build.zig.zon ] && grep -q '\.name = \.rediwm,' ./build.zig.zon 2>/dev/null; then
-    SRC_DIR=$(pwd)
-    log "Running from an existing checkout at $SRC_DIR"
-elif [ -d "$SRC_DIR/.git" ]; then
-    [ -n "$REPO_REF" ] || REPO_REF=$(default_ref)
-    log "Updating existing checkout at $SRC_DIR"
-    git -C "$SRC_DIR" fetch --depth 1 origin "$REPO_REF"
-    git -C "$SRC_DIR" checkout "$REPO_REF"
-    git -C "$SRC_DIR" reset --hard "origin/$REPO_REF"
+if [ -n "$LOCAL_SRC_DIR" ]; then
+    SRC_DIR=$LOCAL_SRC_DIR
+    log "Building working files at $SRC_DIR (including local changes)"
+elif is_source_dir "$SRC_DIR"; then
+    log "Building working files at $SRC_DIR (including local changes; update this source manually if needed)"
 elif [ -e "$SRC_DIR" ]; then
-    die "$SRC_DIR exists but isn't a git checkout; move it aside or set REDIWM_SRC_DIR and re-run"
+    die "$SRC_DIR exists but isn't a RediWM source directory; move it aside or set REDIWM_SRC_DIR and re-run"
 else
     [ -n "$REPO_REF" ] || REPO_REF=$(default_ref)
     log "Cloning $REPO_URL ($REPO_REF) into $SRC_DIR"

@@ -124,6 +124,7 @@ pub fn buildTaskbarSection(out: *Section, t: theme.Theme, pal: theme.Theme) Widg
         out.item_controls[i] = .{
             .{ .kind = .{ .button = .{ .label = i18n.tr("Drag to move"), .icon = .drag_handle, .variant = .ghost, .owner = out, .id = i } }, .width = .{ .fixed = 28 }, .height = .{ .fixed = 28 } },
             .{ .kind = .{ .text = .{ .content = "", .font_size = theme.global.app_text_size, .weight = 600, .color = pal.fg } }, .width = .{ .flex = 1 } },
+            .{ .kind = .{ .segmented = .{ .labels = panel.translatedLabels(&.{ i18n.msg("Left"), i18n.msg("Center"), i18n.msg("Right") }), .selected = 0, .owner = out, .id = i, .on_change = &appearance_items.onItemSectionChanged } }, .width = .{ .fixed = appearance_items.item_section_width } },
             .{ .kind = .{ .toggle = .{ .on = false, .owner = out, .on_change = &ItemToggle(i).changed } } },
         };
         out.item_rows[i] = .{ .kind = .{ .rect = itemRowStyle(false) }, .direction = .row, .gap = 8, .@"align" = .center, .padding = .{ .top = 6, .right = 10, .bottom = 6, .left = 6 }, .children = &out.item_controls[i] };
