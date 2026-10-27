@@ -35,15 +35,39 @@ pub fn build(b: *std.Build) void {
     const wayland = protocols.module(b);
     const xkbcommon = b.dependency("xkbcommon", .{}).module("xkbcommon");
     const pixman = b.dependency("pixman", .{}).module("pixman");
-    const wlroots = b.dependency("wlroots", .{}).module("wlroots");
+    const wlroots_dep = b.dependency("wlroots", .{}).module("wlroots");
 
-    wlroots.addImport("wayland", wayland);
-    wlroots.addImport("xkbcommon", xkbcommon);
-    wlroots.addImport("pixman", pixman);
+    wlroots_dep.addImport("wayland", wayland);
+    wlroots_dep.addImport("xkbcommon", xkbcommon);
+    wlroots_dep.addImport("pixman", pixman);
 
     // Expose the wlroots include path from pkg-config to its @cImport calls.
-    wlroots.resolved_target = target;
-    wlroots.linkSystemLibrary("wlroots-0.20", .{});
+    wlroots_dep.resolved_target = target;
+    wlroots_dep.linkSystemLibrary("wlroots-0.20", .{});
+
+    // In-tree facade over wlroots (src/wlr/AGENTS.md / top-level AGENTS.md's
+    // "zig-wlroots" note): migrates off zig-wlroots onto @cImport one
+    // subsystem at a time. Everything not yet migrated forwards to the real
+    // zig-wlroots module above, imported here as "old". Every existing user
+    // of the module named `wlroots` below gets the facade transparently.
+    const wlr_facade = b.createModule(.{ .root_source_file = b.path("src/wlr/wlr.zig") });
+    wlr_facade.addImport("old", wlroots_dep);
+    wlr_facade.addImport("wayland", wayland);
+    wlr_facade.resolved_target = target;
+    wlr_facade.linkSystemLibrary("wlroots-0.20", .{});
+
+    // wlr/types/wlr_output_power_management_v1.h #includes its protocol's
+    // generated server header; wlroots doesn't install that header for
+    // consumers, so generate it the same way build/protocols.zig's scanner
+    // does internally, just emitting a C header instead of Zig bindings.
+    const output_power_protocol_header = blk: {
+        const run = b.addSystemCommand(&.{ "wayland-scanner", "server-header" });
+        run.addFileArg(b.path("protocol/wlr-output-power-management-unstable-v1.xml"));
+        break :blk run.addOutputFileArg("wlr-output-power-management-unstable-v1-protocol.h");
+    };
+    wlr_facade.addIncludePath(output_power_protocol_header.dirname());
+
+    const wlroots = wlr_facade;
 
     // Module roots enforce one-way dependencies: shared code cannot import Server.
     const memory_mod = b.createModule(.{ .root_source_file = b.path("src/memory/allocator.zig"), .target = target, .optimize = optimize });

@@ -5,7 +5,7 @@ Tests: `TESTING.md`. Where code lives: [source map](docs/agent-notes/map.md).
 Area notes are in an `AGENTS.md` beside the code; read
 the one for the directory you work in: `src/files`, `src/editor`,
 `src/desktop`, `src/input`, `src/control_center`, `src/ui`, `src/session`,
-`src/dm`, `src/accounts_helper`, `src/printing`, `scripts`.
+`src/dm`, `src/accounts_helper`, `src/printing`, `scripts`, `src/wlr`.
 
 ## Working rules
 
@@ -261,6 +261,10 @@ panel painting. The key rules:
   `ScreencopyFrameV1.buffer` can be NULL: read through `*const ?*T`.
   `wlr.Pointer` is 8 bytes short: embed it in an extern wrapper
   (`input/virtual.zig`) or `wlr_pointer_init` overwrites the next field.
+  `src/wlr/` is migrating `wlr.*` off this hand-mirrored dependency onto an
+  in-tree `@cImport` facade, one subsystem at a time, to stop depending on
+  zig-wlroots's own release cadence; read `src/wlr/AGENTS.md` before adding
+  a new wlr type or forwarding one off `old`.
 * Debug `main.gpa` is `DebugAllocator`: freed memory reads `0xaa…` (glibc
   `MALLOC_PERTURB_`: `0xa5…`), leaks print at exit in the compositor log. Free
   process-lifetime caches in `main.start`'s defers; state workers read during
