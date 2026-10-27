@@ -10,4 +10,5 @@ pub const c = @cImport({
     @cInclude("wlr/types/wlr_output_power_management_v1.h");
     @cInclude("wlr/types/wlr_idle_notify_v1.h");
     @cInclude("wlr/types/wlr_idle_inhibit_v1.h");
+    @cInclude("wlr/types/wlr_keyboard_shortcuts_inhibit_v1.h");
 });

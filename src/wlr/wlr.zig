@@ -19,6 +19,10 @@ const idle_inhibit = @import("idle_inhibit.zig").Types(old.Surface);
 pub const IdleInhibitManagerV1 = idle_inhibit.IdleInhibitManagerV1;
 pub const IdleInhibitorV1 = idle_inhibit.IdleInhibitorV1;
 
+const kb_shortcuts_inhibit = @import("keyboard_shortcuts_inhibit.zig").Types(old.Surface, old.Seat);
+pub const KeyboardShortcutsInhibitManagerV1 = kb_shortcuts_inhibit.KeyboardShortcutsInhibitManagerV1;
+pub const KeyboardShortcutsInhibitorV1 = kb_shortcuts_inhibit.KeyboardShortcutsInhibitorV1;
+
 // --- Not yet migrated: forwarded straight to zig-wlroots. ---
 //
 // Box/FBox/Edges are drafted and verified against the real headers in
@@ -64,8 +68,6 @@ pub const InputMethodManagerV2 = old.InputMethodManagerV2;
 pub const InputMethodV2 = old.InputMethodV2;
 pub const InputPopupSurfaceV2 = old.InputPopupSurfaceV2;
 pub const Keyboard = old.Keyboard;
-pub const KeyboardShortcutsInhibitManagerV1 = old.KeyboardShortcutsInhibitManagerV1;
-pub const KeyboardShortcutsInhibitorV1 = old.KeyboardShortcutsInhibitorV1;
 pub const LayerShellV1 = old.LayerShellV1;
 pub const LayerSurfaceV1 = old.LayerSurfaceV1;
 pub const LinuxDmabufV1 = old.LinuxDmabufV1;
