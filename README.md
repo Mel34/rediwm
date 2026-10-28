@@ -51,6 +51,10 @@ curl -fsSL https://rediwm.redios.org/install.sh | sh    # add `-s -- --dm` for r
 and derivatives such as Artix and CachyOS, Debian, Ubuntu and Fedora).
 Installing never replaces your login manager
 
+NixOS users can install the flake and enable `programs.rediwm.enable` to add
+RediWM to their existing login manager. See [Nix installation](docs/nix.md)
+for configuration, building with Nix, and the initial support scope.
+
 ## Building and running
 
 Requirements: Zig 0.17, wlroots 0.20, and the development files for Wayland,
