@@ -49,7 +49,11 @@ pub fn add(ctx: Context) Apps {
     torrents.addArg("-g");
     torrents.addArg("-D_GLIBCXX_ASSERTIONS");
     torrents.addArg("-fstack-protector-strong");
-    if (optimize != .debug) torrents.addArg("-D_FORTIFY_SOURCE=3");
+    if (optimize != .debug) {
+        // Distro compilers may predefine fortification; replace it explicitly.
+        torrents.addArg("-U_FORTIFY_SOURCE");
+        torrents.addArg("-D_FORTIFY_SOURCE=3");
+    }
     inline for (.{ "helper.cpp", "helper_transfers.cpp", "helper_peers.cpp", "helper_tray.cpp" }) |part| torrents.addFileArg(b.path("src/files/torrent/" ++ part));
     torrents.addFileInput(b.path("src/files/torrent/helper.hpp"));
     torrents.addArg("-o");
