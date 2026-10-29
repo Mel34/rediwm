@@ -83,6 +83,7 @@ pub const View = struct {
     controls_node: *sn.Buffer,
     controls_key: ?ControlsKey = null,
     revision: u64 = 0,
+    content_ready: bool = false,
     width: i32 = 0,
     height: i32 = 0,
     scale: f32 = 0,
@@ -122,6 +123,7 @@ pub const View = struct {
         self.caret.hide();
         self.hideControls();
         self.revision = 0;
+        self.content_ready = false;
         Buffer.drainPool();
     }
 
@@ -177,6 +179,8 @@ pub const View = struct {
         if (self.revision == lock.revision and self.width == b.width and self.height == b.height and self.scale == scale) return self.caret.frame(now);
         if (b.width <= 0 or b.height <= 0) return false;
         // Drop stale pixels before a failed resize allocation.
+        self.content_ready = false;
+        out.greeter_presented = false;
         self.ui_node.setBuffer(null);
         if (lock.greeter_wallpaper orelse out.server.wallpaper) |image| {
             self.wallpaper.setBuffer(&image.base);
@@ -197,6 +201,7 @@ pub const View = struct {
         } else null, lock.caret_edit_ms);
         self.ui_node.setBuffer(&buf.base);
         self.ui_node.setDestSize(b.width, b.height);
+        self.content_ready = true;
         self.revision = lock.revision;
         self.width = b.width;
         self.height = b.height;

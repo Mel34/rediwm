@@ -84,6 +84,7 @@ pub fn handleSessionActive(listener: *wl.Listener(void)) void {
     if (session.active) {
         log.info("session became active (VT switch back)", .{});
         server.reactivateSession();
+        @import("../session/greeter_ready.zig").check(server);
         server.startup_tasks.onSessionActive();
     } else {
         log.info("session became inactive (VT switch away)", .{});

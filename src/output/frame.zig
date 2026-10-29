@@ -326,10 +326,15 @@ pub fn runFrame(output: *Output) void {
                     output.startup_commit_seq = output.wlr_output.commit_seq +% 1;
                     output.startup_presented = false;
                 }
+                if (output.server.greeter_mode and output.lock_view.content_ready and output.greeter_unveiled)
+                    output.greeter_commit_seq = output.wlr_output.commit_seq +% 1;
                 output.startup_committing = true;
                 committed = output.commitFrameState(&state);
                 output.startup_committing = false;
-                if (!committed) output.startup_commit_seq = null;
+                if (!committed) {
+                    output.startup_commit_seq = null;
+                    output.greeter_commit_seq = null;
+                }
             } else {
                 committed = false;
             }
@@ -438,6 +443,10 @@ pub fn handleRequestState(
 
 pub fn handlePresent(listener: *wl.Listener(*wlr.Output.event.Present), event: *wlr.Output.event.Present) void {
     const output: *Output = @fieldParentPtr("present", listener);
+    if (event.presented and output.greeter_commit_seq == event.commit_seq) {
+        output.greeter_presented = true;
+        @import("../session/greeter_ready.zig").check(output.server);
+    }
     if (@import("../startup.zig").marks.first_visible_ns != 0 or !event.presented) return;
     if (output.startup_commit_seq == null or event.commit_seq != output.startup_commit_seq.?) return;
     output.startup_presented = true;

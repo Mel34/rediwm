@@ -80,6 +80,7 @@ pub fn add(ctx: Context) Session {
     dm.root_module.linkSystemLibrary("pam", .{});
     dm.root_module.addCSourceFile(.{ .file = b.path("src/dm/pam.c"), .flags = &.{"-std=c11"} });
     b.installArtifact(dm);
+    b.step("rediwm-dm", "Build the display manager").dependOn(&dm.step);
 
     const accounts_helper = b.addExecutable(.{
         .name = "rediwm-accounts-helper",

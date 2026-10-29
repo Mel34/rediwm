@@ -60,6 +60,9 @@ const Output = @This();
 const log = std.log.scoped(.output);
 
 lock_view: @import("session/lock.zig").View,
+greeter_commit_seq: ?u32 = null,
+greeter_presented: bool = false,
+greeter_unveiled: bool = true,
 server: *Server,
 wlr_output: *wlr.Output,
 wallpaper: ?*sn.Buffer = null,

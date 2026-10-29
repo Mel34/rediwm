@@ -324,6 +324,10 @@ pub const Daemon = struct {
         };
         switch (action) {
             .none => {},
+            .greeter_ready => @import("notify.zig").greeterReady() catch |err| {
+                log.err("cannot publish greeter readiness: {}", .{err});
+                self.dropGreeter("readiness notification failed");
+            },
             .spawn_login => self.beginLogin(parsed.request.login),
             .kill_worker => self.killLogin(),
             .handoff => self.beginHandoff(),
@@ -447,7 +451,7 @@ pub const Daemon = struct {
         };
         if (payload.len == 0) return;
         const text = payload[1..];
-        switch (@as(proto.Report, @enumFromInt(payload[0]))) {
+        switch (@as(proto.Report, @fromBackingInt(@intCast(payload[0])))) {
             .auth_ok => self.sendStart(worker, self.config.greeter_command, "", "") catch |err|
                 log.err("cannot start the greeter: {}", .{err}),
             .denied, .failed => log.err("cannot open the greeter account '{s}': {s}", .{ self.config.greeter_user, text }),
@@ -468,7 +472,7 @@ pub const Daemon = struct {
         };
         if (payload.len == 0) return;
         const text = payload[1..];
-        switch (@as(proto.Report, @enumFromInt(payload[0]))) {
+        switch (@as(proto.Report, @fromBackingInt(@intCast(payload[0])))) {
             .session_started => {
                 self.session_running = true;
                 self.session_started_at = monotonicMs();
@@ -476,7 +480,7 @@ pub const Daemon = struct {
             .session_failed => log.err("cannot open the session: {s}", .{text}),
             .session_ended => log.info("session ended (wait status {s})", .{text}),
             else => if (self.user_autologin) {
-                if (payload[0] == @intFromEnum(proto.Report.auth_ok)) {
+                if (payload[0] == @backingInt(proto.Report.auth_ok)) {
                     const session = self.autologin_session.?;
                     self.sendStart(worker, session.exec, session.id, session.desktops) catch |err|
                         log.err("cannot start the autologin session: {}", .{err});

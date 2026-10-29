@@ -29,6 +29,7 @@ pub fn start(self: *Tasks, server: *Server) !void {
     if (self.input_pending) server.input.holdCursor() else startup.markInputReady();
     if (server.greeter_mode) {
         self.complete = true;
+        @import("session/greeter_ready.zig").check(server);
         return;
     }
     self.timer = try server.wl_server.getEventLoop().addTimer(*Tasks, tick, self);

@@ -54,6 +54,9 @@ pub const Greeter = struct {
     client: ?dm_ipc.Client = null,
     source: ?*wl.EventSource = null,
     phase: Phase = .idle,
+    ready_sent: bool = false,
+    ready_pending: bool = false,
+    ready_pointer_required: bool = true,
     /// The first answer, typed before the daemon asks for it.
     pending: [512]u8 = @splat(0),
     pending_len: ?usize = null,
@@ -67,6 +70,10 @@ pub const Greeter = struct {
         self.* = .{ .arena = .init(gpa), .io = io, .loop = loop };
         _ = c.mlock(&self.pending, self.pending.len);
         const a = self.arena.allocator();
+        // An explicit administrator choice for keyboard-only seats. Unknown
+        // values keep the conservative desktop keyboard + pointer policy.
+        if (environ.getPosix("REDIWM_GREETER_READY_INPUT")) |policy|
+            self.ready_pointer_required = !std.mem.eql(u8, policy, "keyboard");
         if (environ.getPosix("REDIWM_GREETER_FD")) |fd_str| {
             if (std.fmt.parseInt(c_int, fd_str, 10)) |fd| {
                 // Nothing the greeter might spawn inherits the daemon socket.
@@ -184,6 +191,15 @@ pub const Greeter = struct {
         self.clearPending();
     }
 
+    /// Called only after presentation and seat readiness, never on a timer.
+    pub fn reportReady(self: *Greeter) void {
+        if (self.ready_sent or self.phase == .starting or self.phase == .done or self.client == null or
+            self.selectedUser() == null or self.selectedSession() == null) return;
+        self.send(.ready) catch return self.lost();
+        self.ready_sent = true;
+        self.ready_pending = true;
+    }
+
     fn send(self: *Greeter, request: dm_ipc.Request) !void {
         try (if (self.client) |*client| client else return error.NoService).send(request);
     }
@@ -229,12 +245,18 @@ pub const Greeter = struct {
     }
 
     fn handle(self: *Greeter, response: dm_ipc.Response) ?Event {
+        if (response == .ready) {
+            if (!self.ready_pending) return self.fail("unsolicited readiness acknowledgement");
+            self.ready_pending = false;
+            return null;
+        }
         switch (self.phase) {
             .cancelling => {
                 self.phase = .idle;
                 return null;
             },
             .starting => return switch (response) {
+                .ready => unreachable,
                 .ok => blk: {
                     self.phase = .done;
                     self.remember();
@@ -244,6 +266,7 @@ pub const Greeter = struct {
                 .question => self.fail("unexpected question"),
             },
             .authenticating => switch (response) {
+                .ready => unreachable,
                 .ok => {
                     self.clearPending();
                     return self.start();

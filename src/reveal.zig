@@ -149,7 +149,15 @@ pub fn tick(self: *Reveal, output: *Output, now_ms: i64) bool {
 fn setVeil(self: *Reveal, output: *Output, alpha: f32) void {
     const server = self.server orelse return;
     const scene_output = server.scene_outputs.get(output.wlr_output) orelse return;
-    if (!server.output_renderer.setVeil(scene_output, alpha)) {
+    // A presented black/fading frame is not an operational greeter.
+    if (alpha != 0) {
+        output.greeter_unveiled = false;
+        output.greeter_presented = false;
+        output.greeter_commit_seq = null;
+    }
+    if (server.output_renderer.setVeil(scene_output, alpha)) {
+        output.greeter_unveiled = alpha == 0;
+    } else {
         std.log.scoped(.reveal).warn("could not veil {s}", .{output.wlr_output.name});
     }
 }
