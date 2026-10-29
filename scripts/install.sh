@@ -53,6 +53,7 @@ while [ "$n" -gt 0 ]; do
     arg=$1; shift; n=$((n - 1))
     case "$arg" in
         --build) BUILD=yes ;;
+        --prefix=*) BUILD=yes; set -- "$@" "$arg" ;;
         --prebuilt-only) PREBUILT_ONLY=yes ;;
         # For scripts/release-build.sh: install what a release build needs.
         --build-deps-only) BUILD=yes; DEPS_ONLY=yes ;;
@@ -74,6 +75,7 @@ elif [ -f "$0" ]; then
         LOCAL_SRC_DIR=$script_repo
     fi
 fi
+if [ -n "${REDIWM_INSTALL_PREFIX:-}" ] && [ "$REDIWM_INSTALL_PREFIX" != /usr/local ]; then BUILD=yes; fi
 if [ -n "$LOCAL_SRC_DIR" ]; then
     BUILD=yes
 fi

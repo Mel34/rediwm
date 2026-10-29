@@ -37,6 +37,7 @@ src/control_center/sections/services.zig
 src/control_center/sections/shortcuts.zig
 src/control_center/sections/sound.zig
 src/control_center/sections/users.zig
+src/control_center/sections/users_helper.zig
 src/control_center/tree.zig
 src/control_center/welcome.zig
 src/cursor_theme.zig

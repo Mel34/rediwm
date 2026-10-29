@@ -1,18 +1,19 @@
 //! Account overview and automatic-login settings.
 const i18n = @import("i18n");
 const std = @import("std");
-const Child = @import("../../session/child.zig");
 const panel = @import("../panel.zig");
 const model = @import("../../accounts/model.zig");
 const validation = @import("../../accounts/validation.zig");
 const ui = @import("ui");
 const W = ui.layout.Widget;
 const gpa = @import("../../main.zig").gpa;
-const c = @import("c");
 const secret_input = ui.widgets.secret_input;
 extern fn rediwm_polkit_secret_new() ?*anyopaque;
 extern fn rediwm_polkit_secret_free(*anyopaque) void;
-extern fn rediwm_polkit_clear([*]u8, usize) void;
+const helper = @import("users_helper.zig");
+const AuthRequest = helper.AuthRequest;
+const startHelper = helper.startHelper;
+pub const cancelAuthorization = helper.cancelAuthorization;
 
 const Form = enum { none, add, details, password, delete_confirm };
 const max_groups = 256;
@@ -50,14 +51,6 @@ pub const Section = struct {
     group_admin: [max_groups]bool = undefined,
     group_target: [32]u8 = undefined,
     group_target_len: usize = 0,
-};
-
-const AuthRequest = struct {
-    allocator: std.mem.Allocator,
-    cc: ?*panel.ControlCenter,
-    io: std.Io,
-    child: *Child,
-    is_authorization: bool,
 };
 
 fn text(value: []const u8, size: f32, dim: bool) W {
@@ -736,85 +729,4 @@ fn autologinSessionChanged(owner: ?*anyopaque, _: usize, index: usize) void {
         cc.users.message = i18n.tr("Could not start the request.");
         cc.refresh();
     };
-}
-
-fn startHelper(cc: *panel.ControlCenter, request: anytype, is_authorization: bool) !void {
-    if (cc.users.auth != null) return;
-    const req = try gpa.create(AuthRequest);
-    errdefer gpa.destroy(req);
-    req.* = .{ .allocator = gpa, .cc = cc, .io = cc.server.io, .child = undefined, .is_authorization = is_authorization };
-    const encoded = try std.json.Stringify.valueAlloc(gpa, request, .{});
-    const contains_secret = comptime @hasField(@TypeOf(request), "password");
-    defer {
-        if (contains_secret) rediwm_polkit_clear(encoded.ptr, encoded.len);
-        gpa.free(encoded);
-    }
-    var sockets: [2]c_int = undefined;
-    if (c.socketpair(c.AF_UNIX, c.SOCK_STREAM | c.SOCK_CLOEXEC, 0, &sockets) != 0) return error.SocketPairFailed;
-    defer {
-        if (sockets[0] >= 0) _ = c.close(sockets[0]);
-        if (sockets[1] >= 0) _ = c.close(sockets[1]);
-    }
-
-    const executable = if (c.access("/usr/bin/pkexec", c.X_OK) == 0) "/usr/bin/pkexec" else "/bin/pkexec";
-    var child = try std.process.spawn(cc.server.io, .{
-        .argv = &.{ executable, "--disable-internal-agent", "/usr/local/bin/rediwm-accounts-helper" },
-        .stdin = .{ .file = .{ .handle = sockets[0], .flags = .{ .nonblocking = false } } },
-        .stdout = .ignore,
-        .stderr = .ignore,
-    });
-    errdefer {
-        child.kill(cc.server.io);
-    }
-    _ = c.close(sockets[0]);
-    sockets[0] = -1;
-    var written: usize = 0;
-    while (written < encoded.len) {
-        const n = c.send(sockets[1], encoded.ptr + written, encoded.len - written, c.MSG_NOSIGNAL);
-        if (n <= 0) return error.RequestWriteFailed;
-        written += @intCast(n);
-    }
-    _ = c.close(sockets[1]);
-    sockets[1] = -1;
-    req.child = try Child.watch(gpa, cc.server.wl_server.getEventLoop(), child.id.?, req, authReady);
-    cc.users.auth = req;
-    cc.users.message = "";
-    cc.refresh();
-}
-
-fn authReady(owner: ?*anyopaque, _: *Child, status: ?u32) void {
-    const req: *AuthRequest = @ptrCast(@alignCast(owner.?));
-    if (req.cc) |cc| {
-        if (cc.users.auth == req) {
-            cc.users.auth = null;
-            if (status != null and status.? == 0) {
-                if (req.is_authorization) {
-                    cc.users.unlocked = true;
-                    cc.users.message = "";
-                } else {
-                    cc.users.message = i18n.tr("Changes saved.");
-                }
-            } else {
-                if (req.is_authorization) {
-                    cc.users.unlocked = false;
-                    cc.users.message = i18n.tr("Authentication was cancelled or denied.");
-                } else {
-                    cc.users.message = i18n.tr("No changes were made. Authentication was cancelled or the request failed.");
-                }
-            }
-            cc.refresh();
-        }
-    }
-    req.allocator.destroy(req);
-}
-
-/// Stop a pending pkexec when its Settings window closes.
-pub fn cancelAuthorization(cc: *panel.ControlCenter) void {
-    if (cc.users.auth) |req| {
-        cc.users.auth = null;
-        req.cc = null;
-        req.child.signal(.TERM);
-        req.child.detach();
-        req.allocator.destroy(req);
-    }
 }

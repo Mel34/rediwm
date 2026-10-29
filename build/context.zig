@@ -6,6 +6,7 @@ const CHeaders = @import("support.zig").CHeaders;
 
 pub const Context = struct {
     b: *std.Build,
+    layout: @import("install_paths.zig").Layout,
     target: std.Build.ResolvedTarget,
     optimize: std.lang.Optimize,
     use_llvm: bool,

@@ -26,13 +26,18 @@ pub fn add(ctx: Context) void {
         "share/xdg-desktop-portal-wlr/config",
     ).step);
     b.getInstallStep().dependOn(&b.addInstallFileWithDir(
-        localizedData(b, i18n_tool, "data/rediwm.desktop"),
+        localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm.desktop"),
         .prefix,
         "share/wayland-sessions/rediwm.desktop",
     ).step);
 
-    b.getInstallStep().dependOn(&b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/org.rediwm.accounts.policy"), .prefix, "share/polkit-1/actions/org.rediwm.accounts.policy").step);
-    b.getInstallStep().dependOn(&b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-release-safe.desktop"), .prefix, "share/wayland-sessions/rediwm-release-safe.desktop").step);
+    b.getInstallStep().dependOn(&b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/org.rediwm.accounts.policy"), .prefix, "share/polkit-1/actions/org.rediwm.accounts.policy").step);
+    b.getInstallStep().dependOn(&b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-release-safe.desktop"), .prefix, "share/wayland-sessions/rediwm-release-safe.desktop").step);
+
+    inline for (.{ "rediwm-dm.conf", "rediwm-dm.service" }) |name| {
+        const configured = @import("install_paths.zig").configure(b, "data/" ++ name, ctx.layout.prefix);
+        b.getInstallStep().dependOn(&b.addInstallFileWithDir(configured, .prefix, "share/rediwm/" ++ name).step);
+    }
 
     // Wallpapers, found at runtime through share/rediwm/wallpapers next to
     // the binaries (wallpapers.zig); `[compositor] wallpaper` picks one.

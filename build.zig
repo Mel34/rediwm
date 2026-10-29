@@ -21,6 +21,7 @@ const localizedData = support.localizedData;
 const addCatalogInputs = support.addCatalogInputs;
 
 pub fn build(b: *std.Build) void {
+    const layout = @import("build/install_paths.zig").Layout.init(b);
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const use_llvm = b.option(bool, "llvm", "Use LLVM and LLD (default for optimized builds)") orelse (optimize != .debug);
@@ -120,7 +121,7 @@ pub fn build(b: *std.Build) void {
     addThumbCodec(b, theme_helper.root_module);
     theme_helper.root_module.linkSystemLibrary("libwebp", .{});
     b.installArtifact(theme_helper);
-    b.getInstallStep().dependOn(&b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-theme.desktop"), .prefix, "share/applications/rediwm-theme.desktop").step);
+    b.getInstallStep().dependOn(&b.addInstallFileWithDir(localizedData(b, i18n_tool, layout.prefix, "data/rediwm-theme.desktop"), .prefix, "share/applications/rediwm-theme.desktop").step);
     b.getInstallStep().dependOn(&b.addInstallFileWithDir(b.path("data/rediwm-theme.xml"), .prefix, "share/mime/packages/rediwm-theme.xml").step);
 
     const protocol_mod = b.createModule(.{
@@ -195,6 +196,7 @@ pub fn build(b: *std.Build) void {
 
     const ctx: Context = .{
         .b = b,
+        .layout = layout,
         .target = target,
         .optimize = optimize,
         .use_llvm = use_llvm,
@@ -252,6 +254,7 @@ pub fn build(b: *std.Build) void {
         inline for (.{ "cairo", "librsvg-2.0", "freetype2", "harfbuzz", "fontconfig" }) |lib| module.linkSystemLibrary(lib, .{});
     }
     inline for (.{ compositor.root_module, ui_tests_module, files.root_module, images.root_module, editor.root_module, pdf.root_module, share_picker.root_module, monitor.root_module, calculator.root_module, editor_tests.root_module, images_tests.root_module, pdf_tests.root_module, files_tests.root_module, ipc_tests_module, protocol_mod, session_supervisor.root_module, session_tests.root_module, share_picker_tests.root_module, dbus_tests.root_module }) |module| {
+        module.addImport("install_paths", layout.options);
         module.addImport("ui", ui_mod);
         module.addImport("i18n", i18n_mod);
         module.addImport("config", config_mod);

@@ -45,6 +45,7 @@ pub fn add(ctx: Context) Session {
         .use_llvm = use_llvm,
         .use_lld = use_llvm,
     });
+    restart.root_module.addImport("install_paths", ctx.layout.options);
     b.installArtifact(restart);
 
     const child_set_mod = b.createModule(.{ .root_source_file = b.path("src/child_set.zig"), .target = target, .optimize = optimize });
@@ -61,6 +62,7 @@ pub fn add(ctx: Context) Session {
 
     dm_ipc_mod.addImport("c", ctx.c.libc);
     ws_mod.addImport("c", ctx.c.libc);
+    ws_mod.addImport("install_paths", ctx.layout.options);
 
     const dm = b.addExecutable(.{
         .name = "rediwm-dm",
@@ -73,6 +75,7 @@ pub fn add(ctx: Context) Session {
         .use_llvm = use_llvm,
         .use_lld = use_llvm,
     });
+    dm.root_module.addImport("install_paths", ctx.layout.options);
     dm.root_module.addImport("c", ctx.c.libc);
     dm.root_module.addImport("child_set", child_set_mod);
     dm.root_module.addImport("dm_ipc", dm_ipc_mod);
@@ -100,11 +103,13 @@ pub fn add(ctx: Context) Session {
         .target = target,
         .optimize = optimize,
     }));
-    accounts_helper.root_module.addImport("dm_config", b.createModule(.{
+    const dm_config = b.createModule(.{
         .root_source_file = b.path("src/dm/config.zig"),
         .target = target,
         .optimize = optimize,
-    }));
+    });
+    dm_config.addImport("install_paths", ctx.layout.options);
+    accounts_helper.root_module.addImport("dm_config", dm_config);
     b.installArtifact(accounts_helper);
     b.step("accounts-helper", "Build the privileged account-management helper").dependOn(&accounts_helper.step);
     return .{ .session_supervisor = session_supervisor, .child_set_mod = child_set_mod, .dm_ipc_mod = dm_ipc_mod, .ws_mod = ws_mod };

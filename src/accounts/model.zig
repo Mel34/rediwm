@@ -102,7 +102,7 @@ pub fn load(a: std.mem.Allocator, io: std.Io) !Snapshot {
     const config = std.Io.Dir.cwd().readFileAlloc(io, "/etc/rediwm/dm.conf", a, .limited(64 * 1024)) catch "";
     defer if (config.len > 0) a.free(config);
     const auto = try parseAutologin(a, config);
-    const sessions = ws.loadSessions(a, io, "/usr/local/share:/usr/share", "/usr/local/bin:/usr/bin:/bin") catch &.{};
+    const sessions = ws.loadSessions(a, io, @import("install_paths").data_dirs, @import("install_paths").search_path) catch &.{};
     return .{ .users = users.items, .groups = groups.items, .sessions = sessions, .autologin_user = auto.user, .autologin_session = auto.session };
 }
 

@@ -25,12 +25,14 @@ dm_flag=no
 # --prebuilt: install.sh unpacked a release, whose zig-out/release-safe is
 # already built (scripts/make-release.sh), so there is nothing to compile.
 prebuilt=no
+prefix=${REDIWM_INSTALL_PREFIX:-/usr/local}
 for arg in "$@"; do
     case "$arg" in
         --no-restart) restart=no ;;
         --dm) dm_flag=yes ;;
         --prebuilt) prebuilt=yes ;;
-        *) echo "Usage: $0 [--no-restart] [--dm] [--prebuilt]" >&2; exit 1 ;;
+        --prefix=*) prefix=${arg#--prefix=} ;;
+        *) echo "Usage: $0 [--no-restart] [--dm] [--prebuilt] [--prefix=/usr/local]" >&2; exit 1 ;;
     esac
 done
 
@@ -50,10 +52,15 @@ if [ "$prebuilt" = no ]; then
     cd "$repo_dir"
     # Set by install.sh when it built the private wlroots (see scripts/build-wlroots.sh).
     if [ -n "${REDIWM_WLROOTS_PREFIX:-}" ]; then
-        as_user sh scripts/with-wlroots.sh "$REDIWM_WLROOTS_PREFIX" zig build -Doptimize=ReleaseSafe -j"$ZIG_JOBS" --prefix "$release_dir" -Dwlroots-prefix="$REDIWM_WLROOTS_PREFIX"
+        as_user sh scripts/with-wlroots.sh "$REDIWM_WLROOTS_PREFIX" zig build -Doptimize=ReleaseSafe -j"$ZIG_JOBS" --prefix "$release_dir" -Dinstall-prefix="$prefix" -Dwlroots-prefix="$REDIWM_WLROOTS_PREFIX"
     else
-        as_user zig build -Doptimize=ReleaseSafe -j"$ZIG_JOBS" --prefix "$release_dir"
+        as_user zig build -Doptimize=ReleaseSafe -j"$ZIG_JOBS" --prefix "$release_dir" -Dinstall-prefix="$prefix"
     fi
+fi
+built_prefix=$(cat "$release_dir/install-prefix")
+if [ "${built_prefix%/}" != "${prefix%/}" ]; then
+    echo "Build targets $built_prefix, not $prefix. Rebuild with --prefix=$prefix (prebuilt releases cannot be relocated)." >&2
+    exit 1
 fi
 for binary in rediwm rediwm-msg rediwm-theme rediwm-files rediwm-images rediwm-monitor rediwm-editor rediwm-pdf rediwm-share-picker rediwm-dm rediwm-accounts-helper rediwm-restart; do
     test -x "$release_dir/bin/$binary"

@@ -89,8 +89,8 @@ pub const Greeter = struct {
             log.err("cannot list accounts: {}", .{err});
             break :blk &.{};
         };
-        const data_dirs = environ.getPosix("XDG_DATA_DIRS") orelse "/usr/local/share:/usr/share";
-        const search = environ.getPosix("PATH") orelse "/usr/local/sbin:/usr/local/bin:/usr/bin";
+        const data_dirs = environ.getPosix("XDG_DATA_DIRS") orelse @import("install_paths").data_dirs;
+        const search = environ.getPosix("PATH") orelse @import("install_paths").search_path;
         self.sessions = ws.loadSessions(a, io, data_dirs, search) catch |err| blk: {
             log.err("cannot list sessions: {}", .{err});
             break :blk &.{};

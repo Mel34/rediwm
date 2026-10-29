@@ -5,14 +5,14 @@
 //! through SO_PEERCRED that the listener is this user's process running the
 //! installed executable, asks it to restart, then waits until the same PID
 //! answers again from the new executable. Usage:
-//! `rediwm-restart [installed [socket]]` (default /usr/local/bin/rediwm). The
+//! `rediwm-restart [installed [socket]]` (default: configured installation). The
 //! socket is an argument, never `REDIWM_SOCKET`: a shell started from the live
 //! session inherits that variable, and a stray run would restart the desktop.
 const std = @import("std");
 const linux = std.os.linux;
 const c = std.posix.system;
 
-const default_installed = "/usr/local/bin/rediwm";
+const default_installed = @import("install_paths").bin ++ "/rediwm";
 const io_timeout_s = 3;
 const ready_timeout_ms = 20_000;
 const poll_interval_ms = 200;

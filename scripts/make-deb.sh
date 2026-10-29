@@ -1,8 +1,8 @@
 #!/bin/sh
 # Builds a .deb from an existing ReleaseSafe tree (zig-out/release-safe, see
 # scripts/install-session.sh and scripts/release-build.sh). The layout mirrors
-# scripts/install-session-root.sh, which installs under /usr/local because the
-# binaries, the session entry and rediwm-restart expect it. It does not enable
+# scripts/install-session-root.sh, using the runtime prefix recorded by the
+# build. Build with -Dinstall-prefix=/usr for distro packages. It does not enable
 # rediwm-dm or touch /etc/pam.d.
 #
 #   scripts/make-deb.sh [OUTDIR]
@@ -21,7 +21,9 @@ command -v dpkg-deb >/dev/null || die "dpkg-deb is required"
 
 root=$(mktemp -d)
 trap 'rm -rf "$root"' EXIT
-L="$root/usr/local"
+prefix=$(cat "$rel/install-prefix")
+prefix=${prefix%/}
+L="$root$prefix"
 install -d "$L/bin" "$L/lib" "$L/share" "$root/usr/share" "$root/DEBIAN"
 
 for b in $bins; do install -m755 "$rel/bin/$b" "$L/bin/$b"; done
@@ -33,7 +35,7 @@ install -d "$root/usr/share/polkit-1/actions" "$root/usr/share/wayland-sessions"
 cp "$rel/share/polkit-1/actions/org.rediwm.accounts.policy" "$root/usr/share/polkit-1/actions/"
 cp "$rel/share/wayland-sessions/rediwm-release-safe.desktop" "$root/usr/share/wayland-sessions/"
 install -m644 "$repo/data/rediwm.portal" "$root/usr/share/xdg-desktop-portal/portals/rediwm.portal"
-# Everything else lives under /usr/local/share, as the binaries expect.
+# Remaining data follows the configured prefix.
 (cd "$rel/share" && tar -cf - --exclude=./polkit-1 --exclude=./wayland-sessions --exclude=./xdg-desktop-portal/portals .) | (cd "$L/share" && tar -xf -)
 install -Dm644 "$repo/data/xdg-desktop-portal-wlr.ini" "$L/share/xdg-desktop-portal-wlr/config"
 install -Dm644 "$repo/data/rediwm-theme.xml" "$L/share/mime/packages/rediwm-theme.xml"
@@ -44,13 +46,13 @@ install -Dm644 "$repo/LICENSE-MIT" "$root/usr/share/doc/rediwm/copyright"
 install -Dm644 "$repo/LICENSE-APACHE" "$root/usr/share/doc/rediwm/LICENSE-APACHE"
 # The dm files are shipped as examples only: nothing enables the display manager.
 install -d "$root/usr/share/doc/rediwm/examples"
-cp -r "$repo/data/pam" "$repo/data/rediwm-dm.conf" "$repo/data/rediwm-dm.service" "$repo/data/rediwm-dm.sysusers" "$repo/data/rediwm-dm.tmpfiles" "$root/usr/share/doc/rediwm/examples/"
+cp -r "$repo/data/pam" "$rel/share/rediwm/rediwm-dm.conf" "$rel/share/rediwm/rediwm-dm.service" "$repo/data/rediwm-dm.sysusers" "$repo/data/rediwm-dm.tmpfiles" "$root/usr/share/doc/rediwm/examples/"
 
 find "$root" -type d -exec chmod 755 {} +
-find "$root/usr" -type f ! -perm -u+x -exec chmod 644 {} +
+find "$root" -type f ! -perm -u+x -exec chmod 644 {} +
 # cp -a and tar keep the build tree's modes: under umask 077 the bundled libraries
 # would ship root-only and the compositor could not load them for users.
-find "$root/usr" -type f -perm -u+x -exec chmod 755 {} +
+find "$root" -type f -perm -u+x -exec chmod 755 {} +
 
 # Dependencies: the packages owning every system library the ELF files need,
 # except the ones bundled in lib/rediwm.
@@ -67,7 +69,7 @@ deps=$(
     done | sort -u | paste -sd, - | sed 's/,/, /g'
 )
 [ -n "$deps" ] || die "no package owns the linked libraries: build on Debian or Ubuntu, where dpkg -S knows them"
-size=$(du -sk "$root/usr" | cut -f1)
+size=$(du -sk "$root" | cut -f1)
 
 cat > "$root/DEBIAN/control" <<EOF
 Package: rediwm
@@ -82,25 +84,25 @@ Recommends: xwayland, foot, polkitd
 Description: RediWM Wayland compositor with its own desktop shell
  Single-process wlroots compositor with taskbar, start menu, settings,
  lock screen, notifications, file manager and image viewer. Installed under
- /usr/local, as upstream's installer does. rediwm-dm is installed but never
+ $prefix. rediwm-dm is installed but never
  enabled.
 EOF
 
-cat > "$root/DEBIAN/postinst" <<'EOF'
+cat > "$root/DEBIAN/postinst" <<EOF
 #!/bin/sh
 set -e
-if command -v update-mime-database >/dev/null 2>&1; then update-mime-database /usr/local/share/mime || true; fi
-if command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database /usr/local/share/applications || true; fi
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then gtk-update-icon-cache -q -t /usr/local/share/icons/hicolor 2>/dev/null || true; fi
+if command -v update-mime-database >/dev/null 2>&1; then update-mime-database $prefix/share/mime || true; fi
+if command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database $prefix/share/applications || true; fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then gtk-update-icon-cache -q -t $prefix/share/icons/hicolor 2>/dev/null || true; fi
 exit 0
 EOF
-cat > "$root/DEBIAN/postrm" <<'EOF'
+cat > "$root/DEBIAN/postrm" <<EOF
 #!/bin/sh
 set -e
-case "$1" in
+case "\$1" in
     remove|purge)
-        if command -v update-mime-database >/dev/null 2>&1 && [ -d /usr/local/share/mime/packages ]; then update-mime-database /usr/local/share/mime || true; fi
-        if command -v update-desktop-database >/dev/null 2>&1 && [ -d /usr/local/share/applications ]; then update-desktop-database /usr/local/share/applications || true; fi
+        if command -v update-mime-database >/dev/null 2>&1 && [ -d $prefix/share/mime/packages ]; then update-mime-database $prefix/share/mime || true; fi
+        if command -v update-desktop-database >/dev/null 2>&1 && [ -d $prefix/share/applications ]; then update-desktop-database $prefix/share/applications || true; fi
         ;;
 esac
 exit 0

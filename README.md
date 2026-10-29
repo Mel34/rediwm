@@ -83,6 +83,9 @@ sh scripts/install-session.sh             # install and restart the running sess
 sh scripts/install-session.sh --no-restart --dm   # install only, plus rediwm-dm
 ```
  
+For custom prefixes and distribution packages, see
+[Installation layouts and packaging](docs/installation.md).
+
 ## Using it
 
 | Keys | Action |

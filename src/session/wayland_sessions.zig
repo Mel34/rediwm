@@ -3,6 +3,7 @@
 const std = @import("std");
 
 pub const standard_data_dirs: []const []const u8 = &.{
+    @import("install_paths").data,
     "/usr/local/share",
     "/usr/share",
 };

@@ -148,11 +148,11 @@ pub fn addShellIcons(b: *std.Build, module: *std.Build.Module) void {
 }
 
 /// Localize installed metadata from the same reviewed catalog entries as UI.
-pub fn localizedData(b: *std.Build, tool: *std.Build.Step.Compile, path: []const u8) std.Build.LazyPath {
+pub fn localizedData(b: *std.Build, tool: *std.Build.Step.Compile, prefix: []const u8, path: []const u8) std.Build.LazyPath {
     const run = b.addRunArtifact(tool);
     run.setCwd(b.path("."));
     run.addArg("data");
-    run.addFileArg(b.path(path));
+    run.addFileArg(@import("install_paths.zig").configure(b, path, prefix));
     const result = run.addOutputFileArg(std.fs.path.basename(path));
     run.addDirectoryArg(b.path("po"));
     addCatalogInputs(b, run);

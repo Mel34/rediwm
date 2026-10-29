@@ -491,7 +491,7 @@ msgstr ""
 msgid "Authentication unavailable. Try again."
 msgstr ""
 
-#: src/control_center/sections/users.zig
+#: src/control_center/sections/users_helper.zig
 msgid "Authentication was cancelled or denied."
 msgstr ""
 
@@ -959,7 +959,7 @@ msgstr ""
 msgid "Changes are saved automatically. Scroll the lists for more modes."
 msgstr ""
 
-#: src/control_center/sections/users.zig
+#: src/control_center/sections/users_helper.zig
 msgid "Changes saved."
 msgstr ""
 
@@ -3683,7 +3683,7 @@ msgstr ""
 msgid "No changed files"
 msgstr ""
 
-#: src/control_center/sections/users.zig
+#: src/control_center/sections/users_helper.zig
 msgid "No changes were made. Authentication was cancelled or the request failed."
 msgstr ""
 

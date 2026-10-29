@@ -29,7 +29,7 @@ const PAM_DELETE_CRED: c_int = 0x0004;
 
 /// How long a session gets to exit after SIGTERM before SIGKILL.
 const stop_grace_ms = 5000;
-const default_path = "/usr/local/sbin:/usr/local/bin:/usr/bin:/bin";
+const default_path = @import("install_paths").search_path;
 
 fn report(fd: c_int, tag: proto.Report, text: []const u8) void {
     proto.writeFrameParts(fd, &.{ &.{@intFromEnum(tag)}, text }) catch {};

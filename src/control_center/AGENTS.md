@@ -67,3 +67,6 @@ helpers (and `panel.ControlCenter`); `sections/` one file per page.
   Use `showingPage`, rather than `page`, in background callbacks: an empty
   search covers the selected page. The search field owns its text across rebuilds;
   navigation is deferred until widget dispatch has finished.
+
+* `sections/users_helper.zig` owns the account helper request and authorization
+  lifetime; `users.zig` owns the account UI.

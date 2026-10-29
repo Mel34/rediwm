@@ -249,6 +249,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
         .optimize = optimize,
         .link_libc = true,
     }) });
+    dm_tests.root_module.addImport("install_paths", ctx.layout.options);
     dm_tests.root_module.addImport("c", ctx.c.libc);
     dm_tests.root_module.addImport("child_set", child_set_mod);
     dm_tests.root_module.addImport("dm_ipc", dm_ipc_mod);

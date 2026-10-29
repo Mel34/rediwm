@@ -68,7 +68,7 @@ pub fn add(ctx: Context) Apps {
     // launcher. Its icon is installed in the hicolor fallback theme so the
     // start menu and taskbar can resolve the desktop entry's Icon name.
     const install_files_desktop_entry = b.addInstallFileWithDir(
-        localizedData(b, i18n_tool, "data/rediwm-files.desktop"),
+        localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-files.desktop"),
         .prefix,
         "share/applications/rediwm-files.desktop",
     );
@@ -86,7 +86,7 @@ pub fn add(ctx: Context) Apps {
     files_step.dependOn(&install_files.step);
     files_step.dependOn(&install_torrents.step);
     files_step.dependOn(&torrent_license.step);
-    const transfers_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-transfers.desktop"), .prefix, "share/applications/rediwm-transfers.desktop");
+    const transfers_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-transfers.desktop"), .prefix, "share/applications/rediwm-transfers.desktop");
     b.getInstallStep().dependOn(&transfers_entry.step);
     files_step.dependOn(&transfers_entry.step);
     const test_torrents = b.step("test-files-torrents", "Test real loopback transfers and the Files/tray interface");
@@ -126,7 +126,7 @@ pub fn add(ctx: Context) Apps {
     images.root_module.addImport("wayland", wayland);
     inline for (.{ "wayland-client", "wayland-cursor", "gdk-pixbuf-2.0", "gobject-2.0", "glib-2.0", "xkbcommon" }) |lib| images.root_module.linkSystemLibrary(lib, .{});
     const install_images = b.addInstallArtifact(images, .{});
-    const images_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-images.desktop"), .prefix, "share/applications/rediwm-images.desktop");
+    const images_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-images.desktop"), .prefix, "share/applications/rediwm-images.desktop");
     b.getInstallStep().dependOn(&install_images.step);
     b.getInstallStep().dependOn(&images_entry.step);
     const images_step = b.step("images", "Build the standalone image viewer");
@@ -144,7 +144,7 @@ pub fn add(ctx: Context) Apps {
     monitor.root_module.addImport("wayland", wayland);
     inline for (.{ "wayland-client", "wayland-cursor", "xkbcommon" }) |lib| monitor.root_module.linkSystemLibrary(lib, .{});
     const install_monitor = b.addInstallArtifact(monitor, .{});
-    const monitor_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-monitor.desktop"), .prefix, "share/applications/rediwm-monitor.desktop");
+    const monitor_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-monitor.desktop"), .prefix, "share/applications/rediwm-monitor.desktop");
     const monitor_icon = b.addInstallFileWithDir(b.path("data/rediwm-monitor.svg"), .prefix, "share/icons/hicolor/scalable/apps/rediwm-monitor.svg");
     const monitor_step = b.step("monitor", "Build the standalone System Monitor");
     inline for (.{ &install_monitor.step, &monitor_entry.step, &monitor_icon.step }) |step| {
@@ -161,7 +161,7 @@ pub fn add(ctx: Context) Apps {
     calculator.root_module.addImport("wayland", wayland);
     inline for (.{ "wayland-client", "wayland-cursor", "xkbcommon" }) |lib| calculator.root_module.linkSystemLibrary(lib, .{});
     const install_calculator = b.addInstallArtifact(calculator, .{});
-    const calculator_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-calculator.desktop"), .prefix, "share/applications/rediwm-calculator.desktop");
+    const calculator_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-calculator.desktop"), .prefix, "share/applications/rediwm-calculator.desktop");
     const calculator_icon = b.addInstallFileWithDir(b.path("data/rediwm-calculator.svg"), .prefix, "share/icons/hicolor/scalable/apps/rediwm-calculator.svg");
     const calculator_step = b.step("calculator", "Build the standalone Calculator");
     inline for (.{ &install_calculator.step, &calculator_entry.step, &calculator_icon.step }) |step| {
@@ -178,7 +178,7 @@ pub fn add(ctx: Context) Apps {
     editor.root_module.addImport("wayland", wayland);
     inline for (.{ "wayland-client", "wayland-cursor", "xkbcommon", "pangocairo" }) |lib| editor.root_module.linkSystemLibrary(lib, .{});
     const install_editor = b.addInstallArtifact(editor, .{});
-    const editor_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-editor.desktop"), .prefix, "share/applications/rediwm-editor.desktop");
+    const editor_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-editor.desktop"), .prefix, "share/applications/rediwm-editor.desktop");
     b.getInstallStep().dependOn(&install_editor.step);
     b.getInstallStep().dependOn(&editor_entry.step);
     const editor_step = b.step("editor", "Build the standalone text editor");
@@ -199,7 +199,7 @@ pub fn add(ctx: Context) Apps {
     pdf.root_module.linkSystemLibrary("seccomp", .{});
     inline for (.{ "wayland-client", "wayland-cursor", "poppler-glib", "cairo", "gio-2.0", "gobject-2.0", "glib-2.0", "xkbcommon" }) |lib| pdf.root_module.linkSystemLibrary(lib, .{});
     const install_pdf = b.addInstallArtifact(pdf, .{});
-    const pdf_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, "data/rediwm-pdf.desktop"), .prefix, "share/applications/rediwm-pdf.desktop");
+    const pdf_entry = b.addInstallFileWithDir(localizedData(b, i18n_tool, ctx.layout.prefix, "data/rediwm-pdf.desktop"), .prefix, "share/applications/rediwm-pdf.desktop");
     b.getInstallStep().dependOn(&install_pdf.step);
     b.getInstallStep().dependOn(&pdf_entry.step);
     const pdf_step = b.step("pdf", "Build the standalone PDF viewer");
