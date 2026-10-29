@@ -6,6 +6,7 @@ import tomllib
 from pathlib import Path
 
 from ipc_client import IPCClient, spawn_compositor, stop_process
+from ui_driver import UIDriver
 
 
 def run():
@@ -23,8 +24,10 @@ def run():
             })
             try:
                 with IPCClient(runtime, timeout=15) as ipc:
+                    ui = UIDriver(ipc)
                     ipc.wait_for("wallpaper_presented", timeout_ms=10000)
                     ipc.action('open_control_center')
+                    ui.wait_settled("control_center")
 
                     def widgets():
                         return ipc.get_widget_tree("control_center")["widgets"]
@@ -38,14 +41,18 @@ def run():
                         ipc.pointer_button(272, False)
                         time.sleep(.15)
 
+                    def click_named(name, fraction=.5):
+                        # The panel is taller than the headless output: scroll first.
+                        click(ui.scroll_into_view(name), fraction)
+
                     click(next(w for w in widgets() if w["label"] == "Input"))
+                    ui.wait_settled("control_center")
                     if restart == 0:
                         click(next(w for w in widgets() if w["role"] == "slider"), .8)
-                        # Toggles in panel order: left-handed, natural scroll, tap to click.
-                        for index in range(3):
-                            click([w for w in widgets() if w["role"] == "toggle"][index])
-                        for index in range(2):
-                            click([w for w in widgets() if w["role"] == "stepper"][index], .9)
+                        for name in ("left_handed", "natural_scroll", "tap_to_click"):
+                            click_named(name)
+                        for name in ("repeat_delay", "repeat_rate"):
+                            click_named(name, .9)
                         config = (runtime / "rediwm-config.toml").read_text()
                         saved = tomllib.loads(config)["input"]
                         assert saved["pointer_speed"] > 0, saved
@@ -65,10 +72,10 @@ def run():
                         assert [(w["role"], w["label"], w["box"]) for w in widgets()] == expected
                         # Toggle and increment restored values to inspect state that
                         # the widget-tree protocol does not expose directly.
-                        for index in range(3):
-                            click([w for w in widgets() if w["role"] == "toggle"][index])
-                        for index in range(2):
-                            click([w for w in widgets() if w["role"] == "stepper"][index], .9)
+                        for name in ("left_handed", "natural_scroll", "tap_to_click"):
+                            click_named(name)
+                        for name in ("repeat_delay", "repeat_rate"):
+                            click_named(name, .9)
                         restored = tomllib.loads((runtime / "rediwm-config.toml").read_text())["input"]
                         assert restored["left_handed"] is False
                         assert restored["natural_scroll"] is True
