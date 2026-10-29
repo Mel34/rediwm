@@ -48,6 +48,9 @@ cp -r "$repo/data/pam" "$repo/data/rediwm-dm.conf" "$repo/data/rediwm-dm.service
 
 find "$root" -type d -exec chmod 755 {} +
 find "$root/usr" -type f ! -perm -u+x -exec chmod 644 {} +
+# cp -a and tar keep the build tree's modes: under umask 077 the bundled libraries
+# would ship root-only and the compositor could not load them for users.
+find "$root/usr" -type f -perm -u+x -exec chmod 755 {} +
 
 # Dependencies: the packages owning every system library the ELF files need,
 # except the ones bundled in lib/rediwm.
@@ -63,6 +66,7 @@ deps=$(
         LC_ALL=C dpkg -S "$(realpath "$path")" 2>/dev/null | grep -v '^diversion' | head -1 | cut -d: -f1
     done | sort -u | paste -sd, - | sed 's/,/, /g'
 )
+[ -n "$deps" ] || die "no package owns the linked libraries: build on Debian or Ubuntu, where dpkg -S knows them"
 size=$(du -sk "$root/usr" | cut -f1)
 
 cat > "$root/DEBIAN/control" <<EOF
