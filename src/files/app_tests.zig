@@ -364,6 +364,59 @@ test "keyboard ranges and focus-only movement in grid and list" {
     }
 }
 
+test "type select extends prefixes and matches displayed labels case insensitively" {
+    var app = try testApp();
+    defer app.deinit();
+    try testItems(&app, 4);
+    app.focus = .file_view;
+    app.items.items[0].name = "Daisy";
+    app.items.items[1].name = "different";
+    app.items.items[1].label = "Documents";
+    app.items.items[2].name = "Other";
+    app.items.items[3].name = "unrelated";
+
+    try std.testing.expect(app.typeSelectAt("d", 100));
+    try std.testing.expectEqual(@as(?usize, 0), app.focused_index);
+    try std.testing.expect(app.typeSelectAt("O", 200));
+    try std.testing.expectEqual(@as(?usize, 1), app.focused_index);
+}
+
+test "type select cycles repeated letters and resets after timeout" {
+    var app = try testApp();
+    defer app.deinit();
+    try testItems(&app, 4);
+    app.focus = .file_view;
+    app.items.items[0].name = "cat";
+    app.items.items[1].name = "car";
+    app.items.items[2].name = "Cow";
+    app.items.items[3].name = "Other";
+
+    try std.testing.expect(app.typeSelectAt("c", 100));
+    try std.testing.expectEqual(@as(?usize, 0), app.focused_index);
+    try std.testing.expect(app.typeSelectAt("C", 200));
+    try std.testing.expectEqual(@as(?usize, 1), app.focused_index);
+    try std.testing.expect(app.typeSelectAt("c", 300));
+    try std.testing.expectEqual(@as(?usize, 2), app.focused_index);
+    try std.testing.expect(app.typeSelectAt("c", 400));
+    try std.testing.expectEqual(@as(?usize, 0), app.focused_index);
+
+    try std.testing.expect(app.typeSelectAt("o", 1500));
+    try std.testing.expectEqual(@as(?usize, 3), app.focused_index);
+}
+
+test "type select matches Croatian letters case insensitively" {
+    var app = try testApp();
+    defer app.deinit();
+    try testItems(&app, 3);
+    app.focus = .file_view;
+    app.items.items[0].name = "žirafa";
+    app.items.items[1].name = "čarobnjak";
+    app.items.items[2].name = "ostalo";
+
+    try std.testing.expect(app.typeSelectAt("Č", 100));
+    try std.testing.expectEqual(@as(?usize, 1), app.focused_index);
+}
+
 test "history restores names and scroll while tolerating removed items" {
     var app = try testApp();
     defer app.deinit();
