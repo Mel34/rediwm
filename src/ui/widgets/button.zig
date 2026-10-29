@@ -138,6 +138,24 @@ pub fn paintBackground(r: *Renderer, box: Rect, opts: Options, state: State) voi
         .border_width = border_w,
         .border_color = if (ring) t.controlFocusColor() else if (hovered) t.border else t.border_soft,
     });
+
+    // Directional lighting gives quiet graphite buttons a subtle raised feel.
+    // Preserve selected, disabled, primary, ghost, and chrome treatments.
+    if (opts.variant == .secondary and !state.selected and !disabled and !state.focused and box.w > 0 and box.h >= 6) {
+        const inset = @min(m.radius, @min(box.w, box.h) / 3);
+        const strip_w = box.w - inset * 2;
+        if (strip_w > 0) {
+            const highlight_alpha: f32 = if (hovered) 0.055 else 0.085;
+            r.fillRect(box.x + inset, box.y + 1.5, strip_w, 1, .{
+                .color = .{ t.fg[0], t.fg[1], t.fg[2], highlight_alpha },
+                .radius = 0.5,
+            });
+            r.fillRect(box.x + inset, box.y + box.h - 2.5, strip_w, 1, .{
+                .color = .{ 0, 0, 0, if (hovered) 0.12 else 0.18 },
+                .radius = 0.5,
+            });
+        }
+    }
 }
 
 pub fn paintContent(r: *Renderer, box: Rect, opts: Options, state: State) void {
