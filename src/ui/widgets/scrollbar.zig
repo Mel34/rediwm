@@ -177,10 +177,8 @@ pub fn look(g: Geometry, state: Appearance, configured: f32, palette: theme.Them
     var track_color = palette.surface;
     for (track_color[0..3]) |*channel| channel.* *= 0.48;
     track_color[3] = @max(track_color[3], 0.22);
-    var track_light = palette.border_glow;
-    track_light[3] = @max(track_light[3], 0.5);
-    var track_dark = palette.shadow;
-    track_dark[3] = @max(track_dark[3], 0.35);
+    const track_light = palette.relief_light;
+    const track_dark = palette.relief_dark;
     const track_thickness: f32 = @min(6.0, gutter_thickness);
     var track_rect = g.track;
     if (g.axis == .vertical) {
@@ -429,8 +427,8 @@ test "the thumb is centred in its gutter, widens and tints with feedback" {
     try std.testing.expectEqual(@as(f32, 6), rest.track.w);
     try std.testing.expectEqual(@as(f32, 90), rest.track.x);
     try std.testing.expect(rest.track_color[3] > 0);
-    try std.testing.expect(rest.track_light[3] >= 0.5);
-    try std.testing.expect(rest.track_dark[3] >= 0.35);
+    try std.testing.expectEqual(palette.relief_light, rest.track_light);
+    try std.testing.expectEqual(palette.relief_dark, rest.track_dark);
     state.wide = 1;
     state.accent = 1;
     const hot = look(g, state, 8, palette);
