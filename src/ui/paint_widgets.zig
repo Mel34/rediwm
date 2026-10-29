@@ -244,7 +244,7 @@ pub fn paintSlider(widget: *const Widget, data: SliderData, renderer: *Renderer)
     // faint hold after a change (`widgets/slider.zig`).
     const tint = data.feel.accent;
     const track_color = lerp4(t.slider_track, .{ t.accent[0], t.accent[1], t.accent[2], t.slider_track_tint_alpha * t.accent[3] }, tint);
-    renderer.fillRect(widget.computed_x, track_y, w, track_h, .{ .color = track_color, .radius = track_h / 2 });
+    renderer.fillRect(widget.computed_x, track_y, w, track_h, .{ .relief = t.slider_track_relief, .color = track_color, .radius = track_h / 2 });
 
     const frac = if (data.max > data.min) std.math.clamp((data.value - data.min) / (data.max - data.min), 0, 1) else 0;
     const fill_w = frac * w;
@@ -253,7 +253,7 @@ pub fn paintSlider(widget: *const Widget, data: SliderData, renderer: *Renderer)
     if (fill_w > 0) renderer.fillRect(widget.computed_x, track_y, fill_w, track_h, .{ .color = fill_color, .radius = track_h / 2 });
 
     const thumb_x = widget.computed_x + fill_w - thumb_w / 2;
-    renderer.fillRect(thumb_x, cy - thumb_h / 2, thumb_w, thumb_h, .{ .color = t.control_thumb, .radius = if (settings) t.slider_thumb_radius else t.slider_thumb_size / 2 });
+    renderer.fillRect(thumb_x, cy - thumb_h / 2, thumb_w, thumb_h, .{ .relief = t.slider_thumb_relief, .color = t.control_thumb, .radius = if (settings) t.slider_thumb_radius else t.slider_thumb_size / 2 });
 }
 
 /// A slider's value readout: the text centred in a rounded label that fades
@@ -406,7 +406,7 @@ pub fn paintSelect(widget: *const Widget, data: layout.SelectData, r: *Renderer)
     const y = widget.computed_y;
     const w = widget.computed_width;
     const h = widget.computed_height;
-    r.fillRect(x, y, w, h, .{ .color = if (hovered and !data.disabled) t.surface_hover else t.surface, .radius = t.radius, .border_width = 1, .border_color = if (focused or data.open) t.accent else if (hovered and !data.disabled) t.border_hover else t.border });
+    r.fillRect(x, y, w, h, .{ .relief = if (data.disabled) .flat else if (data.open) t.button_pressed_relief else t.select_relief, .color = if (hovered and !data.disabled) t.surface_hover else t.surface, .radius = t.radius, .border_width = 1, .border_color = if (focused or data.open) t.accent else if (hovered and !data.disabled) t.border_hover else t.border });
     const valid = if (data.selected) |i| i < data.labels.len else false;
     const icon_width: f32 = if (valid and data.selected.? < data.icons.len) 24 else 0;
     if (icon_width > 0) r.drawIcon(x + 12, y + (h - 16) / 2, 16, 16, .{ .id = data.icons[data.selected.?], .color = if (data.disabled) t.faint else t.dim });
@@ -423,7 +423,7 @@ pub fn paintOverlays(widget: *const Widget, r: *Renderer) void {
         const t = r.palette orelse theme.global;
         var bg = t.bg;
         bg[3] = 1;
-        r.fillRect(b.x, b.y, b.w, b.h, .{ .color = bg, .radius = t.radius, .border_width = 1, .border_color = t.border_hover });
+        r.fillRect(b.x, b.y, b.w, b.h, .{ .relief = t.select_popup_relief, .color = bg, .radius = t.radius, .border_width = 1, .border_color = t.border_hover });
         const row_h = select.rowHeight();
         const visible = select.visibleCount(widget);
         const end = @min(d.labels.len, d.first_visible + visible);

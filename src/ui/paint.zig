@@ -17,6 +17,7 @@ const IconStyle = layout.IconStyle;
 const paint_icons = @import("paint_icons.zig");
 const paint_image = @import("paint_image.zig");
 const paint_widgets = @import("paint_widgets.zig");
+const relief = @import("relief.zig");
 pub const iconDistance = paint_icons.iconDistance;
 pub const sdSegment = paint_icons.sdSegment;
 pub const sdCircle = paint_icons.sdCircle;
@@ -179,7 +180,62 @@ pub const Renderer = struct {
         return out;
     }
 
+    /// A rounded fill, with the theme's neumorphic relief when the style asks
+    /// for it and `relief_depth` is set (`relief.zig`). A raised fill's shadows
+    /// go under it, around its edge; an inset fill's go over it, inside.
     pub fn fillRect(r: *Renderer, x: f32, y: f32, w: f32, h: f32, style: RectStyle) void {
+        if (style.relief == .flat or w <= 0 or h <= 0) return r.fillRectPlain(x, y, w, h, style);
+        const spec = relief.Spec.from(r.palette orelse theme.global, r.scale);
+        if (!spec.enabled()) return r.fillRectPlain(x, y, w, h, style);
+        if (style.relief == .raised) r.paintRelief(x, y, w, h, style, spec);
+        r.fillRectPlain(x, y, w, h, style);
+        if (style.relief == .inset) r.paintRelief(x, y, w, h, style, spec);
+    }
+
+    /// The shadow pair of `style.relief` over the pixels it can touch: the
+    /// fill's box grown by the shadows' reach when raised, the box itself when
+    /// inset. Honors the clip, so a scroll container cuts a raised control's
+    /// shadows at its edge.
+    fn paintRelief(r: *Renderer, x: f32, y: f32, w: f32, h: f32, style: RectStyle, spec: relief.Spec) void {
+        const s = r.scale;
+        const raised = style.relief == .raised;
+        const grow: f32 = if (raised) spec.reach() else 0;
+        var dx0 = x * s - grow;
+        var dy0 = y * s - grow;
+        var dx1 = (x + w) * s + grow;
+        var dy1 = (y + h) * s + grow;
+        if (r.effectiveClip()) |c| {
+            dx0 = @max(dx0, c.x * s);
+            dy0 = @max(dy0, c.y * s);
+            dx1 = @min(dx1, (c.x + c.w) * s);
+            dy1 = @min(dy1, (c.y + c.h) * s);
+        }
+        const x0: i32 = @intFromFloat(@floor(@max(0, dx0)));
+        const y0: i32 = @intFromFloat(@floor(@max(0, dy0)));
+        const x1: i32 = @intFromFloat(@ceil(@min(@as(f32, @floatFromInt(r.width)), dx1)));
+        const y1: i32 = @intFromFloat(@ceil(@min(@as(f32, @floatFromInt(r.height)), dy1)));
+        if (x0 >= x1 or y0 >= y1) return;
+
+        r.clean = false;
+        const shape: relief.Shape = .{ .x = x * s, .y = y * s, .w = w * s, .h = h * s, .radius = style.radius * s };
+        const dark = toColor(spec.dark);
+        const light = toColor(spec.light);
+        var py = y0;
+        while (py < y1) : (py += 1) {
+            const sy = @as(f32, @floatFromInt(py)) + 0.5;
+            const row: usize = @intCast(py * r.width);
+            var px = x0;
+            while (px < x1) : (px += 1) {
+                const sx = @as(f32, @floatFromInt(px)) + 0.5;
+                const pair = if (raised) relief.raised(spec, shape, sx, sy) else relief.inset(spec, shape, sx, sy);
+                const index = row + @as(usize, @intCast(px));
+                if (pair.dark > 0) blendPixel(&r.pixels[index], dark, pair.dark);
+                if (pair.light > 0) blendPixel(&r.pixels[index], light, pair.light);
+            }
+        }
+    }
+
+    fn fillRectPlain(r: *Renderer, x: f32, y: f32, w: f32, h: f32, style: RectStyle) void {
         if (w <= 0 or h <= 0) return;
         const s = r.scale;
         var dx0 = x * s;

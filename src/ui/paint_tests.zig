@@ -395,3 +395,52 @@ test "smooth image sampling is exact at one to one, blends between pixels and sh
     try std.testing.expectEqual(white, pixels[2 * 4 + 1]);
     try std.testing.expectEqual(black, pixels[2 * 4 + 2]);
 }
+
+/// A theme with relief on: depth 4, softness 6, light at the upper left, and
+/// opaque shadows so the pixel checks below are unambiguous.
+fn reliefTheme() theme.Theme {
+    var t: theme.Theme = .{};
+    t.relief_depth = 4;
+    t.relief_softness = 6;
+    t.relief_light_angle = 135;
+    t.relief_dark = .{ 0, 0, 0, 1 };
+    t.relief_light = .{ 1, 1, 1, 1 };
+    return t;
+}
+
+test "relief draws nothing while the theme's relief_depth is zero" {
+    var with_relief = @as([40 * 40]u32, @splat(0xff808080));
+    var without = with_relief;
+    var a = Renderer.init(&with_relief, 40, 40, 1);
+    a.palette = .{};
+    a.fillRect(10, 10, 20, 20, .{ .color = .{ 1, 0, 0, 1 }, .radius = 4, .relief = .raised });
+    var b = Renderer.init(&without, 40, 40, 1);
+    b.fillRect(10, 10, 20, 20, .{ .color = .{ 1, 0, 0, 1 }, .radius = 4 });
+    try std.testing.expectEqualSlices(u32, &without, &with_relief);
+}
+
+test "a raised fill casts its dark shadow away from the light and a light one toward it" {
+    var pixels = @as([60 * 60]u32, @splat(0xff808080));
+    var r = Renderer.init(&pixels, 60, 60, 1);
+    r.palette = reliefTheme();
+    r.fillRect(20, 20, 20, 20, .{ .color = .{ 0.5, 0.5, 0.5, 1 }, .radius = 4, .relief = .raised });
+    // Light from the upper left: shadow below and right of the box, glow above and left.
+    try std.testing.expect((pixels[41 * 60 + 41] & 0xff) < 0x80);
+    try std.testing.expect((pixels[18 * 60 + 18] & 0xff) > 0x80);
+    // The fill and the surface far from it are untouched.
+    try std.testing.expectEqual(@as(u32, 0xff808080), pixels[30 * 60 + 30]);
+    try std.testing.expectEqual(@as(u32, 0xff808080), pixels[2 * 60 + 2]);
+}
+
+test "an inset fill shades the edge facing the light and lights the opposite one" {
+    var pixels = @as([60 * 60]u32, @splat(0xff808080));
+    var r = Renderer.init(&pixels, 60, 60, 1);
+    r.palette = reliefTheme();
+    r.fillRect(20, 20, 20, 20, .{ .color = .{ 0.5, 0.5, 0.5, 1 }, .radius = 4, .relief = .inset });
+    // Just inside the top edge it is dark, just inside the bottom edge light.
+    try std.testing.expect((pixels[22 * 60 + 30] & 0xff) < 0x80);
+    try std.testing.expect((pixels[37 * 60 + 30] & 0xff) > 0x80);
+    // Neither the middle nor the surface outside the box is touched.
+    try std.testing.expectEqual(@as(u32, 0xff808080), pixels[30 * 60 + 30]);
+    try std.testing.expectEqual(@as(u32, 0xff808080), pixels[30 * 60 + 15]);
+}

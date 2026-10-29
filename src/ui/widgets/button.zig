@@ -133,6 +133,7 @@ pub fn paintBackground(r: *Renderer, box: Rect, opts: Options, state: State) voi
     const ring = state.focused and !disabled;
     const border_w: f32 = if (ring) 2 else if (opts.variant == .secondary) 1 else 0;
     if (bg[3] > 0 or border_w > 0) r.fillRect(box.x, box.y, box.w, box.h, .{
+        .relief = if (disabled or (opts.variant != .primary and opts.variant != .secondary)) .flat else if (state.pointer == .press or state.selected) t.button_pressed_relief else t.button_relief,
         .color = bg,
         .radius = opts.radius orelse if (opts.variant == .chrome) chrome.cornerRadius(t.chrome_round_buttons, box.w, box.h, chrome.control_radius) else m.radius,
         .border_width = border_w,

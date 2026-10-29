@@ -150,7 +150,7 @@ pub fn paintHeader(r: *Renderer, x: f32, y: f32, w: f32, header: Header) void {
 /// The panel holding what the dialog is about (an account, a file).
 pub fn paintInset(r: *Renderer, box: Rect) void {
     const t = r.palette orelse theme.global;
-    r.fillRect(box.x, box.y, box.w, box.h, .{ .color = t.surface, .radius = t.dialog_inset_radius });
+    r.fillRect(box.x, box.y, box.w, box.h, .{ .color = t.surface, .radius = t.dialog_inset_radius, .relief = t.dialog_inset_relief });
 }
 
 test "header badge takes an accent tint and the frame opaque app colours" {

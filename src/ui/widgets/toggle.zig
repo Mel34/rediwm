@@ -41,6 +41,7 @@ pub fn paint(r: *Renderer, box: Rect, opts: Options) void {
         thumb[3] *= 0.5;
     }
     r.fillRect(box.x, box.y, box.w, box.h, .{
+        .relief = if (opts.disabled) .flat else t.toggle_track_relief,
         .color = track,
         .radius = radius,
         .border_width = if (opts.focused and !opts.disabled) 2 else 0,
@@ -49,7 +50,7 @@ pub fn paint(r: *Renderer, box: Rect, opts: Options) void {
     const inset: f32 = 2;
     const side = @max(0, box.h - inset * 2);
     const x = box.x + inset + (box.w - 2 * inset - side) * restPosition(opts);
-    r.fillRect(x, box.y + inset, side, side, .{ .color = thumb, .radius = if (opts.style == .settings) t.toggle_thumb_radius else side / 2 });
+    r.fillRect(x, box.y + inset, side, side, .{ .relief = if (opts.disabled) .flat else t.toggle_thumb_relief, .color = thumb, .radius = if (opts.style == .settings) t.toggle_thumb_radius else side / 2 });
 }
 
 /// Recessed track and raised knob, contained in the control's damage bounds.

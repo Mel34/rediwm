@@ -10,6 +10,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
+const layout = @import("layout.zig");
+pub const Relief = layout.Relief;
 
 const log = std.log.scoped(.theme);
 
@@ -214,6 +216,31 @@ pub const Theme = struct {
     border_glow_depth: f32 = 3.0, // how far it bleeds inward past the 1 px ring
     shadow_size: f32 = 24.0, // blur/softness radius, logical px
     shadow_offset_y: f32 = 8.0, // vertical offset, logical px
+    /// Neumorphic relief of buttons, fields and inset panels (`ui/relief.zig`):
+    /// each casts a dark and a light shadow shifted `relief_depth` logical px
+    /// from its edge, away from and toward the light. 0 turns relief off.
+    relief_depth: f32 = 0,
+    /// Fade-out length of those shadows, logical px; 0 follows 1.5 x the depth.
+    relief_softness: f32 = 0,
+    /// Where the light sits, in degrees counter-clockwise from the right (135
+    /// is the upper left).
+    relief_light_angle: f32 = 135,
+    relief_dark: [4]f32 = .{ 0, 0, 0, 0.35 },
+    relief_light: [4]f32 = .{ 1, 1, 1, 0.10 },
+
+    // Component-level relief styles. Flat defaults preserve existing rendering
+    // for controls that did not previously request relief.
+    button_relief: Relief = .flat,
+    button_pressed_relief: Relief = .flat,
+    field_relief: Relief = .flat,
+    dialog_inset_relief: Relief = .flat,
+    select_relief: Relief = .flat,
+    select_popup_relief: Relief = .flat,
+    checkbox_relief: Relief = .flat,
+    toggle_track_relief: Relief = .flat,
+    toggle_thumb_relief: Relief = .flat,
+    slider_track_relief: Relief = .flat,
+    slider_thumb_relief: Relief = .flat,
     // 0 sizes the menu to the output (`start_menu/size.zig`); set either to pin it.
     start_menu_width: f32 = 0,
     start_menu_max_height: f32 = 0,
