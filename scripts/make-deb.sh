@@ -75,7 +75,7 @@ Version: $version
 Section: x11
 Priority: optional
 Architecture: $arch
-Maintainer: Local build <noreply@localhost>
+Maintainer: luginf <274086518+luginf@users.noreply.github.com>
 Installed-Size: $size
 Depends: $deps
 Recommends: xwayland, foot, polkitd
