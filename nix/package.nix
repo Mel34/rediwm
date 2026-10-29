@@ -53,9 +53,6 @@
 
 let
   wlroots = callPackage ./wlroots.nix { };
-  zigDeps = callPackage ./zig-deps.nix { };
-in
-stdenv.mkDerivation {
   pname = "rediwm";
   version = builtins.head (
     builtins.match ''.*\.version = "([^"]+)".*'' (builtins.readFile ../build.zig.zon)
@@ -77,6 +74,16 @@ stdenv.mkDerivation {
       ../LICENSE-APACHE
     ];
   };
+  # Only this fixed-output fetch may access the network; the build gets the
+  # verified package cache and runs offline. Using nixpkgs' zig.fetchDeps
+  # rather than our own derivation was suggested by SpaceboyRoss.
+  zigDeps = zig_0_17.fetchDeps {
+    inherit pname version src;
+    hash = "sha256-R5Eg4CG+DW/pgg1zU+4Y2Ov1LCY3ReJordmBQGxkiyc=";
+  };
+in
+stdenv.mkDerivation {
+  inherit pname version src;
 
   strictDeps = true;
   nativeBuildInputs = [
@@ -147,7 +154,7 @@ stdenv.mkDerivation {
     runHook preConfigure
     export ZIG_GLOBAL_CACHE_DIR="$TMPDIR/zig-cache"
     mkdir -p "$ZIG_GLOBAL_CACHE_DIR"
-    cp -R ${zigDeps}/p "$ZIG_GLOBAL_CACHE_DIR/p"
+    cp -R ${zigDeps} "$ZIG_GLOBAL_CACHE_DIR/p"
     chmod -R u+w "$ZIG_GLOBAL_CACHE_DIR"
     runHook postConfigure
   '';

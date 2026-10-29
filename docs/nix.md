@@ -74,8 +74,8 @@ of `scripts/make-release.sh`; Nix packages do not need a distro tarball.
 Real display-manager login, unlock, Xwayland and browser screen sharing still
 need a NixOS session acceptance check.
 
-When changing `build.zig.zon` dependencies, set `outputHash` in
-`nix/zig-deps.nix` to `lib.fakeHash` (and add `lib` to its arguments), build
+When changing `build.zig.zon` dependencies, set the `zigDeps` hash in
+`nix/package.nix` (nixpkgs' `zig.fetchDeps`) to `""`, build
 `nix build .#rediwm.zigDeps`, then replace it with the reported actual hash.
 Keep `nix/wlroots.nix` aligned with `scripts/build-wlroots.sh` and the patches
 in `patches/wlroots/`. Update Nixpkgs deliberately with
