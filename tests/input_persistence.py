@@ -41,13 +41,15 @@ def run():
                     click(next(w for w in widgets() if w["label"] == "Input"))
                     if restart == 0:
                         click(next(w for w in widgets() if w["role"] == "slider"), .8)
-                        for index in range(2):
+                        # Toggles in panel order: left-handed, natural scroll, tap to click.
+                        for index in range(3):
                             click([w for w in widgets() if w["role"] == "toggle"][index])
                         for index in range(2):
                             click([w for w in widgets() if w["role"] == "stepper"][index], .9)
                         config = (runtime / "rediwm-config.toml").read_text()
                         saved = tomllib.loads(config)["input"]
                         assert saved["pointer_speed"] > 0, saved
+                        assert saved["left_handed"] is True, saved
                         assert saved["natural_scroll"] is False, saved
                         assert saved["tap_to_click"] is False, saved
                         assert saved["key_repeat_delay"] != 400, saved
@@ -63,11 +65,12 @@ def run():
                         assert [(w["role"], w["label"], w["box"]) for w in widgets()] == expected
                         # Toggle and increment restored values to inspect state that
                         # the widget-tree protocol does not expose directly.
-                        for index in range(2):
+                        for index in range(3):
                             click([w for w in widgets() if w["role"] == "toggle"][index])
                         for index in range(2):
                             click([w for w in widgets() if w["role"] == "stepper"][index], .9)
                         restored = tomllib.loads((runtime / "rediwm-config.toml").read_text())["input"]
+                        assert restored["left_handed"] is False
                         assert restored["natural_scroll"] is True
                         assert restored["tap_to_click"] is True
                         assert restored["key_repeat_delay"] == saved["key_repeat_delay"] + 50
