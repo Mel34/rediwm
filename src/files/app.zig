@@ -175,6 +175,9 @@ pub const App = struct {
     // Selection & scroll
     selection_anchor: ?usize = null,
     focused_index: ?usize = null,
+    type_select_buffer: [256]u8 = undefined,
+    type_select_len: usize = 0,
+    type_select_last_ms: i64 = 0,
     scroll_y: i32 = 0,
     wheel_glide: anim.Anim = .{},
     wheel_sidebar: bool = false,
@@ -854,6 +857,7 @@ pub const App = struct {
     // app_keyboard.zig
     pub const keyRepeats = app_keyboard.keyRepeats;
     pub const handleKey = app_keyboard.handleKey;
+    pub const typeSelectAt = app_keyboard.typeSelectAt;
     pub const selectIndex = app_keyboard.selectIndex;
     pub const handleLocationKey = app_keyboard.handleLocationKey;
     pub const activeEditor = app_keyboard.activeEditor;
