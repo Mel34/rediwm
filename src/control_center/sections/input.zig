@@ -28,19 +28,19 @@ const KeyboardLayout = struct { label: []const u8, layout: []const u8, variant: 
 
 // Layout names are shown in their own language, so they are not translated.
 const keyboard_layouts = [_]KeyboardLayout{
-    .{ .label = "English (US, QWERTY)", .layout = "us" },
-    .{ .label = "Français (AZERTY)", .layout = "fr" },
-    .{ .label = "Français (BÉPO)", .layout = "fr", .variant = "bepo" },
-    .{ .label = "Belge (AZERTY)", .layout = "be" },
-    .{ .label = "Suisse romand (QWERTZ)", .layout = "ch", .variant = "fr" },
-    .{ .label = "Canadien multilingue", .layout = "ca", .variant = "multix" },
-    .{ .label = "Deutsch (QWERTZ)", .layout = "de" },
-    .{ .label = "Español", .layout = "es" },
-    .{ .label = "Italiano", .layout = "it" },
-    .{ .label = "Português", .layout = "pt" },
-    .{ .label = "English (UK)", .layout = "gb" },
-    .{ .label = "English (Dvorak)", .layout = "us", .variant = "dvorak" },
-    .{ .label = "Русский", .layout = "ru" },
+    .{ .label = "English (US, QWERTY)", .layout = "us" }, // i18n: raw
+    .{ .label = "Français (AZERTY)", .layout = "fr" }, // i18n: raw
+    .{ .label = "Français (BÉPO)", .layout = "fr", .variant = "bepo" }, // i18n: raw
+    .{ .label = "Belge (AZERTY)", .layout = "be" }, // i18n: raw
+    .{ .label = "Suisse romand (QWERTZ)", .layout = "ch", .variant = "fr" }, // i18n: raw
+    .{ .label = "Canadien multilingue", .layout = "ca", .variant = "multix" }, // i18n: raw
+    .{ .label = "Deutsch (QWERTZ)", .layout = "de" }, // i18n: raw
+    .{ .label = "Español", .layout = "es" }, // i18n: raw
+    .{ .label = "Italiano", .layout = "it" }, // i18n: raw
+    .{ .label = "Português", .layout = "pt" }, // i18n: raw
+    .{ .label = "English (UK)", .layout = "gb" }, // i18n: raw
+    .{ .label = "English (Dvorak)", .layout = "us", .variant = "dvorak" }, // i18n: raw
+    .{ .label = "Русский", .layout = "ru" }, // i18n: raw
 };
 
 const keyboard_layout_labels = blk: {

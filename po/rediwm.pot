@@ -1769,6 +1769,10 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
+#: src/control_center/sections/input.zig
+msgid "Custom (config file)"
+msgstr ""
+
 #: src/control_center/sections/portals.zig
 msgid "Custom ({name})"
 msgstr ""
@@ -3071,6 +3075,10 @@ msgstr ""
 msgid "Keyboard Shortcuts"
 msgstr ""
 
+#: src/control_center/sections/input.zig
+msgid "Keyboard layout"
+msgstr ""
+
 #: src/control_center/search_index.zig
 msgid "Keyboard repeat delay"
 msgstr ""
@@ -3141,6 +3149,10 @@ msgstr ""
 
 #: src/control_center/sections/appearance_sections.zig
 msgid "Left"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Left-handed mouse"
 msgstr ""
 
 #: src/control_center/search_index.zig
