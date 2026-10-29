@@ -139,6 +139,11 @@ pub const Drag = struct {
 
 /// What to draw: the thumb's rounded box, colour and illuminated edge.
 pub const Look = struct {
+    track: Rect,
+    track_radius: f32,
+    track_color: [4]f32,
+    track_light: [4]f32,
+    track_dark: [4]f32,
     rect: Rect,
     radius: f32,
     color: [4]f32,
@@ -167,12 +172,41 @@ pub fn look(g: Geometry, state: Appearance, configured: f32, palette: theme.Them
     var highlight = palette.border_glow;
     // A pale reflection of the frame's glow reads as light on every palette.
     for (highlight[0..3]) |*channel| channel.* += (1 - channel.*) * 0.55;
-    return .{ .rect = rect, .radius = cornerRadius(thickness), .color = color, .axis = g.axis, .highlight = highlight, .shine = state.shine, .glow = @max(palette.scrollbar_glow, 0) };
+    // A narrow, inset-looking groove remains visible even when the thumb is idle.
+    // Use the theme surface as its base, with a restrained darkening for contrast.
+    var track_color = palette.surface;
+    for (track_color[0..3]) |*channel| channel.* *= 0.48;
+    track_color[3] = @max(track_color[3], 0.22);
+    var track_light = palette.border_glow;
+    track_light[3] = @max(track_light[3], 0.5);
+    var track_dark = palette.shadow;
+    track_dark[3] = @max(track_dark[3], 0.35);
+    const track_thickness: f32 = @min(6.0, gutter_thickness);
+    var track_rect = g.track;
+    if (g.axis == .vertical) {
+        track_rect.x += (track_rect.w - track_thickness) / 2;
+        track_rect.w = track_thickness;
+    } else {
+        track_rect.y += (track_rect.h - track_thickness) / 2;
+        track_rect.h = track_thickness;
+    }
+    return .{ .track = track_rect, .track_radius = track_thickness / 2, .track_color = track_color, .track_light = track_light, .track_dark = track_dark, .rect = rect, .radius = cornerRadius(thickness), .color = color, .axis = g.axis, .highlight = highlight, .shine = state.shine, .glow = @max(palette.scrollbar_glow, 0) };
 }
 
 /// The light stays inside the thumb, so ordinary scrollbar damage erases it.
 /// Cairo clients use this same painter through `ui/cairo.zig`'s `drawScrollbar`.
 pub fn paint(r: *@import("../paint.zig").Renderer, l: Look) void {
+    r.fillRect(l.track.x, l.track.y, l.track.w, l.track.h, .{
+        .color = l.track_color,
+        .radius = l.track_radius,
+    });
+    if (l.axis == .vertical) {
+        r.fillRect(l.track.x, l.track.y, 1, l.track.h, .{ .color = l.track_light });
+        r.fillRect(l.track.x + l.track.w - 1, l.track.y, 1, l.track.h, .{ .color = l.track_dark });
+    } else {
+        r.fillRect(l.track.x, l.track.y, l.track.w, 1, .{ .color = l.track_light });
+        r.fillRect(l.track.x, l.track.y + l.track.h - 1, l.track.w, 1, .{ .color = l.track_dark });
+    }
     if (l.shine <= 0) {
         r.fillRect(l.rect.x, l.rect.y, l.rect.w, l.rect.h, .{ .color = l.color, .radius = l.radius });
         return;
@@ -392,6 +426,11 @@ test "the thumb is centred in its gutter, widens and tints with feedback" {
     try std.testing.expectEqual(@as(f32, 86 + 4), rest.rect.x);
     try std.testing.expectEqual(palette.scrollbar_thumb, rest.color);
     try std.testing.expectEqual(cornerRadius(6), rest.radius);
+    try std.testing.expectEqual(@as(f32, 6), rest.track.w);
+    try std.testing.expectEqual(@as(f32, 90), rest.track.x);
+    try std.testing.expect(rest.track_color[3] > 0);
+    try std.testing.expect(rest.track_light[3] >= 0.5);
+    try std.testing.expect(rest.track_dark[3] >= 0.35);
     state.wide = 1;
     state.accent = 1;
     const hot = look(g, state, 8, palette);

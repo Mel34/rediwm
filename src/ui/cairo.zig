@@ -157,6 +157,42 @@ pub fn drawSplitter(cr_any: *anyopaque, geometry: splitter.Geometry, engaged: bo
 /// `scrollbar.paint` for the widget tree.
 pub fn drawScrollbar(cr_any: *anyopaque, look: scrollbar.Look) void {
     const cr: *c.cairo_t = @ptrCast(cr_any);
+
+    // Paint the groove on the original context so it is not clipped to the
+    // thumb-sized layer used for animated shine.
+    const tx: f64 = look.track.x;
+    const ty: f64 = look.track.y;
+    const tw: f64 = look.track.w;
+    const th: f64 = look.track.h;
+    if (tw > 0 and th > 0) {
+        const tr: f64 = @min(look.track_radius, @min(tw, th) / 2);
+        setSource(cr, look.track_color);
+        c.cairo_new_sub_path(cr);
+        c.cairo_arc(cr, tx + tw - tr, ty + tr, tr, -std.math.pi / 2.0, 0);
+        c.cairo_arc(cr, tx + tw - tr, ty + th - tr, tr, 0, std.math.pi / 2.0);
+        c.cairo_arc(cr, tx + tr, ty + th - tr, tr, std.math.pi / 2.0, std.math.pi);
+        c.cairo_arc(cr, tx + tr, ty + tr, tr, std.math.pi, 3 * std.math.pi / 2.0);
+        c.cairo_close_path(cr);
+        c.cairo_fill(cr);
+
+        // Contrasting edges make the channel read as a recessed groove.
+        if (look.axis == .vertical) {
+            setSource(cr, look.track_light);
+            c.cairo_rectangle(cr, tx, ty, 1, th);
+            c.cairo_fill(cr);
+            setSource(cr, look.track_dark);
+            c.cairo_rectangle(cr, tx + tw - 1, ty, 1, th);
+            c.cairo_fill(cr);
+        } else {
+            setSource(cr, look.track_light);
+            c.cairo_rectangle(cr, tx, ty, tw, 1);
+            c.cairo_fill(cr);
+            setSource(cr, look.track_dark);
+            c.cairo_rectangle(cr, tx, ty + th - 1, tw, 1);
+            c.cairo_fill(cr);
+        }
+    }
+
     if (look.shine > 0) {
         // Preserve the thumb's fractional placement within the device-aligned
         // layer, including a Cairo translation, as its animated width changes.

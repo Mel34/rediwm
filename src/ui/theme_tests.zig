@@ -1,4 +1,5 @@
 const std = @import("std");
+const theme_file = @import("theme_file.zig");
 const theme = @import("theme.zig");
 const Theme = theme.Theme;
 const taskbarTokensEql = theme.taskbarTokensEql;
@@ -282,4 +283,69 @@ test "chrome geometry validates and survives theme serialization" {
     try std.testing.expectEqual(@as(f32, 28), restored.chrome_height);
     try std.testing.expectEqual(@as(f32, 0), restored.chrome_control_gap);
     try std.testing.expect(restored.chrome_round_buttons);
+}
+
+
+test "component relief theme keys parse, inherit, and reject invalid values" {
+    const Relief = theme.Relief;
+    try std.testing.expect(theme_file.knownKey("button_relief"));
+    try std.testing.expect(theme_file.knownKey("button_pressed_relief"));
+    try std.testing.expect(theme_file.knownKey("field_relief"));
+    try std.testing.expect(theme_file.knownKey("dialog_inset_relief"));
+    try std.testing.expect(theme_file.knownKey("select_relief"));
+    try std.testing.expect(theme_file.knownKey("select_popup_relief"));
+    try std.testing.expect(theme_file.knownKey("checkbox_relief"));
+    try std.testing.expect(theme_file.knownKey("toggle_track_relief"));
+    try std.testing.expect(theme_file.knownKey("toggle_thumb_relief"));
+    try std.testing.expect(theme_file.knownKey("slider_track_relief"));
+    try std.testing.expect(theme_file.knownKey("slider_thumb_relief"));
+    try std.testing.expect(!theme_file.knownKey("fake_relief_key"));
+
+    const toml =
+        \\[theme]
+        \\button_relief = "flat"
+        \\button_pressed_relief = "raised"
+        \\checkbox_relief = "inset"
+    ;
+    var t: Theme = .{};
+    try theme_file.overlay(std.testing.allocator, &t, toml);
+    try std.testing.expectEqual(Relief.flat, t.button_relief);
+    try std.testing.expectEqual(Relief.raised, t.button_pressed_relief);
+    try std.testing.expectEqual(Relief.inset, t.checkbox_relief);
+    try std.testing.expectEqual(Relief.flat, t.field_relief);
+    try std.testing.expectEqual(Relief.flat, t.toggle_track_relief);
+
+    var bad_t: Theme = .{};
+    const invalid_relief =
+        \\[theme]
+        \\button_relief = "concave"
+    ;
+    try std.testing.expectError(error.InvalidRelief, theme_file.overlay(std.testing.allocator, &bad_t, invalid_relief));
+    const unquoted_relief =
+        \\[theme]
+        \\button_relief = flat
+    ;
+    try std.testing.expectError(error.ExpectedQuotedString, theme_file.overlay(std.testing.allocator, &bad_t, unquoted_relief));
+}
+
+test "component relief theme serialization round-trips and omits defaults" {
+    var buf: std.ArrayList(u8) = .empty;
+    defer buf.deinit(std.testing.allocator);
+
+    var original: Theme = .{};
+    const defaults: Theme = .{};
+    original.button_relief = .raised;
+    original.toggle_track_relief = .inset;
+    original.field_relief = .inset;
+
+    try theme_file.writeDiff(std.testing.allocator, &buf, original, defaults, "", false);
+    try std.testing.expect(std.mem.indexOf(u8, buf.items, "button_relief = \"raised\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, buf.items, "toggle_track_relief = \"inset\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, buf.items, "field_relief = \"inset\"") != null);
+
+    var reloaded: Theme = .{};
+    try theme_file.overlay(std.testing.allocator, &reloaded, buf.items);
+    try std.testing.expectEqual(original.button_relief, reloaded.button_relief);
+    try std.testing.expectEqual(original.toggle_track_relief, reloaded.toggle_track_relief);
+    try std.testing.expectEqual(original.field_relief, reloaded.field_relief);
 }

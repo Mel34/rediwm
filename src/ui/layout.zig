@@ -155,6 +155,11 @@ pub const ButtonState = enum { idle, hover, press, disabled };
 // bold Manrope face bundled to switch to.
 pub const TextFamily = enum { sans, mono };
 
+/// Neumorphic relief of a filled rect (`relief.zig`, theme `relief_*`): raised
+/// casts its shadows on the surface around it, inset inside its own edge. It
+/// draws nothing while the theme's `relief_depth` is 0.
+pub const Relief = enum { flat, raised, inset };
+
 pub const RectStyle = struct {
     color: [4]f32,
     /// Replace the covered background, preserving this fill's alpha. Rounded
@@ -163,6 +168,7 @@ pub const RectStyle = struct {
     radius: f32 = 0,
     border_width: f32 = 0,
     border_color: [4]f32 = .{ 0, 0, 0, 0 },
+    relief: Relief = .flat,
 };
 
 /// Padding of a value pill (`TextStyle.pill`) around its text.

@@ -24,6 +24,7 @@ pub fn create(input: *Input, device: *wlr.InputDevice) !void {
     pointer.* = .{ .input = input, .device = device };
     device.events.destroy.add(&pointer.destroy);
     input.pointers.append(pointer);
+    if (input.server.input.open_control_center) |cc| cc.refresh();
     @import("config_runtime/apply.zig").applyPointerDevice(device, input.server.config.input);
 }
 
@@ -71,5 +72,6 @@ fn handleDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) 
     }
     pointer.link.remove();
     pointer.destroy.link.remove();
+    if (pointer.input.server.input.open_control_center) |cc| cc.refresh();
     gpa.destroy(pointer);
 }
