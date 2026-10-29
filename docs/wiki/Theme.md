@@ -144,7 +144,7 @@ the titlebar, clipped by the shape. The titlebar's icon, title and controls
 over the rows they occupy; a notch they do not reach into is left to the clip.
 The outline's GL programs are built the first time a theme asks for one, so a
 theme without `window_shape` or `taskbar_shape` never pays for them. The
-bundled `chamfer-blue` pack is an example.
+`chamfer-blue` pack (`assets/themes/chamfer-blue.toml`, not yet offered in the picker) is an example.
 
 `[theme].taskbar_shape` does the same for the taskbar, against the bar's own
 box (so `-0` is the bar's right or bottom edge): for example
