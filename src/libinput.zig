@@ -70,6 +70,40 @@ pub fn getKind(device: *wlr.InputDevice) Kind {
     return presentation.classify(tags);
 }
 
+/// Settings defaults to physical pointing devices. Composite HID keyboards
+/// can expose wheels and even full mouse reports for macros; leave those in
+/// the optional full list. Never filter a touchpad, trackball or pointing stick
+/// merely because it shares a keyboard interface.
+pub fn isSettingsPointer(device: *wlr.InputDevice) bool {
+    const dev = handle(device) orelse return false;
+    const kind = getKind(device);
+    if (kind == .touchpad or kind == .trackball) return true;
+    if (c.libinput_device_get_udev_device(dev)) |udev| {
+        defer _ = c.udev_device_unref(udev);
+        if (propertyFlag(udev, "ID_INPUT_POINTINGSTICK")) return true;
+        if (std.mem.eql(u8, ancestorAttribute(udev, "bInterfaceClass") orelse "", "03") and
+            std.mem.eql(u8, ancestorAttribute(udev, "bInterfaceProtocol") orelse "", "01")) return false;
+    }
+    if (kind == .mouse) return true;
+    if (c.libinput_device_has_capability(dev, c.LIBINPUT_DEVICE_CAP_KEYBOARD) != 0) return false;
+    return getPointerSpeed(device) != null or getNaturalScroll(device) != null or getLeftHanded(device) != null;
+}
+
+/// Some touchpads expose a second, compatibility mouse interface. Only hide
+/// that interface when its actual touchpad is connected in the same libinput
+/// group. A paired pointing stick is a separate physical control.
+pub fn isTouchpadCompanion(device: *wlr.InputDevice, touchpad: *wlr.InputDevice) bool {
+    if (getKind(device) != .mouse or getKind(touchpad) != .touchpad) return false;
+    const dev = handle(device) orelse return false;
+    const pad = handle(touchpad) orelse return false;
+    if (c.libinput_device_get_udev_device(dev)) |udev| {
+        defer _ = c.udev_device_unref(udev);
+        if (propertyFlag(udev, "ID_INPUT_POINTINGSTICK")) return false;
+    }
+    const group = c.libinput_device_get_device_group(dev) orelse return false;
+    return group == c.libinput_device_get_device_group(pad);
+}
+
 /// The returned key owns its bytes and survives removal of the libinput device.
 /// No sysname, sysfs input number, pointer address, or connection index is used.
 pub fn getIdentity(device: *wlr.InputDevice) ?Identity {
