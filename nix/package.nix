@@ -160,7 +160,8 @@ stdenv.mkDerivation {
   '';
   buildPhase = ''
     runHook preBuild
-    zig build -Doptimize=ReleaseSafe -Dcpu=baseline -j"$NIX_BUILD_CORES" --prefix "$out"
+    zig build -Doptimize=ReleaseSafe -Dcpu=baseline -j"$NIX_BUILD_CORES" \
+      -Dinstall-prefix="$out" --prefix "$out"
     runHook postBuild
   '';
   installPhase = ''
@@ -169,8 +170,6 @@ stdenv.mkDerivation {
     rm "$out/bin/rediwm-dm" "$out/bin/rediwm-accounts-helper" "$out/bin/rediwm-restart"
     rm "$out/share/polkit-1/actions/org.rediwm.accounts.policy"
     rm "$out/share/wayland-sessions/rediwm-release-safe.desktop"
-    substituteInPlace "$out/share/wayland-sessions/rediwm.desktop" \
-      --replace-fail 'Exec=rediwm-session' "Exec=$out/bin/rediwm-session"
     install -Dm644 data/rediwm-theme.xml "$out/share/mime/packages/rediwm-theme.xml"
     install -Dm644 LICENSE-MIT "$out/share/licenses/rediwm/LICENSE-MIT"
     install -Dm644 LICENSE-APACHE "$out/share/licenses/rediwm/LICENSE-APACHE"
