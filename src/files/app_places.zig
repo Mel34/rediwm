@@ -225,6 +225,28 @@ pub fn pinSlotAt(self: *App, x: f64, y: f64) ?usize {
     return @intFromFloat(std.math.clamp(nearest, 0, @as(f64, @floatFromInt(count))));
 }
 
+/// Whether a file drag is over the built-in Trash row and drops are allowed.
+pub fn trashDropAt(self: *App, x: f64, y: f64) bool {
+    if (self.transfer_view.active) return false;
+    if (self.chooser != null or self.dialog != null or self.menu != null or self.history.archive_len > 0) return false;
+    if (self.job_state == .running or self.job_state == .waiting_conflict) return false;
+    return self.placeAt(x, y) == 1;
+}
+
+/// Updates the Trash drag highlight and damages only the affected row.
+pub fn setTrashDrop(self: *App, active: bool) void {
+    if (self.trash_drop == active) return;
+    const area: header.Rect = .{
+        .x = 0,
+        .y = @floatFromInt(self.contentTop()),
+        .w = @floatFromInt(self.sidebarWidth()),
+        .h = @floatFromInt(self.h - self.contentTop() - self.sidebarFooter()),
+    };
+    const row = self.placeRect(1);
+    self.damageHighlight(area, if (self.trash_drop) row else null, if (active) row else null);
+    self.trash_drop = active;
+}
+
 pub fn setPinDrop(self: *App, slot: ?usize) void {
     if (std.meta.eql(self.pin_drop, slot)) return;
     const area: header.Rect = .{ .x = 0, .y = @floatFromInt(self.contentTop()), .w = @floatFromInt(self.sidebarWidth()), .h = @floatFromInt(self.h - self.contentTop() - self.sidebarFooter()) };
@@ -277,6 +299,7 @@ pub fn highlightDrop(self: *App, x: f64, y: f64, accepted: bool) void {
 pub fn dropLeave(self: *App) void {
     self.highlightDrop(0, 0, false);
     self.setPinDrop(null);
+    self.setTrashDrop(false);
 }
 
 /// The drop happened: the gap it chose, with the line gone.

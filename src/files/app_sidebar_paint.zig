@@ -175,6 +175,10 @@ pub fn renderSidebar(self: *App, cr: *c.cairo_t) void {
             const row = self.placeRect(i);
             shell_ui.drawSidebarSelected(cr, .{ .x = @floatCast(row.x), .y = @floatCast(row.y), .w = @floatCast(row.w), .h = @floatCast(row.h) });
         }
+        if (i == 1 and self.trash_drop) {
+            const row = self.placeRect(i);
+            shell_ui.drawSidebarHover(cr, .{ .x = @floatCast(row.x), .y = @floatCast(row.y), .w = @floatCast(row.w), .h = @floatCast(row.h) }, 1.0);
+        }
         setSource(cr, withAlpha(ui_theme.global.app_icon, alpha));
         if (self.drawPackPlaceIcon(cr, i, y, alpha)) {
             // The pack's colour artwork replaces this place's plain glyph.

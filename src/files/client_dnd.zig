@@ -74,6 +74,7 @@ pub fn dragOver(self: *Client, x: f64, y: f64, entered: bool) void {
     self.drag_x = x;
     self.drag_y = y - @as(f64, @floatFromInt(self.titlebarHeight()));
     const available = offer.uri and self.drop_receiving == null;
+    self.app.setTrashDrop(available and self.app.trashDropAt(x, self.drag_y));
     const pin = available and self.app.dropMotion(x, self.drag_y);
     const terminal = available and !pin and self.app.terminalDropAt(x, self.drag_y);
     const folder = available and !pin and !terminal and self.app.dropDirectoryAt(x, self.drag_y) != null;

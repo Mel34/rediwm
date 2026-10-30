@@ -147,6 +147,38 @@ test "sidebar menus unpin only Places and close gaps without changing selection"
     try std.testing.expect(app.placeActive(2));
 }
 
+test "Trash row is an isolated drag target with a cleared hover highlight" {
+    var app = try testApp();
+    defer app.deinit();
+
+    const trash_y: f64 = @floatFromInt(app.placeY(1) + 10);
+    const home_y: f64 = @floatFromInt(app.placeY(0) + 10);
+    const recent_y: f64 = @floatFromInt(app.placeY(2) + 10);
+
+    try std.testing.expect(app.trashDropAt(70, trash_y));
+    try std.testing.expect(!app.trashDropAt(70, home_y));
+    try std.testing.expect(!app.trashDropAt(70, recent_y));
+    try std.testing.expect(!app.trashDropAt(400, trash_y));
+
+    app.setTrashDrop(true);
+    try std.testing.expect(app.trash_drop);
+    try std.testing.expect(app.dirty);
+
+    app.dropLeave();
+    try std.testing.expect(!app.trash_drop);
+
+    app.dialog = .{ .kind = .trash_confirm, .title = "Delete", .deletion = .{} };
+    try std.testing.expect(!app.trashDropAt(70, trash_y));
+    app.dialog = null;
+
+    app.menu = .sidebar;
+    try std.testing.expect(!app.trashDropAt(70, trash_y));
+    app.menu = null;
+
+    app.chooser = .{ .mode = .open };
+    try std.testing.expect(!app.trashDropAt(70, trash_y));
+}
+
 test "pins sit after Projects, take drops by gap and keep the rows in drawn order" {
     var app = try testApp();
     defer app.deinit();

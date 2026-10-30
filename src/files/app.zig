@@ -151,6 +151,8 @@ pub const App = struct {
     /// While a drag hovers PLACES: the gap, among the pins, where a drop lands.
     pin_drop: ?usize = null,
     folder_drop: ?usize = null,
+    /// Whether a file drag is hovering the built-in Trash row.
+    trash_drop: bool = false,
 
     // Removable and external volumes (see volumes.zig), listed under DEVICES.
     // The monitor starts once the window exists; without it the list is empty.
@@ -685,6 +687,8 @@ pub const App = struct {
     pub const ejectAt = app_places.ejectAt;
     pub const pinBoundary = app_places.pinBoundary;
     pub const pinSlotAt = app_places.pinSlotAt;
+    pub const trashDropAt = app_places.trashDropAt;
+    pub const setTrashDrop = app_places.setTrashDrop;
     pub const setPinDrop = app_places.setPinDrop;
     pub const dropMotion = app_places.dropMotion;
     pub const dropDirectoryAt = app_places.dropDirectoryAt;
