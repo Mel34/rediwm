@@ -27,7 +27,7 @@ void ft_resize(FT *t, int rows, int cols);
 void ft_feed(FT *t, const char *bytes, size_t len);
 int ft_pty(const FT *t);
 int ft_channel(const FT *t);
-int ft_pidfd(const FT *t);
+int ft_exit_fd(const FT *t);
 bool ft_wants_write(const FT *t);
 bool ft_wants_request(const FT *t);
 void ft_io(FT *t, bool read_pty, bool write_pty, bool channel, bool exited);

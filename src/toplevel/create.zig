@@ -2,6 +2,7 @@
 
 const std = @import("std");
 const Toplevel = @import("../Toplevel.zig");
+const Child = @import("../session/child.zig");
 const glass = @import("../glass.zig");
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
@@ -207,19 +208,17 @@ pub fn handleLaunchTimeout(toplevel: *Toplevel) c_int {
     return 0;
 }
 
-// Observe the same pidfd exit without reaping: services owns the child status.
-pub fn handleChildExit(_: c_int, _: wl.EventMask, toplevel: *Toplevel) c_int {
-    if (toplevel.backend != .placeholder) return 0;
+// The launched process exited. The watch only observes: services owns the
+// child status, and the watch ends itself once this returns.
+pub fn handleChildExit(owner: ?*anyopaque, _: *Child, _: ?u32) void {
+    const toplevel: *Toplevel = @ptrCast(@alignCast(owner.?));
+    if (toplevel.backend != .placeholder) return;
     const ph = &toplevel.backend.placeholder;
-    if (ph.child_source) |source| source.remove();
-    ph.child_source = null;
-    if (ph.child_pidfd >= 0) _ = std.os.linux.close(ph.child_pidfd);
-    ph.child_pidfd = -1;
+    ph.child = null;
     if (!ph.matched and !ph.cancelled) {
         if (toplevel.server.ipc) |ipc| events.onLaunchTimeout(ipc, ph.desktop_id, ph.pid);
         toplevel.destroyNow();
     }
-    return 0;
 }
 
 pub fn createPlaceholder(

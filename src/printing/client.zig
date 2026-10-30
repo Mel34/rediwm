@@ -236,7 +236,7 @@ pub const Client = struct {
         };
         state.remote = (try endpoint.parseServer(socket)).unix == null;
         state.admin_local = std.mem.eql(u8, socket, "/run/cups/cups.sock") or std.mem.eql(u8, socket, "/var/run/cups/cups.sock");
-        if (self.watch) |*watch| if (watch.fd < 0) {
+        if (self.watch) |*watch| if (watch.fd() < 0) {
             watch.deinit(a);
             self.watch = null;
         };
@@ -384,7 +384,7 @@ pub const Client = struct {
             }
             if (self.reload.load(.acquire)) continue;
             const timeout: c_int = if (rescan_at) |deadline| @intCast(@max(0, deadline - http.nowMs())) else -1;
-            var fds = [_]c.struct_pollfd{ .{ .fd = self.wake_worker, .events = c.POLLIN, .revents = 0 }, .{ .fd = netlink, .events = c.POLLIN, .revents = 0 }, .{ .fd = if (self.watch) |watch| watch.fd else -1, .events = c.POLLIN, .revents = 0 } };
+            var fds = [_]c.struct_pollfd{ .{ .fd = self.wake_worker, .events = c.POLLIN, .revents = 0 }, .{ .fd = netlink, .events = c.POLLIN, .revents = 0 }, .{ .fd = if (self.watch) |watch| watch.fd() else -1, .events = c.POLLIN, .revents = 0 } };
             const n = c.poll(&fds, fds.len, timeout);
             if (n < 0) {
                 if (std.posix.errno(n) == .INTR) continue;

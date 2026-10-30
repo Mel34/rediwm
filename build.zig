@@ -63,6 +63,8 @@ pub fn build(b: *std.Build) void {
 
     // Module roots enforce one-way dependencies: shared code cannot import Server.
     const memory_mod = b.createModule(.{ .root_source_file = b.path("src/memory/allocator.zig"), .target = target, .optimize = optimize });
+    // The OS-specific parts (children, file watching, own path): std only.
+    const platform_mod = b.createModule(.{ .root_source_file = b.path("src/platform/mod.zig"), .target = target, .optimize = optimize });
     const i18n_tool = b.addExecutable(.{ .name = "i18n-tool", .root_module = b.createModule(.{ .root_source_file = b.path("tools/i18n.zig"), .target = b.graph.host, .optimize = .safe }) });
     const catalog_compile = b.addRunArtifact(i18n_tool);
     catalog_compile.setCwd(b.path("."));
@@ -210,6 +212,7 @@ pub fn build(b: *std.Build) void {
         .i18n_mod = i18n_mod,
         .ui_mod = ui_mod,
         .dbus_mod = dbus_mod,
+        .platform_mod = platform_mod,
         .config_mod = config_mod,
         .protocol_mod = protocol_mod,
         .c = c_headers,
@@ -260,6 +263,7 @@ pub fn build(b: *std.Build) void {
         module.addImport("i18n", i18n_mod);
         module.addImport("config", config_mod);
         module.addImport("memory", memory_mod);
+        module.addImport("platform", platform_mod);
         module.addImport("c", c_headers.libc);
         module.addImport("c_gfx", c_headers.gfx);
     }

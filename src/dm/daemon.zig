@@ -13,6 +13,7 @@ const state_mod = @import("state.zig");
 const proto = @import("proto.zig");
 const dm_ipc = @import("dm_ipc");
 const ws = @import("wayland_sessions");
+const platform = @import("platform");
 
 const c = @import("c");
 
@@ -62,7 +63,7 @@ pub const Daemon = struct {
     range: ws.UidRange = .{},
     relay: state_mod.Relay,
 
-    children: @import("child_set") = .{},
+    children: platform.child.Set = .{},
     signal_fd: i32 = -1,
     timer_fd: i32 = -1,
     timer: Timer = .none,
@@ -292,7 +293,7 @@ pub const Daemon = struct {
             n += 2;
         }
         if (self.is_test) args[n] = "--test";
-        _ = linux.execve("/proc/self/exe", &args, @ptrCast(std.c.environ));
+        platform.exe.execSelf(&args, @ptrCast(std.c.environ));
         linux.exit_group(127);
     }
 

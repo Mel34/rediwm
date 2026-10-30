@@ -9,6 +9,7 @@ const linux = std.os.linux;
 const proto = @import("proto.zig");
 
 const c = @import("c");
+const platform = @import("platform");
 
 pub const pam_handle_t = opaque {};
 
@@ -121,15 +122,13 @@ pub fn runWorker(ctrl_fd: c_int, greeter_fd: c_int, confdir: ?[]const u8, is_tes
 /// Waits for the session child. A termination signal ends its process group
 /// (SIGTERM, then SIGKILL after `stop_grace_ms`); returns the wait status.
 fn supervise(pid: linux.pid_t, signal_fd: i32) u32 {
-    const pidfd_rc = linux.pidfd_open(pid, 0);
-    if (linux.errno(pidfd_rc) == .SUCCESS) {
-        const pidfd: i32 = @intCast(pidfd_rc);
-        defer _ = linux.close(pidfd);
+    if (platform.child.Handle.open(pid)) |process| {
+        defer process.close();
         var deadline: ?i64 = null;
         var killed = false;
         while (true) {
             var fds = [_]linux.pollfd{
-                .{ .fd = pidfd, .events = linux.POLL.IN, .revents = 0 },
+                .{ .fd = process.fd, .events = linux.POLL.IN, .revents = 0 },
                 .{ .fd = signal_fd, .events = linux.POLL.IN, .revents = 0 },
             };
             const timeout: i32 = if (deadline) |d| @intCast(@max(0, d - monotonicMs())) else -1;
@@ -150,7 +149,7 @@ fn supervise(pid: linux.pid_t, signal_fd: i32) u32 {
                 deadline = null;
             }
         }
-    }
+    } else |_| {}
     var status: u32 = 0;
     while (linux.errno(linux.waitpid(pid, @ptrCast(&status), 0)) == .INTR) {}
     return status;

@@ -6,8 +6,10 @@ const std = @import("std");
 const linux = std.os.linux;
 const sys = @import("login_sys.zig");
 const publication = @import("publication.zig");
+const platform = @import("platform");
 
 const Pid = linux.pid_t;
+const Handle = platform.child.Handle;
 const PidSet = std.AutoArrayHashMapUnmanaged(Pid, void);
 
 const max_crashes = 5;
@@ -98,18 +100,18 @@ pub fn supervise(comptime Publication: type, options: Options(Publication)) !u8 
             return err;
         };
         sys.close(child);
-        const pidfd: i32 = @intCast(try sys.check(linux.pidfd_open(pid, 0)));
+        const process = try Handle.open(pid);
 
         var status: ?u32 = null;
         {
             defer {
                 sys.close(parent);
                 parent_open = false;
-                status = stopGroup(allocator, pid, pidfd, &preexisting);
-                sys.close(pidfd);
+                status = stopGroup(allocator, pid, process, &preexisting);
+                process.close();
                 if (options.publication) |p| p.restore() catch |err| sys.diagnostic("activation cleanup pending: {t}", .{err});
             }
-            stopping = try waitForExit(allocator, pid, parent, pidfd, signal_fd, options.publication, &locked);
+            stopping = try waitForExit(allocator, pid, parent, process, signal_fd, options.publication, &locked);
         }
         if (stopping) return 0;
         const raw = status orelse return 1;
@@ -125,13 +127,13 @@ pub fn supervise(comptime Publication: type, options: Options(Publication)) !u8 
 
 /// Serves readiness handshakes and records lock reports until the compositor
 /// exits (false) or the supervisor is asked to stop (true).
-fn waitForExit(allocator: std.mem.Allocator, compositor: Pid, parent: i32, pidfd: i32, signal_fd: i32, maybe_publication: anytype, locked: *bool) !bool {
+fn waitForExit(allocator: std.mem.Allocator, compositor: Pid, parent: i32, process: Handle, signal_fd: i32, maybe_publication: anytype, locked: *bool) !bool {
     var deadline: ?i64 = sys.monotonicMs() + readiness_timeout_ms;
     var parent_open = true;
     var packet: [16384]u8 = undefined;
     while (true) {
         var fds = [_]linux.pollfd{
-            .{ .fd = pidfd, .events = linux.POLL.IN, .revents = 0 },
+            .{ .fd = process.fd, .events = linux.POLL.IN, .revents = 0 },
             .{ .fd = signal_fd, .events = linux.POLL.IN, .revents = 0 },
             .{ .fd = if (parent_open) parent else -1, .events = linux.POLL.IN, .revents = 0 },
         };
@@ -291,22 +293,22 @@ fn descendants(allocator: std.mem.Allocator, root: Pid) !PidSet {
     return result;
 }
 
-/// Holds pidfds throughout so an exiting or reused PID can never redirect a
-/// signal to an unrelated process. Returns the compositor's wait status, or
-/// null when it is stuck in the kernel.
-fn stopGroup(allocator: std.mem.Allocator, compositor: Pid, compositor_fd: i32, preexisting: *const PidSet) ?u32 {
-    var handles: std.AutoArrayHashMapUnmanaged(Pid, i32) = .empty;
+/// Holds process handles throughout so an exiting or reused PID can never
+/// redirect a signal to an unrelated process. Returns the compositor's wait
+/// status, or null when it is stuck in the kernel.
+fn stopGroup(allocator: std.mem.Allocator, compositor: Pid, compositor_handle: Handle, preexisting: *const PidSet) ?u32 {
+    var handles: std.AutoArrayHashMapUnmanaged(Pid, Handle) = .empty;
     defer {
-        for (handles.values()) |fd| sys.close(fd);
+        for (handles.values()) |handle| handle.close();
         handles.deinit(allocator);
     }
     collect(allocator, &handles, compositor, preexisting);
-    send(&handles, compositor_fd, .TERM);
+    send(&handles, compositor_handle, .TERM);
     // One bounded grace period, ended early once everything has exited.
-    awaitExit(allocator, &handles, compositor_fd, 1000);
+    awaitExit(allocator, &handles, compositor_handle, 1000);
     collect(allocator, &handles, compositor, preexisting);
-    send(&handles, compositor_fd, .KILL);
-    awaitExit(allocator, &handles, compositor_fd, 2000);
+    send(&handles, compositor_handle, .KILL);
+    awaitExit(allocator, &handles, compositor_handle, 2000);
 
     var status: u32 = 0;
     const reaped = sys.retry(linux.wait4, .{ compositor, @as(*i32, @ptrCast(&status)), linux.W.NOHANG, null }) catch 0;
@@ -321,35 +323,34 @@ fn stopGroup(allocator: std.mem.Allocator, compositor: Pid, compositor_fd: i32, 
     return status;
 }
 
-fn collect(allocator: std.mem.Allocator, handles: *std.AutoArrayHashMapUnmanaged(Pid, i32), compositor: Pid, preexisting: *const PidSet) void {
+fn collect(allocator: std.mem.Allocator, handles: *std.AutoArrayHashMapUnmanaged(Pid, Handle), compositor: Pid, preexisting: *const PidSet) void {
     var tree = descendants(allocator, linux.getpid()) catch return;
     defer tree.deinit(allocator);
     for (tree.keys()) |pid| {
         if (pid == compositor or preexisting.contains(pid) or handles.contains(pid)) continue;
-        const rc = linux.pidfd_open(pid, 0);
-        if (linux.errno(rc) != .SUCCESS) continue;
-        handles.put(allocator, pid, @intCast(rc)) catch sys.close(@intCast(rc));
+        const handle = Handle.open(pid) catch continue;
+        handles.put(allocator, pid, handle) catch handle.close();
     }
 }
 
-fn send(handles: *const std.AutoArrayHashMapUnmanaged(Pid, i32), compositor_fd: i32, sig: linux.SIG) void {
-    signalPidfd(compositor_fd, sig);
-    for (handles.values()) |fd| signalPidfd(fd, sig);
+fn send(handles: *const std.AutoArrayHashMapUnmanaged(Pid, Handle), compositor_handle: Handle, sig: linux.SIG) void {
+    signalHandle(compositor_handle, sig);
+    for (handles.values()) |handle| signalHandle(handle, sig);
 }
 
-fn signalPidfd(fd: i32, sig: linux.SIG) void {
-    switch (linux.errno(linux.pidfd_send_signal(fd, sig, null, 0))) {
-        .PERM => sys.diagnostic("privileged descendant must be stopped by logind session teardown", .{}),
+fn signalHandle(handle: Handle, sig: linux.SIG) void {
+    handle.signal(sig) catch |err| switch (err) {
+        error.PermissionDenied => sys.diagnostic("privileged descendant must be stopped by logind session teardown", .{}),
         else => {},
-    }
+    };
 }
 
-/// Waits for every pidfd to become readable (exited), up to `timeout_ms`.
-fn awaitExit(allocator: std.mem.Allocator, handles: *const std.AutoArrayHashMapUnmanaged(Pid, i32), compositor_fd: i32, timeout_ms: i64) void {
+/// Waits for every handle to become readable (exited), up to `timeout_ms`.
+fn awaitExit(allocator: std.mem.Allocator, handles: *const std.AutoArrayHashMapUnmanaged(Pid, Handle), compositor_handle: Handle, timeout_ms: i64) void {
     const fds = allocator.alloc(linux.pollfd, handles.count() + 1) catch return;
     defer allocator.free(fds);
-    fds[0] = .{ .fd = compositor_fd, .events = linux.POLL.IN, .revents = 0 };
-    for (handles.values(), fds[1..]) |fd, *p| p.* = .{ .fd = fd, .events = linux.POLL.IN, .revents = 0 };
+    fds[0] = .{ .fd = compositor_handle.fd, .events = linux.POLL.IN, .revents = 0 };
+    for (handles.values(), fds[1..]) |handle, *p| p.* = .{ .fd = handle.fd, .events = linux.POLL.IN, .revents = 0 };
     const deadline = sys.monotonicMs() + timeout_ms;
     while (true) {
         const remaining = deadline - sys.monotonicMs();

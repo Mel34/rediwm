@@ -5,7 +5,6 @@ const Context = @import("context.zig").Context;
 
 pub const Session = struct {
     session_supervisor: *std.Build.Step.Compile,
-    child_set_mod: *std.Build.Module,
     dm_ipc_mod: *std.Build.Module,
     ws_mod: *std.Build.Module,
 };
@@ -48,7 +47,6 @@ pub fn add(ctx: Context) Session {
     restart.root_module.addImport("install_paths", ctx.layout.options);
     b.installArtifact(restart);
 
-    const child_set_mod = b.createModule(.{ .root_source_file = b.path("src/child_set.zig"), .target = target, .optimize = optimize });
     const dm_ipc_mod = b.createModule(.{
         .root_source_file = b.path("src/session/dm_ipc.zig"),
         .target = target,
@@ -77,7 +75,7 @@ pub fn add(ctx: Context) Session {
     });
     dm.root_module.addImport("install_paths", ctx.layout.options);
     dm.root_module.addImport("c", ctx.c.libc);
-    dm.root_module.addImport("child_set", child_set_mod);
+    dm.root_module.addImport("platform", ctx.platform_mod);
     dm.root_module.addImport("dm_ipc", dm_ipc_mod);
     dm.root_module.addImport("wayland_sessions", ws_mod);
     dm.root_module.linkSystemLibrary("pam", .{});
@@ -112,5 +110,5 @@ pub fn add(ctx: Context) Session {
     accounts_helper.root_module.addImport("dm_config", dm_config);
     b.installArtifact(accounts_helper);
     b.step("accounts-helper", "Build the privileged account-management helper").dependOn(&accounts_helper.step);
-    return .{ .session_supervisor = session_supervisor, .child_set_mod = child_set_mod, .dm_ipc_mod = dm_ipc_mod, .ws_mod = ws_mod };
+    return .{ .session_supervisor = session_supervisor, .dm_ipc_mod = dm_ipc_mod, .ws_mod = ws_mod };
 }

@@ -56,6 +56,7 @@ pub fn add(ctx: Context) Apps {
     }
     inline for (.{ "helper.cpp", "helper_transfers.cpp", "helper_peers.cpp", "helper_tray.cpp" }) |part| torrents.addFileArg(b.path("src/files/torrent/" ++ part));
     torrents.addFileInput(b.path("src/files/torrent/helper.hpp"));
+    torrents.addFileInput(b.path("src/platform/self_exe.h"));
     torrents.addArg("-o");
     const torrent_binary = torrents.addOutputFileArg("rediwm-transfers");
     const install_torrents = b.addInstallFileWithDir(torrent_binary, .bin, "rediwm-transfers");

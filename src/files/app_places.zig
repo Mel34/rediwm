@@ -5,6 +5,7 @@ const i18n = @import("i18n");
 const tr = i18n.tr;
 const App = @import("app.zig").App;
 const c = @import("c.zig").api;
+const platform = @import("platform");
 const recent = @import("recent.zig");
 const volumes_mod = @import("volumes.zig");
 const header = @import("header.zig");
@@ -113,9 +114,8 @@ pub fn openPlaceWindow(self: *App, index: usize) void {
         self.setStatusNotice(tr("Could not open folder"), true);
         return;
     }
-    var exe: [4096]u8 = undefined;
-    const n = c.readlink("/proc/self/exe", &exe, exe.len);
-    const executable: []const u8 = if (n > 0 and n < exe.len) exe[0..@intCast(n)] else "rediwm-files";
+    var exe: [platform.exe.max_path]u8 = undefined;
+    const executable: []const u8 = platform.exe.path(&exe) orelse "rediwm-files";
     var child = std.process.spawn(self.io, .{
         .argv = &.{ executable, path },
     }) catch {

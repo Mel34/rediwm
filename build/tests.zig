@@ -43,7 +43,6 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     const config_mod = ctx.config_mod;
     const protocol_mod = ctx.protocol_mod;
     const session_supervisor = session.session_supervisor;
-    const child_set_mod = session.child_set_mod;
     const dm_ipc_mod = session.dm_ipc_mod;
     const ws_mod = session.ws_mod;
     // The UI layout engine (src/ui/) isn't wired into the compositor's
@@ -105,6 +104,9 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     const i18n_tests = b.addTest(.{ .root_module = i18n_mod });
     const run_i18n_tests = b.addRunArtifact(i18n_tests);
     test_step.dependOn(&run_i18n_tests.step);
+    const run_platform_tests = b.addRunArtifact(b.addTest(.{ .root_module = ctx.platform_mod }));
+    test_step.dependOn(&run_platform_tests.step);
+    b.step("test-platform", "Test child handles, file watching and the program's own path").dependOn(&run_platform_tests.step);
     const i18n_tool_tests = b.addTest(.{ .root_module = i18n_tool.root_module });
     test_step.dependOn(&b.addRunArtifact(i18n_tool_tests).step);
     b.step("test-i18n", "Test locale resolution, catalogs and formatting").dependOn(&run_i18n_tests.step);
@@ -115,6 +117,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
         .link_libc = true,
     }) });
     monitor_tests.root_module.addImport("c", ctx.c.libc);
+    monitor_tests.root_module.addImport("platform", ctx.platform_mod);
     const run_monitor_tests = b.addRunArtifact(monitor_tests);
     const monitor_test_step = b.step("test-monitor", "Test System Monitor collection, process identity and model");
     monitor_test_step.dependOn(&run_monitor_tests.step);
@@ -128,6 +131,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     printing_tests.root_module.addImport("c", ctx.c.libc);
     printing_tests.root_module.addImport("dbus", dbus_mod);
     printing_tests.root_module.addImport("i18n", i18n_mod);
+    printing_tests.root_module.addImport("platform", ctx.platform_mod);
     printing_tests.root_module.addImport("wayland", wayland);
     printing_tests.root_module.linkSystemLibrary("wayland-server", .{});
     printing_tests.root_module.linkSystemLibrary("cups", .{});
@@ -252,7 +256,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     }) });
     dm_tests.root_module.addImport("install_paths", ctx.layout.options);
     dm_tests.root_module.addImport("c", ctx.c.libc);
-    dm_tests.root_module.addImport("child_set", child_set_mod);
+    dm_tests.root_module.addImport("platform", ctx.platform_mod);
     dm_tests.root_module.addImport("dm_ipc", dm_ipc_mod);
     dm_tests.root_module.addImport("wayland_sessions", ws_mod);
     dm_tests.root_module.linkSystemLibrary("pam", .{});
