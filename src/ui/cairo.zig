@@ -158,77 +158,38 @@ pub fn drawSplitter(cr_any: *anyopaque, geometry: splitter.Geometry, engaged: bo
 pub fn drawScrollbar(cr_any: *anyopaque, look: scrollbar.Look) void {
     const cr: *c.cairo_t = @ptrCast(cr_any);
 
-    // Paint the groove on the original context so it is not clipped to the
-    // thumb-sized layer used for animated shine.
-    const tx: f64 = look.track.x;
-    const ty: f64 = look.track.y;
-    const tw: f64 = look.track.w;
-    const th: f64 = look.track.h;
-    if (tw > 0 and th > 0) {
-        const tr: f64 = @min(look.track_radius, @min(tw, th) / 2);
-        setSource(cr, look.track_color);
-        c.cairo_new_sub_path(cr);
-        c.cairo_arc(cr, tx + tw - tr, ty + tr, tr, -std.math.pi / 2.0, 0);
-        c.cairo_arc(cr, tx + tw - tr, ty + th - tr, tr, 0, std.math.pi / 2.0);
-        c.cairo_arc(cr, tx + tr, ty + th - tr, tr, std.math.pi / 2.0, std.math.pi);
-        c.cairo_arc(cr, tx + tr, ty + tr, tr, std.math.pi, 3 * std.math.pi / 2.0);
-        c.cairo_close_path(cr);
-        c.cairo_fill(cr);
+    const track = look.track;
+    const thumb = look.rect;
+    const left = @min(track.x, thumb.x);
+    const top = @min(track.y, thumb.y);
+    const right = @max(track.x + track.w, thumb.x + thumb.w);
+    const bottom = @max(track.y + track.h, thumb.y + thumb.h);
+    if (right <= left or bottom <= top) return;
 
-        // Contrasting edges make the channel read as a recessed groove.
-        if (look.axis == .vertical) {
-            setSource(cr, look.track_light);
-            c.cairo_rectangle(cr, tx, ty, 1, th);
-            c.cairo_fill(cr);
-            setSource(cr, look.track_dark);
-            c.cairo_rectangle(cr, tx + tw - 1, ty, 1, th);
-            c.cairo_fill(cr);
-        } else {
-            setSource(cr, look.track_light);
-            c.cairo_rectangle(cr, tx, ty, tw, 1);
-            c.cairo_fill(cr);
-            setSource(cr, look.track_dark);
-            c.cairo_rectangle(cr, tx, ty + th - 1, tw, 1);
-            c.cairo_fill(cr);
-        }
-    }
+    // Snap the combined layer origin to device pixels while preserving
+    // the scrollbar's fractional placement within that layer.
+    const s = scaleOf(cr);
+    var dx: f64 = left;
+    var dy: f64 = top;
+    c.cairo_user_to_device(cr, &dx, &dy);
+    const inset_x: f32 = @floatCast((dx - @floor(dx)) / s);
+    const inset_y: f32 = @floatCast((dy - @floor(dy)) / s);
 
-    if (look.shine > 0) {
-        // Preserve the thumb's fractional placement within the device-aligned
-        // layer, including a Cairo translation, as its animated width changes.
-        const s = scaleOf(cr);
-        var dx: f64 = look.rect.x;
-        var dy: f64 = look.rect.y;
-        c.cairo_user_to_device(cr, &dx, &dy);
-        const inset_x: f32 = @floatCast((dx - @floor(dx)) / s);
-        const inset_y: f32 = @floatCast((dy - @floor(dy)) / s);
-        var layer = Layer.begin(cr, .{
-            .x = look.rect.x - inset_x,
-            .y = look.rect.y - inset_y,
-            .w = look.rect.w + inset_x,
-            .h = look.rect.h + inset_y,
-        }) orelse return;
-        var local = look;
-        local.rect.x = inset_x;
-        local.rect.y = inset_y;
-        scrollbar.paint(&layer.renderer, local);
-        layer.finish();
-        return;
-    }
-    const x: f64 = look.rect.x;
-    const y: f64 = look.rect.y;
-    const w: f64 = look.rect.w;
-    const h: f64 = look.rect.h;
-    if (w <= 0 or h <= 0) return;
-    const r: f64 = @min(look.radius, @min(w, h) / 2);
-    setSource(cr, look.color);
-    c.cairo_new_sub_path(cr);
-    c.cairo_arc(cr, x + w - r, y + r, r, -std.math.pi / 2.0, 0);
-    c.cairo_arc(cr, x + w - r, y + h - r, r, 0, std.math.pi / 2.0);
-    c.cairo_arc(cr, x + r, y + h - r, r, std.math.pi / 2.0, std.math.pi);
-    c.cairo_arc(cr, x + r, y + r, r, std.math.pi, 3 * std.math.pi / 2.0);
-    c.cairo_close_path(cr);
-    c.cairo_fill(cr);
+    var layer = Layer.begin(cr, .{
+        .x = left - inset_x,
+        .y = top - inset_y,
+        .w = right - left + inset_x,
+        .h = bottom - top + inset_y,
+    }) orelse return;
+
+    var local = look;
+    local.track.x = track.x - left + inset_x;
+    local.track.y = track.y - top + inset_y;
+    local.rect.x = thumb.x - left + inset_x;
+    local.rect.y = thumb.y - top + inset_y;
+
+    scrollbar.paint(&layer.renderer, local);
+    layer.finish();
 }
 
 /// Draws `str` with its pen at `x` and baseline at `y`, like
@@ -387,7 +348,8 @@ test "a scrollbar thumb paints its look through cairo" {
     // Six wide at rest, centred in the 14 wide gutter: x 24..30, top half.
     try std.testing.expectEqual(@as(u32, 0xff0000ff), data[15 * 40 + 27]);
     try std.testing.expectEqual(@as(u32, 0), data[15 * 40 + 22]);
-    try std.testing.expectEqual(@as(u32, 0), data[45 * 40 + 27]);
+    // The recessed groove continues below the thumb.
+    try std.testing.expect(data[45 * 40 + 27] != 0);
 
     // Engaged thumbs share the shell raster, including fractional placement,
     // Cairo translation and clipping. The highlight remains inside the thumb.
@@ -401,6 +363,8 @@ test "a scrollbar thumb paints its look through cairo" {
     c.cairo_surface_flush(surface);
     var expected = @as([40 * 60]u32, @splat(0));
     var renderer = paint.Renderer.init(&expected, 40, 60, 1.5);
+    hot.track.x += 0.25;
+    hot.track.y += 0.5;
     hot.rect.x += 0.25;
     hot.rect.y += 0.5;
     scrollbar.paint(&renderer, hot);
