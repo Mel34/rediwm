@@ -36,3 +36,19 @@ search paths still include `/usr/local` where appropriate.
 
 Check both layouts with [tests/install_layout.py](../tests/install_layout.py)
 (commands in its docstring).
+
+## Arch Linux package
+
+[packaging/arch/PKGBUILD](../packaging/arch/PKGBUILD) builds a `rediwm-git`
+package from the `master` branch, following the layout above (`/usr` prefix,
+Arch PAM profile, display-manager files included). It was contributed by Petar
+Margetić. Build and install it with:
+
+```sh
+cd packaging/arch
+makepkg -si
+```
+
+The package ships the display manager's service and PAM files but does not
+enable the service or change the selected display manager. It conflicts with
+and provides `rediwm`.
