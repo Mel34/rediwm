@@ -30,7 +30,7 @@ translate. About 47 Zig files call `std.os.linux.*` directly.
 | --- | --- | --- |
 | `eventfd` | ~38 files | Native (13+). Swap `linux.EFD` for `c.EFD_*`. |
 | `memfd_create`, `timerfd` | few | Native on current releases (confirm in phase 0). |
-| `pidfd_open`, `pidfd_send_signal`, `waitid(P_PIDFD)` | `platform/child.zig` (`Handle`, `Set`) and `platform/child.h`, used by `session/child.zig`, the supervisor, dm worker and daemon, IPC, `Toplevel`, the pickers, System Monitor and the terminal engine | No equivalent for an existing pid. kqueue `EVFILT_PROC`/`NOTE_EXIT`; the kqueue fd joins the wl event loop like a pidfd. Signals by pid, guarded by the still-unreaped zombie. `Handle.pid()` has no counterpart: System Monitor needs another identity check. |
+| `pidfd_open`, `pidfd_send_signal`, `waitid(P_PIDFD)` | `platform/child.zig` (`Handle`, `Set`) and `platform/child.h`, used by `session/child.zig`, the supervisor, dm worker and daemon, IPC, `Toplevel`, the pickers, System Monitor and the terminal engine | No equivalent for an existing pid. kqueue `EVFILT_PROC`/`NOTE_EXIT`; the kqueue fd joins the wl event loop like a pidfd. Signals by pid, guarded by the still-unreaped zombie, which only holds for our own children: handles on other processes (`Toplevel` client pids, `Handle.peer` for IPC, System Monitor) become a bare pid with a reuse race, so those callers need another identity check (start time from `kern.proc`). `Handle.pid()` reads `fdinfo` and has no counterpart. `Pid`/`Signal` are `std.os.linux` types today; switch them to `std.posix` before the FreeBSD part. |
 | `signalfd`, `epoll` | supervisor, dm daemon/worker, `platform.child.Set` | kqueue `EVFILT_SIGNAL`, kqueue. |
 | `inotify` | `platform/watch.zig` (`Watcher`); all 7 users (config, desktop, Files worker ×2, printing, start menu, system monitor settings) call it | Native in 15.0 (confirm); otherwise kqueue `EVFILT_VNODE`, which has no names: diff the directory to synthesize them. |
 | `prctl` | dm worker, lock, PAM worker, PDF print/sandbox, theme helper | `procctl(PROC_PDEATHSIG_CTL / PROC_NO_NEW_PRIVS_CTL / PROC_TRACE_CTL)`, `pthread_set_name_np`. |
@@ -139,8 +139,9 @@ headless + GLES2 path works there.
 
 ### 1. Compositor builds and runs
 
-Add `src/platform/` with Linux parts (moving the preparation helpers in) and
-FreeBSD parts; split the translate roots; build conditions for `seccomp`,
+Split `src/platform/` into Linux and FreeBSD parts (`exe.path` can use
+`std.process.executablePath`, which already reads `kern.proc.pathname`);
+split the translate roots; build conditions for `seccomp`,
 `util`, `pam`. Hide NM, BlueZ, PPD, UDisks, app scopes; PDF and theme helper
 refuse. Goal: `rediwm` and the apps start in a seatd session and the headless
 integration suites run.
