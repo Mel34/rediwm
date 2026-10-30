@@ -1565,6 +1565,14 @@ msgstr ""
 msgid "Could not request authentication. Check that polkit is running."
 msgstr ""
 
+#: src/control_center/sections/input.zig
+msgid "Could not reset or restore the previous settings."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Could not reset. The previous settings were restored."
+msgstr ""
+
 #: src/images/app_input.zig
 msgid "Could not rotate: not enough memory."
 msgstr ""
@@ -1587,6 +1595,10 @@ msgstr ""
 
 #: src/control_center/sections/desktop.zig
 msgid "Could not save floating apps."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Could not save or restore the previous settings."
 msgstr ""
 
 #: src/control_center/sections/portals.zig
@@ -1627,6 +1639,10 @@ msgstr ""
 
 #: src/images/app_dialogs.zig
 msgid "Could not save. Check the folder and permissions."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Could not save. The previous settings were restored."
 msgstr ""
 
 #: src/printing/admin.zig
@@ -1972,7 +1988,7 @@ msgid "Disable shortcut"
 msgstr ""
 
 #: src/control_center/search_index.zig
-msgid "Disable touchpad while typing"
+msgid "Disable while typing"
 msgstr ""
 
 #: src/control_center/sections/services.zig
@@ -3151,8 +3167,8 @@ msgstr ""
 msgid "Left"
 msgstr ""
 
-#: src/control_center/sections/input.zig
-msgid "Left-handed mouse"
+#: src/control_center/search_index.zig
+msgid "Left-handed mode"
 msgstr ""
 
 #: src/control_center/search_index.zig
@@ -3443,10 +3459,6 @@ msgstr ""
 msgid "Mounting…"
 msgstr ""
 
-#: src/control_center/search_index.zig
-msgid "Mouse speed"
-msgstr ""
-
 #: src/control_center/sections/shortcuts.zig
 msgid "Move To Workspace"
 msgstr ""
@@ -3687,6 +3699,10 @@ msgstr ""
 msgid "No changes were made. Authentication was cancelled or the request failed."
 msgstr ""
 
+#: src/control_center/sections/input.zig
+msgid "No devices"
+msgstr ""
+
 #: src/pdf/app_paint.zig
 msgid "No document open. Click 'Open' or press Ctrl+O."
 msgstr ""
@@ -3747,6 +3763,10 @@ msgstr ""
 msgid "No paired devices. Choose Pair New Device to get started."
 msgstr ""
 
+#: src/control_center/sections/input.zig
+msgid "No pointer devices connected."
+msgstr ""
+
 #: src/battery_popup.zig
 msgid "No power profile service is running."
 msgstr ""
@@ -3805,6 +3825,10 @@ msgstr ""
 
 #: src/control_center/sections/printers_add.zig
 msgid "No unambiguous automatic driver match. Choose a listed driver, check an IPP address, or explicitly choose a raw queue."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "No unique device identity; settings are unavailable."
 msgstr ""
 
 #: src/control_center/sections/printers.zig
@@ -3895,7 +3919,7 @@ msgstr ""
 msgid "Not specified"
 msgstr ""
 
-#: src/session/power_capabilities.zig
+#: src/control_center/sections/input.zig
 msgid "Not supported"
 msgstr ""
 
@@ -4269,6 +4293,14 @@ msgstr ""
 
 #: src/taskbar/battery.zig
 msgid "Plugged In"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Pointer device"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Pointer speed"
 msgstr ""
 
 #: src/control_center/sections/desktop.zig
@@ -4812,6 +4844,10 @@ msgid "Reserved folder name"
 msgstr ""
 
 #: src/control_center/search_index.zig
+msgid "Reset pointer settings"
+msgstr ""
+
+#: src/control_center/search_index.zig
 msgid "Reset theme"
 msgstr ""
 
@@ -4821,6 +4857,10 @@ msgstr ""
 
 #: src/control_center/sections/appearance_sections.zig
 msgid "Reset to default"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Reset to defaults"
 msgstr ""
 
 #: src/control_center/sections/appearance_sections.zig
@@ -5295,6 +5335,10 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
+#: src/control_center/sections/input.zig
+msgid "Settings apply only to this device."
+msgstr ""
+
 #: src/control_center/sections/appearance_rows.zig
 msgid "Shadow"
 msgstr ""
@@ -5708,6 +5752,10 @@ msgid "Takes effect at next boot. The keyring will not unlock automatically."
 msgstr ""
 
 #: src/control_center/search_index.zig
+msgid "Tap and drag"
+msgstr ""
+
+#: src/control_center/search_index.zig
 msgid "Tap to click"
 msgstr ""
 
@@ -5865,6 +5913,10 @@ msgstr ""
 
 #: src/printing/ladder.zig
 msgid "The device address matches; successful communication has not been confirmed."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "The device could not apply this setting."
 msgstr ""
 
 #: src/pdf/client_print.zig
@@ -6115,6 +6167,10 @@ msgstr ""
 msgid "This security type needs a network configuration tool."
 msgstr ""
 
+#: src/control_center/sections/input.zig
+msgid "This setting is unavailable on the selected device."
+msgstr ""
+
 #: src/control_center/tree.zig
 msgid "This setting is unavailable on this device or in the current mode."
 msgstr ""
@@ -6209,10 +6265,6 @@ msgstr ""
 
 #: src/files/app_torrents.zig
 msgid "Torrent file or magnet link"
-msgstr ""
-
-#: src/control_center/search_index.zig
-msgid "Touchpad speed"
 msgstr ""
 
 #: src/files/app_torrents.zig
@@ -6976,7 +7028,7 @@ msgid "keep icons in place"
 msgstr ""
 
 #: src/control_center/search_index.zig
-msgid "keyboard trackpad"
+msgid "keyboard touchpad trackpad"
 msgstr ""
 
 #: src/control_center/search_index.zig
@@ -7031,6 +7083,22 @@ msgstr ""
 msgid "motion duration"
 msgstr ""
 
+#: src/control_center/search_index.zig
+msgid "mouse buttons swap primary"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "mouse touchpad trackball default custom inherit"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "mouse touchpad trackpad acceleration sensitivity"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "mouse touchpad trackpad select"
+msgstr ""
+
 #: src/notifications/toast.zig
 msgid "now"
 msgstr ""
@@ -7073,10 +7141,6 @@ msgstr ""
 
 #: src/control_center/search_index.zig
 msgid "panel width"
-msgstr ""
-
-#: src/control_center/search_index.zig
-msgid "pointer acceleration sensitivity"
 msgstr ""
 
 #: src/control_center/search_index.zig
@@ -7225,10 +7289,6 @@ msgstr ""
 
 #: src/control_center/search_index.zig
 msgid "touchpad trackpad"
-msgstr ""
-
-#: src/control_center/search_index.zig
-msgid "trackpad acceleration sensitivity"
 msgstr ""
 
 #: src/control_center/search_index.zig

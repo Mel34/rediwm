@@ -16,6 +16,7 @@ pub const window_rules = @import("window_rules.zig");
 pub const WindowRule = window_rules.WindowRule;
 pub const sandbox_allow = @import("sandbox_allow.zig");
 pub const SandboxAllowRule = sandbox_allow.SandboxAllowRule;
+pub const input_device = @import("input_device.zig");
 const anim = @import("ui").anim;
 const anim_cfg = @import("animations.zig");
 const output_transform = @import("output_transform.zig");
@@ -356,6 +357,7 @@ pub const Config = struct {
     /// Null (no section) follows the main theme. Only taskbar tokens are set.
     taskbar_theme: ?Theme = null,
     input: InputConfig = .{},
+    input_devices: []input_device.Record = &.{},
     input_method: struct { env: types.InputMethod = .none } = .{},
     keyboard_keymap: ?*xkb.Keymap = null,
     compositor: CompositorConfig = .{},

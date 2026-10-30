@@ -122,6 +122,8 @@ cursor_held: bool = false,
 cursor_serial: CursorSerial = .{},
 keyboards: wl.list.Head(Keyboard, .link) = undefined,
 pointers: wl.list.Head(Pointer, .link) = undefined,
+/// Monotonic live tokens keep Settings selection safe across allocator reuse.
+next_pointer_id: u64 = 1,
 // The one open control center, if any (opening/open/closing all count) —
 // routes pointer gestures and captures keys only while focused.
 // Output creates it; ControlCenter.destroy clears this reference.

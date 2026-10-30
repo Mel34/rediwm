@@ -25,7 +25,7 @@ pub fn cHeaders(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.l
         .libc = cHeader(b, target, optimize, b.path("src/c/libc.h"), &.{}),
         .gfx = cHeader(b, target, optimize, b.path("src/c/gfx.h"), &gfx_libs),
         .pulse = cHeader(b, target, optimize, b.path("src/c/pulse.h"), &.{"libpulse"}),
-        .libinput = cHeader(b, target, optimize, b.path("src/c/libinput.h"), &.{"libinput"}),
+        .libinput = cHeader(b, target, optimize, b.path("src/c/libinput.h"), &.{ "libinput", "libudev" }),
         .png = cHeader(b, target, optimize, b.path("src/c/png.h"), &.{"libpng16"}),
         .archive = cHeader(b, target, optimize, b.path("src/c/archive.h"), &.{"libarchive"}),
     };
@@ -142,7 +142,7 @@ pub fn addShellUi(b: *std.Build, module: *std.Build.Module) void {
 pub fn addShellIcons(b: *std.Build, module: *std.Build.Module) void {
     module.addAnonymousImport("redi-logo", .{ .root_source_file = b.path("assets/redi-logo.svg") });
     module.addAnonymousImport("rediwm-settings-icon", .{ .root_source_file = b.path("assets/icons/rediwm-settings.png") });
-    inline for (.{ "git-branch", "home", "folder", "terminal", "settings", "keyboard", "edit", "mouse", "display", "music", "headphones", "wifi", "ethernet", "globe", "bluetooth", "battery", "notification-bell", "speaker", "speaker-xmark", "power-button", "clock", "lock", "logout", "restart", "eye", "eye-off", "refresh", "cut", "copy", "paste", "trash-outline", "trash", "view-grid", "view-list", "sort", "filter", "zoom-in", "zoom-out", "rotate", "crop", "undo", "save", "fit", "print", "open", "usb-stick", "drive", "eject", "users", "squares", "divide" }) |name| {
+    inline for (.{ "git-branch", "home", "folder", "terminal", "settings", "keyboard", "edit", "mouse", "touchpad", "trackball", "display", "music", "headphones", "wifi", "ethernet", "globe", "bluetooth", "battery", "notification-bell", "speaker", "speaker-xmark", "power-button", "clock", "lock", "logout", "restart", "eye", "eye-off", "refresh", "cut", "copy", "paste", "trash-outline", "trash", "view-grid", "view-list", "sort", "filter", "zoom-in", "zoom-out", "rotate", "crop", "undo", "save", "fit", "print", "open", "usb-stick", "drive", "eject", "users", "squares", "divide" }) |name| {
         module.addAnonymousImport("shell-icon-" ++ name, .{ .root_source_file = b.path("assets/icons/" ++ name ++ ".svg") });
     }
 }

@@ -1968,10 +1968,6 @@ msgstr "Désactiver l'imprimante"
 msgid "Disable shortcut"
 msgstr "Désactiver le raccourci"
 
-#: src/control_center/search_index.zig
-msgid "Disable touchpad while typing"
-msgstr "Désactiver le pavé tactile pendant la frappe"
-
 #: src/control_center/sections/services.zig
 msgid "Disabled"
 msgstr "Désactivé"
@@ -3411,10 +3407,6 @@ msgstr "Monté"
 #: src/files/app_places.zig
 msgid "Mounting…"
 msgstr "Montage…"
-
-#: src/control_center/search_index.zig
-msgid "Mouse speed"
-msgstr "Vitesse de la souris"
 
 #: src/control_center/sections/shortcuts.zig
 msgid "Move To Workspace"
@@ -6144,10 +6136,6 @@ msgstr "En haut"
 msgid "Torrent file or magnet link"
 msgstr "Fichier torrent ou lien magnet"
 
-#: src/control_center/search_index.zig
-msgid "Touchpad speed"
-msgstr "Vitesse du pavé tactile"
-
 #: src/files/app_torrents.zig
 msgid "Transfer"
 msgstr "Transfert"
@@ -6909,10 +6897,6 @@ msgid "keep icons in place"
 msgstr "fixer les icônes"
 
 #: src/control_center/search_index.zig
-msgid "keyboard trackpad"
-msgstr "clavier pavé tactile"
-
-#: src/control_center/search_index.zig
 msgid "laptop suspend sleep"
 msgstr "portable suspendre veille"
 
@@ -7003,10 +6987,6 @@ msgstr "panneau haut bas"
 #: src/control_center/search_index.zig
 msgid "panel width"
 msgstr "largeur panneau"
-
-#: src/control_center/search_index.zig
-msgid "pointer acceleration sensitivity"
-msgstr "pointeur accélération sensibilité"
 
 #: src/control_center/search_index.zig
 msgid "pointer mouse"
@@ -7151,10 +7131,6 @@ msgstr "haut bas gauche droite"
 #: src/control_center/search_index.zig
 msgid "touchpad trackpad"
 msgstr "pavé tactile trackpad"
-
-#: src/control_center/search_index.zig
-msgid "trackpad acceleration sensitivity"
-msgstr "pavé tactile accélération sensibilité"
 
 #: src/control_center/search_index.zig
 msgid "transparency"
@@ -7590,4 +7566,92 @@ msgstr ""
 
 #: src/editor/app_search.zig
 msgid "Matches replaced: {count}"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Disable while typing"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Left-handed mode"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "No devices"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "No pointer devices connected."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "No unique device identity; settings are unavailable."
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Pointer device"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Pointer speed"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Settings apply only to this device."
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Tap and drag"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "The device could not apply this setting."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "This setting is unavailable on the selected device."
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "keyboard touchpad trackpad"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "mouse buttons swap primary"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "mouse touchpad trackpad acceleration sensitivity"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "mouse touchpad trackpad select"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Could not reset or restore the previous settings."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Could not reset. The previous settings were restored."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Could not save or restore the previous settings."
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Could not save. The previous settings were restored."
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "Reset pointer settings"
+msgstr ""
+
+#: src/control_center/sections/input.zig
+msgid "Reset to defaults"
+msgstr ""
+
+#: src/control_center/search_index.zig
+msgid "mouse touchpad trackball default custom inherit"
 msgstr ""

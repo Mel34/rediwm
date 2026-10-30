@@ -86,6 +86,16 @@ pub const input_rules: std.enums.EnumFieldStruct(std.meta.FieldEnum(InputConfig)
     .caret_motion_ms = .{ .uint = .{ .min = 0, .max = 2000 } },
 };
 
+pub const input_device_rules: std.enums.EnumFieldStruct(std.meta.FieldEnum(@import("input_device.zig").Record), FieldRule, null) = .{
+    .id = .string,
+    .pointer_speed = input_rules.pointer_speed,
+    .natural_scroll = input_rules.natural_scroll,
+    .left_handed = input_rules.left_handed,
+    .tap_to_click = input_rules.tap_to_click,
+    .tap_drag = input_rules.tap_drag,
+    .disable_while_typing = input_rules.disable_while_typing,
+};
+
 pub const region_rules: std.enums.EnumFieldStruct(std.meta.FieldEnum(RegionConfig), FieldRule, null) = .{
     .timezone = .string,
     .language = .string,

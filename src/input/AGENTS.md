@@ -1,5 +1,15 @@
 # Input
 
+* **Per-device pointer settings:** `Pointer` owns its stable identity and a
+  monotonic live token. Settings resolves the token on every callback; no UI
+  state may retain a device pointer. `persistentId` rejects missing/ambiguous
+  identities. Hotplug and reload both call `applyPointerDevice`, resolving
+  `[[input_device]]` overrides over `[input]` defaults. Do not reapply bare
+  global pointer values later. Identity collisions reset those peers to
+  defaults and stay ambiguous for their remaining connection lifetimes.
+  `tests/input_persistence.py` uses a noninstalled backend fixture; physical
+  touchpad/mouse scroll feel and libinput DWT pairing still need manual checks.
+
 * **Text input/IME** (`text_input.zig`): `syncFocus` is the only enter path.
   IM grabs replace client delivery only (bindings, hardware keys and
   shell/lock UI win); an IM's own virtual keyboard bypasses its grab.

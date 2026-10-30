@@ -4,6 +4,8 @@ const std = @import("std");
 const Io = std.Io;
 const loader = @import("loader.zig");
 const theme = @import("ui").theme;
+pub const saveInputDevice = @import("input_device_save.zig").save;
+pub const resetInputDevice = @import("input_device_save.zig").reset;
 
 pub fn saveInput(allocator: std.mem.Allocator, io: Io, path: []const u8, comptime key: []const u8, value: @FieldType(loader.InputConfig, key)) !void {
     try save(allocator, io, path, "input", key, value);
@@ -113,7 +115,7 @@ pub fn saveCanvas(allocator: std.mem.Allocator, io: Io, path: []const u8, column
     try writeValidated(allocator, io, path, result);
 }
 
-fn writeValidated(allocator: std.mem.Allocator, io: Io, path: []const u8, result: []const u8) !void {
+pub fn writeValidated(allocator: std.mem.Allocator, io: Io, path: []const u8, result: []const u8) !void {
     var checked = try loader.parse(allocator, result, path);
     defer checked.deinit();
     const stat = try Io.Dir.cwd().statFile(io, path, .{});

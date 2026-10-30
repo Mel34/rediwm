@@ -165,6 +165,7 @@ pub fn build(b: *std.Build) void {
     // (accel speed, natural scroll, tap-to-click). Header is a clean, glib-free
     // C API so it's @cInclude'd directly, unlike librsvg (see AGENTS.md, "Build and platform gotchas").
     compositor.root_module.linkSystemLibrary("libinput", .{});
+    compositor.root_module.linkSystemLibrary("libudev", .{});
     compositor.root_module.linkSystemLibrary("png16", .{});
     // PipeWire's PulseAudio-compat client library — see src/audio/pipewire.zig.
     compositor.root_module.linkSystemLibrary("libpulse", .{});

@@ -71,6 +71,7 @@ pub fn addZig(ctx: Context, session: Session) ZigTests {
     ui_tests_module.linkSystemLibrary("fontconfig", .{});
     ui_tests_module.linkSystemLibrary("librsvg-2.0", .{});
     ui_tests_module.linkSystemLibrary("libinput", .{});
+    ui_tests_module.linkSystemLibrary("libudev", .{});
     ui_tests_module.linkSystemLibrary("png16", .{});
     ui_tests_module.linkSystemLibrary("libpulse", .{});
     inline for (.{ .{ "c_pulse", ctx.c.pulse }, .{ "c_libinput", ctx.c.libinput }, .{ "c_png", ctx.c.png } }) |entry| ui_tests_module.addImport(entry[0], entry[1]);

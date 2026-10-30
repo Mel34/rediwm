@@ -144,6 +144,8 @@ pub const IconId = enum {
     users,
     squares,
     divide,
+    touchpad,
+    trackball,
 };
 
 pub const ButtonState = enum { idle, hover, press, disabled };
@@ -414,6 +416,8 @@ pub const SelectData = struct {
     /// Visible placeholders that cannot be committed.
     disabled_options: []const usize = &.{},
     labels: []const []const u8,
+    /// Optional leading glyphs by option index; borrowed like labels.
+    icons: []const IconId = &.{},
     selected: ?usize = null,
     placeholder: []const u8 = "Select an option",
     disabled: bool = false,

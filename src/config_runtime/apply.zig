@@ -1,6 +1,6 @@
 //! Apply parsed configuration to the running compositor. Kept outside the config module.
 const std = @import("std");
-const wlr = @import("wlroots");
+const Pointer = @import("../Pointer.zig");
 const Server = @import("../Server.zig");
 const loader = @import("config").loader;
 const Config = loader.Config;
@@ -76,7 +76,7 @@ pub fn applyDiff(server: *Server, old: Config, new: Config) void {
         }
     }
 
-    if (!inputEql(old.input, new.input)) {
+    if (!inputEql(old.input, new.input) or !@import("config").input_device.eql(old.input_devices, new.input_devices)) {
         applyInputConfig(server, new.input);
     }
     if (!@import("config").keymap.namesEqual(old.input, new.input)) {
@@ -284,7 +284,7 @@ pub fn applyInputConfig(server: *Server, cfg: InputConfig) void {
     server.input.updateAccel(cfg.accel_profile, cfg.accel_p1, cfg.accel_p2, cfg.accel_max_speed);
 
     var pit = server.input.pointers.iterator(.forward);
-    while (pit.next()) |pointer| applyPointerDevice(pointer.device, cfg);
+    while (pit.next()) |pointer| applyPointerDevice(pointer);
 
     var kit = server.input.keyboards.iterator(.forward);
     while (kit.next()) |kb| {
@@ -292,18 +292,24 @@ pub fn applyInputConfig(server: *Server, cfg: InputConfig) void {
     }
 }
 
-pub fn applyPointerDevice(device: *wlr.InputDevice, cfg: InputConfig) void {
-    if (libinput.isTouchpad(device)) {
-        libinput.setPointerSpeed(device, cfg.pointer_speed_touchpad);
-        libinput.setDisableWhileTyping(device, cfg.disable_while_typing_touchpad);
-    } else {
-        libinput.setPointerSpeed(device, cfg.pointer_speed);
-        libinput.setDisableWhileTyping(device, cfg.disable_while_typing);
+pub fn applyPointerDevice(pointer: *Pointer) void {
+    const config = &pointer.input.server.config;
+    const device = pointer.device;
+    const effective = @import("config").input_device.resolve(config.input, config.input_devices, pointer.persistentId(), libinput.isTouchpad(device));
+    inline for (.{
+        .{ "pointer_speed", libinput.setPointerSpeed },
+        .{ "natural_scroll", libinput.setNaturalScroll },
+        .{ "left_handed", libinput.setLeftHanded },
+        .{ "tap_to_click", libinput.setTapToClick },
+        .{ "tap_drag", libinput.setTapDrag },
+        .{ "disable_while_typing", libinput.setDisableWhileTyping },
+    }) |setting| {
+        // Unsupported settings inherit harmlessly; rejected supported values
+        // are logged, and Settings reads the actual backend state.
+        if (setting[1](device, @field(effective, setting[0])) == .failed) {
+            log.warn("could not apply pointer setting '{s}' to '{s}'", .{ setting[0], libinput.getName(device) orelse "pointer" });
+        }
     }
-    libinput.setNaturalScroll(device, cfg.natural_scroll);
-    libinput.setLeftHanded(device, cfg.left_handed);
-    libinput.setTapToClick(device, cfg.tap_to_click);
-    libinput.setTapDrag(device, cfg.tap_drag);
 }
 
 pub fn applyWindowOpacity(server: *Server) void {

@@ -61,3 +61,20 @@ interval; CPU and GPU work overlap, so do not add their timings.
 Hardware, login, browser/OBS sharing and toolkit IME checks remain manual. See
 [rendering](docs/agent-notes/rendering.md), [tiling qualification](docs/plans/optional-tiling-qualification.md)
 and [printer qualification](docs/plans/printers-qualification.md).
+
+Pointer settings: `python3 tests/input_persistence.py` drives the real Settings,
+reload, hotplug and restart paths with a noninstalled libinput fixture. Repeat
+with `REDIWM_TEST_SCALE=1.5`; set `WLR_RENDER_DRM_DEVICE` on multi-GPU hosts as
+above. No host input devices are configured. For manual hardware qualification,
+select a touchpad and external mouse in Settings, give them opposite natural
+scrolling and different speeds, and verify both in a client. Check tapping,
+tap-drag and disable-while-typing on supported hardware. Unplug the selected
+mouse with the selector open, reconnect, reload configuration and restart the
+compositor; verify each device's values and behavior again. A device identified
+by physical path follows its port; see [configuration](README.md#configuration)
+for identity limitations.
+Check the type icon and friendly name (including a trackball, if available).
+An edited control should switch from Default to Custom. Reset one device and
+verify that it returns to Default immediately while the others remain unchanged;
+then change a global default and check that the reset device inherits it after
+reload, reconnection and restart.

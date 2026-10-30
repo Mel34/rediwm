@@ -140,7 +140,7 @@ desktop: desktop_section.Section = .{},
 region: region_section.Section = .{},
 portals: portal_section.Section = .{},
 default_apps: default_apps_section.Section = .{},
-input: input_section.Section = undefined,
+input: input_section.Section = .{},
 users: users_section.Section = .{},
 network: network_section.Section = .{},
 bluetooth: bluetooth_section.Section = .{},
@@ -239,6 +239,7 @@ pub fn destroy(cc: *ControlCenter) void {
     if (cc.systemd_client) |client| client.detachSettings();
     cc.welcome.deinit();
     cc.search.deinit();
+    cc.input.arena.deinit();
     cc.services.deinit();
     cc.printers.deinit();
     cc.network.deinit();

@@ -60,6 +60,8 @@ pub fn configure(io: std.Io, root: []const u8) void {
         .{ IconId.keyboard, "keyboard" },
         .{ IconId.settings, "settings" },
         .{ IconId.mouse, "mouse" },
+        .{ IconId.touchpad, "touchpad" },
+        .{ IconId.trackball, "trackball" },
         .{ IconId.display, "display" },
         .{ IconId.headphones, "headphones" },
         .{ IconId.music, "music" },
@@ -118,7 +120,7 @@ fn loadOverride(io: std.Io, root: []const u8, id: IconId, name: []const u8) void
     };
     const stat = std.Io.Dir.cwd().statFile(io, path, .{ .follow_symlinks = false }) catch return;
     if (stat.kind != .file) return;
-    overrides[@intFromEnum(id)] = std.Io.Dir.cwd().readFileAlloc(io, path, std.heap.c_allocator, .limited(64 * 1024)) catch null;
+    overrides[@backingInt(id)] = std.Io.Dir.cwd().readFileAlloc(io, path, std.heap.c_allocator, .limited(64 * 1024)) catch null;
 }
 
 pub fn deinitPack() void {
@@ -138,7 +140,7 @@ fn clearPack() void {
 }
 
 fn source(id: IconId) ?[]const u8 {
-    if (overrides[@intFromEnum(id)]) |bytes| return bytes;
+    if (overrides[@backingInt(id)]) |bytes| return bytes;
     return builtinSource(id);
 }
 
@@ -152,6 +154,8 @@ fn builtinSource(id: IconId) ?[]const u8 {
         .keyboard => @embedFile("shell-icon-keyboard"),
         .settings => @embedFile("shell-icon-settings"),
         .mouse => @embedFile("shell-icon-mouse"),
+        .touchpad => @embedFile("shell-icon-touchpad"),
+        .trackball => @embedFile("shell-icon-trackball"),
         .display => @embedFile("shell-icon-display"),
         .headphones => @embedFile("shell-icon-headphones"),
         .music => @embedFile("shell-icon-music"),
@@ -254,7 +258,7 @@ fn rasterize(svg: []const u8, size: i32) ?Mask {
 
 test "bundled shell SVGs render nonempty transparent masks at fractional scales" {
     defer deinit();
-    for ([_]IconId{ .print, .usb_stick, .drive, .eject, .home, .settings, .mouse, .display, .music, .headphones, .wifi, .bluetooth, .battery, .notification, .volume, .volume_muted, .power, .clock, .lock, .logout, .reboot, .divide }) |id| {
+    for ([_]IconId{ .print, .usb_stick, .drive, .eject, .home, .settings, .mouse, .touchpad, .trackball, .display, .music, .headphones, .wifi, .bluetooth, .battery, .notification, .volume, .volume_muted, .power, .clock, .lock, .logout, .reboot, .divide }) |id| {
         for ([_]i32{ 24, 36, 48 }) |size| {
             const mask = get(id, size) orelse return error.InvalidShellIcon;
             var visible = false;

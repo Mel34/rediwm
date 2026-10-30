@@ -106,6 +106,12 @@ pub const source =
     \\caret_blink_ms    = 1060      # full on+off cycle; 0 = never blink
     \\caret_blink_timeout = 10      # seconds idle before it goes solid; 0 = never
     \\caret_motion_ms   = 80        # glide between positions; 0 = snap
+    \\# Pointer values above are defaults. Settings > Input saves only changed
+    \\# values in [[input_device]] records keyed by a stable generated id.
+    \\# Omitted device fields inherit these defaults; delete a field to reset it.
+    \\# Device fields: pointer_speed, natural_scroll, left_handed, tap_to_click,
+    \\# tap_drag, disable_while_typing. The latter and speed inherit the *_touchpad
+    \\# defaults on touchpads. invert_scroll and pan_speed always remain global.
     \\
     \\# ───────────────────────────────────────────────
     \\# Compositor behaviour

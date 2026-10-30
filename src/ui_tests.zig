@@ -11,6 +11,8 @@ test {
     _ = @import("config").keymap;
     _ = @import("input/repeat_keys.zig");
     _ = @import("input/wheel_debounce.zig");
+    _ = @import("pointer_identity.zig");
+    _ = @import("pointer_presentation.zig");
     _ = @import("ui").key_repeat;
     _ = @import("ui").hover_glide;
     _ = @import("input/ime_placement.zig");
@@ -96,6 +98,7 @@ test {
     _ = @import("notifications_tests.zig");
     _ = @import("notifications/image.zig");
     _ = @import("Input.zig");
+    _ = @import("Pointer.zig");
     _ = @import("undo.zig");
     _ = @import("ipc/handlers.zig");
     _ = @import("ipc/server.zig");

@@ -408,7 +408,9 @@ pub fn paintSelect(widget: *const Widget, data: layout.SelectData, r: *Renderer)
     const h = widget.computed_height;
     r.fillRect(x, y, w, h, .{ .color = if (hovered and !data.disabled) t.surface_hover else t.surface, .radius = t.radius, .border_width = 1, .border_color = if (focused or data.open) t.accent else if (hovered and !data.disabled) t.border_hover else t.border });
     const valid = if (data.selected) |i| i < data.labels.len else false;
-    r.drawText(x + 12, y, @max(0, w - 48), h, .{ .content = if (valid) data.labels[data.selected.?] else data.placeholder, .font_size = t.font_size, .weight = 600, .color = if (data.disabled) t.faint else if (valid) t.fg else t.dim });
+    const icon_width: f32 = if (valid and data.selected.? < data.icons.len) 24 else 0;
+    if (icon_width > 0) r.drawIcon(x + 12, y + (h - 16) / 2, 16, 16, .{ .id = data.icons[data.selected.?], .color = if (data.disabled) t.faint else t.dim });
+    r.drawText(x + 12 + icon_width, y, @max(0, w - 48 - icon_width), h, .{ .content = if (valid) data.labels[data.selected.?] else data.placeholder, .font_size = t.font_size, .weight = 600, .color = if (data.disabled) t.faint else if (valid) t.fg else t.dim });
     r.drawIcon(x + w - 28, y + (h - 16) / 2, 16, 16, .{ .id = if (data.open) .chevron_up else .chevron_down, .color = if (data.disabled) t.faint else t.dim });
 }
 
@@ -428,7 +430,10 @@ pub fn paintOverlays(widget: *const Widget, r: *Renderer) void {
         for (d.first_visible..end) |i| {
             const y = b.y + select.padding + @as(f32, @floatFromInt(i - d.first_visible)) * row_h;
             if (i == d.highlighted) r.fillRect(b.x + 4, y, b.w - 8, row_h, .{ .color = .{ t.accent[0], t.accent[1], t.accent[2], 0.18 }, .radius = @max(0, t.radius - 3) });
-            r.drawText(b.x + 12, y, @max(0, b.w - 46), row_h, .{ .content = d.labels[i], .font_size = t.font_size, .weight = if (d.selected == i) 600 else 400, .color = if (std.mem.indexOfScalar(usize, d.disabled_options, i) != null) t.faint else t.fg });
+            const disabled = std.mem.indexOfScalar(usize, d.disabled_options, i) != null;
+            const icon_width: f32 = if (i < d.icons.len) 24 else 0;
+            if (icon_width > 0) r.drawIcon(b.x + 12, y + (row_h - 16) / 2, 16, 16, .{ .id = d.icons[i], .color = if (disabled) t.faint else t.dim });
+            r.drawText(b.x + 12 + icon_width, y, @max(0, b.w - 46 - icon_width), row_h, .{ .content = d.labels[i], .font_size = t.font_size, .weight = if (d.selected == i) 600 else 400, .color = if (disabled) t.faint else t.fg });
             if (d.selected == i) r.drawIcon(b.x + b.w - 28, y + (row_h - 16) / 2, 16, 16, .{ .id = .checkmark, .color = t.accent });
         }
         if (visible > 0) {
