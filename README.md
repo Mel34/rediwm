@@ -1,8 +1,6 @@
 # RediWM
-
 <div align="center">
 <img width="1085" height="233" alt="redi-logo" src="https://github.com/user-attachments/assets/4e80c572-bd30-4800-bcf3-acb95299358d" />
-
 
 ### A Wayland compositor with its own desktop shell, built in Zig
 
@@ -20,7 +18,7 @@ screens, notifications and OSDs, all in one process, benchmarked against
 
 ## Features
 
-- **One process, not a stack:** no waybar, greeter, launcher or notification
+- **One process:** no waybar, greeter, launcher or notification
   daemon to wire up.
 - **Pan-and-zoom desktop:** a canvas several screens wide; zoom the desktop or
   single windows.
@@ -31,7 +29,6 @@ screens, notifications and OSDs, all in one process, benchmarked against
 - **Works with wlroots tools:** wlr-randr, kanshi, swaylock, swayidle, grim,
   wf-recorder, wayvnc, docks.
 - **JSON IPC** (`rediwm-msg`), desktop icons, a file manager and an image viewer.
-- **Crash-resilient:** bounded restarts and layout autosave.
 
 ## Installing
 
@@ -56,17 +53,7 @@ nix build github:oxydizer/rediwm
 Requirements: Zig 0.17, wlroots 0.20, and the development files for Wayland,
 wayland-protocols, xkbcommon, pixman, FreeType, HarfBuzz, Fontconfig,
 librsvg/GdkPixbuf, PangoCairo, libinput, PAM, libpulse, libpipewire-0.3, Poppler GLib,
-libseccomp, libarchive, libjpeg, libpng, libwebp and GNU Readline. Files embeds
-the pinned libvterm 0.3.3 source (downloaded by Zig; no system libvterm needed). Optional:
-Xwayland, `foot`, `brightnessctl`, `gio`/`xdg-open`, `git` (optional).
-
-Printer support uses an existing CUPS server (`cups`).
-
-Run from a checkout, or invoke its `scripts/install.sh` by path, to build the
-files currently in that checkout, including uncommitted edits and new files
-(dependencies, then `install-session.sh` with the arguments you give it).
-Source builds also reuse an existing `REDIWM_SRC_DIR` as-is; update it manually
-when you want newer upstream changes. The installer never resets local source.
+libseccomp, libarchive, libjpeg, libpng, libwebp and GNU Readline.
 
 ```sh
 zig build run -- foot                     # nested in your current Wayland session
@@ -164,11 +151,6 @@ RediWM's own code is dual-licensed under either of
 
 - [Apache License, Version 2.0](LICENSE-APACHE)
 - [MIT license](LICENSE-MIT)
-
-at your option. Unless you explicitly state otherwise, any contribution
-intentionally submitted for inclusion in RediWM by you, as defined in the
-Apache-2.0 license, shall be dual-licensed as above, without any additional
-terms or conditions.
 
 Bundled third-party assets keep their own licenses: the fonts under
 `assets/fonts` (SIL OFL 1.1) and the cursors under `assets/cursors` (CC BY-SA 4.0).
