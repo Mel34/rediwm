@@ -11,13 +11,12 @@
 RediWM is a single process [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots) compositor
 that draws its whole shell itself: taskbar, start menu, settings, lock and login
 screens, notifications and OSDs, all in one process, benchmarked against
-[labwc](https://labwc.github.io/) to stay as lean (192mb idle ram usage, <1% CPU usage)
+[labwc](https://labwc.github.io/) to stay as lean (< 200mb idle ram usage, <1% CPU usage)
 
-
-
-https://github.com/user-attachments/assets/34c20760-f1ec-4776-a00b-063e3c8a5ffb
-
-
+|  |  |
+| :---: | :---: |
+| <img width="100%" alt="Screenshot 1" src="https://github.com/user-attachments/assets/b4cbd48c-ccab-452e-8457-2d1b8c096def" /> | <img width="100%" alt="Screenshot 2" src="https://github.com/user-attachments/assets/10f9becc-bcd9-4089-872b-4a03d1dba818" /> |
+| <img width="100%" alt="Screenshot 3" src="https://github.com/user-attachments/assets/a0ccd5f3-7476-4171-80c5-5f74a751e6b7" /> | <img width="100%" alt="Screenshot 4" src="https://github.com/user-attachments/assets/dd0cdae7-4c4d-401c-9624-80895897d0de" /> |
 
 ## Features
 
@@ -50,14 +49,7 @@ To build just the Nix package, without configuring a login session:
 
 ```sh
 nix build github:oxydizer/rediwm
-```
-
-## Themes and screenshots
-
-|  |  |
-| :---: | :---: |
-| <img width="100%" alt="Screenshot 1" src="https://github.com/user-attachments/assets/b4cbd48c-ccab-452e-8457-2d1b8c096def" /> | <img width="100%" alt="Screenshot 2" src="https://github.com/user-attachments/assets/10f9becc-bcd9-4089-872b-4a03d1dba818" /> |
-| <img width="100%" alt="Screenshot 3" src="https://github.com/user-attachments/assets/a0ccd5f3-7476-4171-80c5-5f74a751e6b7" /> | <img width="100%" alt="Screenshot 4" src="https://github.com/user-attachments/assets/dd0cdae7-4c4d-401c-9624-80895897d0de" /> |
+``` 
 
 ## Building and running
 
@@ -104,24 +96,6 @@ For custom prefixes and distribution packages, see
 | Super+Shift+E | quit |
 
 Canvas bindings live in `[keybinds]`; `"noop"` disables one.
-
-## Protocols
-
-Beyond xdg-shell, layer-shell and Xwayland:
-
-| Area | Protocols | Works with |
-| --- | --- | --- |
-| Displays | `wlr-output-management-v1`, `xdg-output-v1` | wlr-randr, kanshi, nwg-displays |
-| Window lists | `wlr-foreign-toplevel-management-v1`, `ext-foreign-toplevel-list-v1` | docks, waybar, rofi/fuzzel, wlrctl |
-| Capture | `wlr-screencopy-v1`, `ext-image-copy-capture-v1` | grim, wf-recorder, OBS, xdg-desktop-portal-wlr |
-| Locking and idle | `ext-session-lock-v1`, `ext-idle-notify-v1`, `idle-inhibit-v1` | swaylock, gtklock, swayidle |
-| Remote input | `virtual-pointer-v1`, `virtual-keyboard-v1` | wayvnc, KDE Connect, wtype |
-| Input | `text-input-v3`, `input-method-v2`, `relative-pointer-v1`, `pointer-constraints-v1`, `keyboard-shortcuts-inhibit-v1`, `pointer-gestures-v1`, `cursor-shape-v1` | fcitx5, IBus, games, virt-manager |
-| Window metadata | `xdg-toplevel-tag-v1`, `content-type-v1`, `xdg-activation-v1` | window rules, content hints, authorized activation |
-| Colour | `color-management-v1`, `color-representation-v1` | renderer-supported colour spaces and pixel representations |
-| Presentation | `tearing-control-v1`, `drm-lease-v1` | opt-in fullscreen tearing, DRM-connected VR headsets |
-| Rendering | `fractional-scale-v1`, `viewporter`, `single-pixel-buffer-v1`, `linux-dmabuf-v1`, `linux-drm-syncobj-v1`, `presentation-time` | |
-and more 
  
 ## Configuration
 
