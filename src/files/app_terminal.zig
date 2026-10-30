@@ -6,6 +6,7 @@ const App = @import("app.zig").App;
 const model = @import("terminal/model.zig");
 const tc = model.c;
 const c = @import("c.zig").api;
+const platform = @import("platform");
 const ui = @import("ui");
 const Rect = @import("header.zig").Rect;
 const scrollbar = ui.widgets.scrollbar;
@@ -143,11 +144,8 @@ pub fn terminalScopes(self: *App) bool {
 }
 pub fn terminalHelper(self: *App, name: []const u8, buffer: []u8) ![:0]u8 {
     _ = self;
-    var executable: [4096]u8 = undefined;
-    const n = c.readlink("/proc/self/exe", &executable, executable.len);
-    if (n <= 0 or n >= executable.len) return error.NoExecutable;
-    const directory = std.fs.path.dirname(executable[0..@intCast(n)]) orelse return error.NoExecutable;
-    return std.fmt.bufPrintSentinel(buffer, "{s}/{s}", .{ directory, name }, 0);
+    const helper = platform.exe.sibling(buffer, name) orelse return error.NoExecutable;
+    return buffer[0..helper.len :0];
 }
 pub fn terminalStart(self: *App) void {
     if (self.chooser != null or self.terminal.close_at != null) return;

@@ -1,5 +1,6 @@
 const std = @import("std");
 const wl = @import("wayland").server.wl;
+const platform = @import("platform");
 
 const CompositorServer = @import("../Server.zig");
 const protocol = @import("protocol.zig");
@@ -326,9 +327,6 @@ const Ucred = extern struct {
     gid: std.posix.gid_t,
 };
 
-const SO_PEERPIDFD: c_int = 77;
-extern "c" fn pidfd_send_signal(pidfd: c_int, sig: c_int, info: ?*anyopaque, flags: c_uint) c_int;
-
 pub fn parseFlatpakAppId(content: []const u8) ?[]const u8 {
     var in_application_section = false;
     var line_it = std.mem.splitScalar(u8, content, '\n');
@@ -359,17 +357,8 @@ pub fn parseFlatpakAppId(content: []const u8) ?[]const u8 {
 fn detectSandbox(pid: i32, client_fd: c_int, allocator: std.mem.Allocator) ?SandboxCaller {
     if (pid <= 0) return null;
 
-    var pidfd: c_int = -1;
-    var pidfd_len: std.posix.socklen_t = @sizeOf(c_int);
-    if (c.getsockopt(client_fd, std.posix.SOL.SOCKET, SO_PEERPIDFD, @ptrCast(&pidfd), &pidfd_len) < 0 or pidfd < 0) {
-        const rc = std.os.linux.pidfd_open(pid, 0);
-        if (std.os.linux.errno(rc) == .SUCCESS) {
-            pidfd = @intCast(rc);
-        } else {
-            pidfd = -1;
-        }
-    }
-    defer if (pidfd >= 0) closeFd(pidfd);
+    const process: ?platform.child.Handle = platform.child.Handle.peer(client_fd) orelse platform.child.Handle.open(pid) catch null;
+    defer if (process) |handle| handle.close();
 
     var proc_buf: [64]u8 = undefined;
     const proc_path = std.fmt.bufPrintSentinel(&proc_buf, "/proc/{d}", .{pid}, 0) catch return null;
@@ -388,16 +377,9 @@ fn detectSandbox(pid: i32, client_fd: c_int, allocator: std.mem.Allocator) ?Sand
     }
     defer closeFd(file_fd);
 
-    if (pidfd >= 0) {
-        if (pidfd_send_signal(pidfd, 0, null, 0) != 0) {
-            return .{ .app_id = null, .engine = "org.flatpak" };
-        }
-    } else {
-        const rc = std.os.linux.syscall2(.kill, @as(usize, @bitCast(@as(isize, pid))), 0);
-        if (std.os.linux.errno(rc) != .SUCCESS) {
-            return .{ .app_id = null, .engine = "org.flatpak" };
-        }
-    }
+    // The peer must still be the process whose root we read.
+    const present = if (process) |handle| handle.alive() else platform.child.exists(pid);
+    if (!present) return .{ .app_id = null, .engine = "org.flatpak" };
 
     var buf: [16 * 1024]u8 = undefined;
     const nread = c.read(file_fd, &buf, buf.len);

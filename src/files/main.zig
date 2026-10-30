@@ -315,7 +315,7 @@ pub fn run(init: std.process.Init, target_dir: []const u8, selected_file: ?[]con
         if (self.app.terminal.session) |session| {
             fds[19] = .{ .fd = terminal_c.ft_pty(session), .events = @intCast(c.POLLIN | @as(c_int, if (terminal_c.ft_wants_write(session)) c.POLLOUT else 0)), .revents = 0 };
             fds[20] = .{ .fd = terminal_c.ft_channel(session), .events = @intCast(c.POLLIN | @as(c_int, if (terminal_c.ft_wants_request(session)) c.POLLOUT else 0)), .revents = 0 };
-            fds[21].fd = terminal_c.ft_pidfd(session);
+            fds[21].fd = terminal_c.ft_exit_fd(session);
         }
         fds[22].fd = self.app.torrents.fd;
         const send_count = self.sends.items.len;

@@ -25,7 +25,6 @@
 #include <string.h>
 #include <sys/eventfd.h>
 #include <sys/file.h>
-#include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>

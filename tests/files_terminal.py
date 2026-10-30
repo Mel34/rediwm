@@ -42,7 +42,7 @@ def build_engine(tmp):
         'ft_free': ([C.c_void_p], None),
         'ft_start': ([C.c_void_p, C.c_char_p, C.c_char_p, C.c_char_p, C.c_bool], C.c_int),
         'ft_pty': ([C.c_void_p], C.c_int), 'ft_channel': ([C.c_void_p], C.c_int),
-        'ft_pidfd': ([C.c_void_p], C.c_int),
+        'ft_exit_fd': ([C.c_void_p], C.c_int),
         'ft_wants_write': ([C.c_void_p], C.c_bool),
         'ft_wants_request': ([C.c_void_p], C.c_bool),
         'ft_io': ([C.c_void_p, C.c_bool, C.c_bool, C.c_bool, C.c_bool], None),
@@ -73,7 +73,7 @@ class Engine:
     def pump(self, timeout=.05):
         poll = select.poll()
         fds = [self.lib.ft_pty(self.handle), self.lib.ft_channel(self.handle),
-               self.lib.ft_pidfd(self.handle)]
+               self.lib.ft_exit_fd(self.handle)]
         for i, fd in enumerate(fds):
             if fd >= 0:
                 output = (i == 0 and self.lib.ft_wants_write(self.handle)) or (

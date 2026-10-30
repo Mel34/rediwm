@@ -1,4 +1,5 @@
 const std = @import("std");
+const platform = @import("platform");
 const proc = @import("system_monitor/proc.zig");
 const model = @import("system_monitor/model.zig");
 const collector = @import("system_monitor/collector.zig");
@@ -119,12 +120,10 @@ test "monitor pidfd actions terminate only disposable fixtures and force a TERM-
     var ready: [16]u8 = undefined;
     try std.testing.expect(proc.c.read(stubborn.stdout.?.handle, &ready, ready.len) > 0);
     const identity = proc.Identity{ .pid = stubborn.id.?, .start = proc.readStat(stubborn.id.?, &buf).?.start };
-    const rc = std.os.linux.pidfd_open(identity.pid, 0);
-    try std.testing.expectEqual(std.os.linux.E.SUCCESS, std.os.linux.errno(rc));
-    const fd: i32 = @intCast(rc);
-    defer _ = proc.c.close(fd);
+    const process = try platform.child.Handle.open(identity.pid);
+    defer process.close();
     try actions.execute(identity, .end);
-    var pollfd = proc.c.struct_pollfd{ .fd = fd, .events = proc.c.POLLIN, .revents = 0 };
+    var pollfd = proc.c.struct_pollfd{ .fd = process.fd, .events = proc.c.POLLIN, .revents = 0 };
     try std.testing.expectEqual(@as(c_int, 0), proc.c.poll(&pollfd, 1, 100));
     try actions.execute(identity, .force);
     const killed = try stubborn.wait(io);

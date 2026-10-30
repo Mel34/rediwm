@@ -5,7 +5,8 @@ Tests: `TESTING.md`. Where code lives: [source map](docs/agent-notes/map.md).
 Area notes are in an `AGENTS.md` beside the code; read
 the one for the directory you work in: `src/files`, `src/editor`,
 `src/desktop`, `src/input`, `src/control_center`, `src/ui`, `src/session`,
-`src/dm`, `src/accounts_helper`, `src/printing`, `scripts`, `src/wlr`.
+`src/dm`, `src/accounts_helper`, `src/printing`, `scripts`, `src/wlr`,
+`src/platform`.
 
 ## Working rules
 
@@ -250,6 +251,8 @@ panel painting. The key rules:
   compositor imports). Parsing/persistence is `config/`, applying and reloads
   `config_runtime/`, shared raster code (`text`, `anim`, `sdf`, icons) `ui/`.
   `memory` owns the process allocator; executables own its shutdown.
+* **OS calls go through `src/platform/`**: use it, not `pidfd_*`, `inotify_*`
+  or `/proc/self/exe` (C and C++: its `child.h`, `self_exe.h`).
 * Zig 0.17 has no `@cImport`: the build translates header roots in `src/c/`
   into modules (`support.cHeaders`): `c` (libc), `c_gfx` (libc, cairo,
   freetype, harfbuzz, fontconfig, xkbcommon), `c_pulse`, `c_libinput`,

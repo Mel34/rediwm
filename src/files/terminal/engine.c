@@ -20,8 +20,8 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/syscall.h>
 #include <sys/wait.h>
+#include "../../platform/child.h"
 
 #if VTERM_VERSION_MAJOR != 0 || VTERM_VERSION_MINOR != 3 || VTERM_VERSION_PATCH < 3
 #error Files requires libvterm 0.3.3 (0.3 ABI)
@@ -42,7 +42,7 @@ struct ft_terminal {
     VTerm *vt;
     VTermScreen *screen;
     VTermState *state;
-    int master, channel, pidfd;
+    int master, channel, process;
     pid_t pid;
     bool exited, eof, changed, cursor_visible, reverse, alternate;
     int exit_status, rows, cols, mouse, cursor_shape;
@@ -171,7 +171,7 @@ FT *ft_new_alloc(int rows, int cols, const FT_Allocator *allocator) {
     FT *t=a.alloc(a.owner,sizeof *t);
     if (!t) return NULL;
     memset(t,0,sizeof *t); t->allocator=a;
-    t->master=t->channel=t->pidfd=-1;
+    t->master=t->channel=t->process=-1;
     t->rows=rows; t->cols=cols; t->cursor_visible=true; t->cursor_shape=1;
     if (setjmp(t->allocation_failure)) { allocation_failed(t); ft_free(t); return NULL; }
     t->vt=vterm_new_with_allocator(rows,cols,(VTermAllocatorFunctions *)&terminal_allocator,t);
@@ -219,8 +219,8 @@ int ft_start(FT *t, const char *helper, const char *plugin, const char *director
     posix_spawn_file_actions_destroy(&actions);
     if (rc) { errno=rc; goto failed; }
     close(slave); close(pair[1]); t->master=master; t->channel=pair[0];
-    t->pidfd=(int)syscall(SYS_pidfd_open,t->pid,0);
-    if (t->pidfd<0) { ft_close(t,true); t->error="Could not watch terminal process"; return -1; }
+    t->process=rediwm_child_open(t->pid);
+    if (t->process<0) { ft_close(t,true); t->error="Could not watch terminal process"; return -1; }
     t->changed=true; return 0;
 failed:
     if (master>=0) close(master);
@@ -248,7 +248,7 @@ void ft_feed(FT *t, const char *bytes, size_t len) {
 }
 int ft_pty(const FT *t) { return t->master; }
 int ft_channel(const FT *t) { return t->channel; }
-int ft_pidfd(const FT *t) { return t->exited ? -1 : t->pidfd; }
+int ft_exit_fd(const FT *t) { return t->exited ? -1 : t->process; }
 bool ft_wants_write(const FT *t) { return t->out_len>0 && !t->eof; }
 bool ft_wants_request(const FT *t) { return t->channel>=0 && t->request_queued; }
 
@@ -295,10 +295,10 @@ static void signal_session(FT *t, int sig) {
         char *end; long value=strtol(entry->d_name,&end,10);
         if (!*entry->d_name || *end || value<=0 || value>INT_MAX || value==t->pid) continue;
         pid_t pid=(pid_t)value;
-        int fd=(int)syscall(SYS_pidfd_open,pid,0);
-        if (fd<0) continue;
-        if (getsid(pid)==t->pid) (void)syscall(SYS_pidfd_send_signal,fd,sig,NULL,0);
-        close(fd);
+        int member=rediwm_child_open(pid);
+        if (member<0) continue;
+        if (getsid(pid)==t->pid) (void)rediwm_child_signal(member,sig);
+        rediwm_child_close(member);
     }
     closedir(proc);
 }
@@ -317,7 +317,7 @@ void ft_io(FT *t, bool read_pty, bool write_pty, bool channel, bool exited) {
     if (channel) integration(t);
     if (exited && t->pid>0 && !t->exited) {
         int status=0;
-        /* pidfd readiness proves exit; retain the zombie until all remaining
+        /* Readiness of the exit descriptor proves exit; retain the zombie until all remaining
          * members of this terminal's session have received their final signal. */
         signal_session(t,SIGKILL);
         pid_t rc=waitpid(t->pid,&status,WNOHANG);
@@ -336,7 +336,7 @@ void ft_close(FT *t, bool force) {
     if (t->pid>0 && !t->exited) {
         int signal=force ? SIGKILL : SIGHUP;
         signal_session(t,signal);
-        if (t->pidfd>=0) (void)syscall(SYS_pidfd_send_signal,t->pidfd,signal,NULL,0);
+        if (t->process>=0) (void)rediwm_child_signal(t->process,signal);
         else (void)kill(t->pid,signal);
     }
 }
@@ -346,7 +346,7 @@ void ft_free(FT *t) {
     if (t->pid>0 && !t->exited) (void)waitpid(t->pid,NULL,WNOHANG);
     if (t->master>=0) close(t->master);
     if (t->channel>=0) close(t->channel);
-    if (t->pidfd>=0) close(t->pidfd);
+    if (t->process>=0) rediwm_child_close(t->process);
     while(t->count) drop_oldest(t);
     if (t->vt) vterm_free(t->vt);
     while (t->allocations) terminal_free(t->allocations+1,t);

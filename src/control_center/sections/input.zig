@@ -62,15 +62,16 @@ fn keyboardLayoutIndex(cfg: anytype) ?usize {
 pub const Section = struct {
     root: Widget = undefined,
     top_children: [2]Widget = undefined,
-    row_storage: [12]Widget = undefined,
+    row_storage: [7]Widget = undefined,
     row_count: usize = 0,
-    selector_children: [3]Widget = undefined,
+    selector_children: [4]Widget = undefined,
     selector_header_children: [2]Widget = undefined,
     speed_group_children: [2]Widget = undefined,
     speed_header_children: [2]Widget = undefined,
     speed_label_children: [2]Widget = undefined,
-    bool_row_children: [5][2]Widget = undefined,
-    bool_label_children: [5][2]Widget = undefined,
+    bool_rows: [bool_keys.len]Widget = undefined,
+    bool_row_children: [bool_keys.len][2]Widget = undefined,
+    bool_label_children: [bool_keys.len][2]Widget = undefined,
     speed_value_buf: [16]u8 = undefined,
     layout_row_children: [2]Widget = undefined,
     pan_speed_row_children: [2]Widget = undefined,
@@ -83,6 +84,7 @@ pub const Section = struct {
     device_ids: []u64 = &.{},
     device_labels: [][]const u8 = &.{},
     device_icons: []layout.IconId = &.{},
+    show_all_devices: bool = false,
     selected_id: ?u64 = null,
     status: enum { none, unavailable, apply_failed, save_failed, rollback_failed, reset_failed, reset_restore_failed } = .none,
     input: *Input = undefined,
@@ -110,6 +112,15 @@ fn selected(s: *Section, id: usize) ?*Pointer {
     return Pointer.find(s.input, @intCast(id));
 }
 
+fn primaryPointer(input: *Input, pointer: *Pointer) bool {
+    if (!libinput.isSettingsPointer(pointer.device)) return false;
+    var it = input.pointers.iterator(.forward);
+    while (it.next()) |other| {
+        if (other != pointer and libinput.isTouchpadCompanion(pointer.device, other.device)) return false;
+    }
+    return true;
+}
+
 fn enumerate(s: *Section) void {
     _ = s.arena.reset(.retain_capacity);
     const a = s.arena.allocator();
@@ -127,6 +138,7 @@ fn enumerate(s: *Section) void {
     var n: usize = 0;
     var preferred: ?u64 = null;
     while (it.next()) |pointer| {
+        if (!s.show_all_devices and !primaryPointer(s.input, pointer)) continue;
         const friendly = libinput.getFriendlyName(a, pointer.device) catch null;
         const raw_name = if (pointer.device.name) |p| std.mem.span(p) else "";
         const fallback_name = if (raw_name.len > 0) raw_name else i18n.tr("Pointer device");
@@ -177,8 +189,8 @@ fn enumerate(s: *Section) void {
             return;
         }
     }
-    // Automation/nested pointers remain selectable, but should not hide the
-    // physical device controls when opening this page for the first time.
+    // In the full list, prefer a configurable device over automation/nested
+    // pointers when the previous selection disappeared.
     s.selected_id = preferred orelse (if (n > 0) ids[0] else null);
     s.status = .none;
 }
@@ -234,9 +246,21 @@ fn buildSelector(s: *Section, row_count: *usize) ?*Pointer {
             .width = .{ .percent = 1 },
         },
         dimLabel(statusText(s, pointer)),
+        .{ .name = "pointer_show_all", .kind = .{ .checkbox = .{
+            .label = i18n.tr("Show all devices"),
+            .checked = s.show_all_devices,
+            .owner = s,
+            .on_change = &onShowAllDevices,
+        } } },
     };
     layout.appendRow(&s.row_storage, row_count, .{ .kind = .container, .direction = .column, .gap = 8, .children = &s.selector_children });
     return pointer;
+}
+
+fn onShowAllDevices(owner: ?*anyopaque, _: usize, on: bool) void {
+    const s: *Section = @ptrCast(@alignCast(owner orelse return));
+    s.show_all_devices = on;
+    refresh(s);
 }
 
 fn onDevicePicked(owner: ?*anyopaque, generation: usize, index: usize) void {
@@ -299,7 +323,7 @@ fn buildSpeed(s: *Section, pointer: ?*Pointer, row_count: *usize) void {
     layout.appendRow(&s.row_storage, row_count, .{ .kind = .container, .direction = .column, .gap = 8, .children = s.speed_group_children[0..count] });
 }
 
-fn buildToggle(s: *Section, pointer: ?*Pointer, row_count: *usize, index: usize, comptime key: []const u8, label: []const u8, comptime getter: anytype, comptime setter: anytype) void {
+fn buildToggle(s: *Section, pointer: ?*Pointer, index: usize, comptime key: []const u8, label: []const u8, comptime getter: anytype, comptime setter: anytype) Widget {
     const value = if (pointer) |p| getter(p.device) else null;
     const editable = if (pointer) |p| p.persistentId() != null else false;
     s.bool_label_children[index] = .{ fgLabel(label), originLabel(s, pointer, key, value != null) };
@@ -326,7 +350,7 @@ fn buildToggle(s: *Section, pointer: ?*Pointer, row_count: *usize, index: usize,
             },
         },
     };
-    layout.appendRow(&s.row_storage, row_count, row(&s.bool_row_children[index]));
+    return row(&s.bool_row_children[index]);
 }
 
 /// Prepare memory before touching hardware or disk. Only publish the new
@@ -469,11 +493,14 @@ pub fn build(out: *Section, input: *Input) void {
     var row_count: usize = 0;
     const pointer = buildSelector(out, &row_count);
     buildSpeed(out, pointer, &row_count);
-    buildToggle(out, pointer, &row_count, 0, "natural_scroll", i18n.tr("Natural scroll"), libinput.getNaturalScroll, libinput.setNaturalScroll);
-    buildToggle(out, pointer, &row_count, 1, "left_handed", i18n.tr("Left-handed mode"), libinput.getLeftHanded, libinput.setLeftHanded);
-    buildToggle(out, pointer, &row_count, 2, "tap_to_click", i18n.tr("Tap to click"), libinput.getTapToClick, libinput.setTapToClick);
-    buildToggle(out, pointer, &row_count, 3, "tap_drag", i18n.tr("Tap and drag"), libinput.getTapDrag, libinput.setTapDrag);
-    buildToggle(out, pointer, &row_count, 4, "disable_while_typing", i18n.tr("Disable while typing"), libinput.getDisableWhileTyping, libinput.setDisableWhileTyping);
+    out.bool_rows = .{
+        buildToggle(out, pointer, 0, "natural_scroll", i18n.tr("Natural scroll"), libinput.getNaturalScroll, libinput.setNaturalScroll),
+        buildToggle(out, pointer, 1, "left_handed", i18n.tr("Left-handed mode"), libinput.getLeftHanded, libinput.setLeftHanded),
+        buildToggle(out, pointer, 2, "tap_to_click", i18n.tr("Tap to click"), libinput.getTapToClick, libinput.setTapToClick),
+        buildToggle(out, pointer, 3, "tap_drag", i18n.tr("Tap and drag"), libinput.getTapDrag, libinput.setTapDrag),
+        buildToggle(out, pointer, 4, "disable_while_typing", i18n.tr("Disable while typing"), libinput.getDisableWhileTyping, libinput.setDisableWhileTyping),
+    };
+    layout.appendRow(&out.row_storage, &row_count, .{ .kind = .container, .direction = .column, .gap = 10, .children = &out.bool_rows });
     const repeat = firstKeyboardRepeat(input);
 
     out.pan_speed_row_children = .{

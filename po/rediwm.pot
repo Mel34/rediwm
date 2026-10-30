@@ -5363,6 +5363,10 @@ msgstr ""
 msgid "Show Trash"
 msgstr ""
 
+#: src/control_center/search_index.zig
+msgid "Show all devices"
+msgstr ""
+
 #: src/control_center/sections/users.zig
 msgid "Show all groups"
 msgstr ""

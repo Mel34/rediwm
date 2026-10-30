@@ -1,6 +1,7 @@
 # FreeBSD support plan
 
-Status: draft, 2026-10-30. Nothing implemented. Decisions D1–D6 are open.
+Status: draft, 2026-10-30. Preparation steps P.1–P.3 are done (Linux only,
+`src/platform/`); nothing else is implemented. Decisions D1–D6 are open.
 
 Run RediWM on FreeBSD: first the compositor in a seatd session on DRM, then
 the shell features and apps, and last `rediwm-dm` and packaging. Linux stays
@@ -21,22 +22,22 @@ Our own code is the problem: it has no OS abstraction at all (no
 
 ### 1. Compile barrier
 
-`src/c/libc.h` includes `linux/netlink.h`, `sys/inotify.h`, `sys/prctl.h` and
-`sys/eventfd.h`, so the `c` module, and with it every artifact, fails to
+`src/c/libc.h` includes `linux/netlink.h`, `sys/prctl.h` and `sys/eventfd.h`
+(`sys/inotify.h` left with P.2), so the `c` module, and with it every artifact, fails to
 translate. About 47 Zig files call `std.os.linux.*` directly.
 
 | Linux interface | Users | FreeBSD |
 | --- | --- | --- |
 | `eventfd` | ~38 files | Native (13+). Swap `linux.EFD` for `c.EFD_*`. |
 | `memfd_create`, `timerfd` | few | Native on current releases (confirm in phase 0). |
-| `pidfd_open`, `pidfd_send_signal`, `waitid(P_PIDFD)` | `session/child.zig`, `child_set.zig` and ~8 ad hoc sites (supervisor, dm worker, terminal engine, IPC, `Toplevel`, folder picker, file chooser, system monitor) | No equivalent for an existing pid. kqueue `EVFILT_PROC`/`NOTE_EXIT`; the kqueue fd joins the wl event loop like a pidfd. Signals by pid, guarded by the still-unreaped zombie. |
-| `signalfd`, `epoll` | supervisor, dm daemon/worker, `child_set.zig` | kqueue `EVFILT_SIGNAL`, kqueue. |
-| `inotify` | 7 separate watchers (config, desktop, Files worker ×2, printing, start menu, system monitor settings) | Native in 15.0 (confirm); otherwise kqueue `EVFILT_VNODE`. |
+| `pidfd_open`, `pidfd_send_signal`, `waitid(P_PIDFD)` | `platform/child.zig` (`Handle`, `Set`) and `platform/child.h`, used by `session/child.zig`, the supervisor, dm worker and daemon, IPC, `Toplevel`, the pickers, System Monitor and the terminal engine | No equivalent for an existing pid. kqueue `EVFILT_PROC`/`NOTE_EXIT`; the kqueue fd joins the wl event loop like a pidfd. Signals by pid, guarded by the still-unreaped zombie, which only holds for our own children: handles on other processes (`Toplevel` client pids, `Handle.peer` for IPC, System Monitor) become a bare pid with a reuse race, so those callers need another identity check (start time from `kern.proc`). `Handle.pid()` reads `fdinfo` and has no counterpart. `Pid`/`Signal` are `std.os.linux` types today; switch them to `std.posix` before the FreeBSD part. |
+| `signalfd`, `epoll` | supervisor, dm daemon/worker, `platform.child.Set` | kqueue `EVFILT_SIGNAL`, kqueue. |
+| `inotify` | `platform/watch.zig` (`Watcher`); all 7 users (config, desktop, Files worker ×2, printing, start menu, system monitor settings) call it | Native in 15.0 (confirm); otherwise kqueue `EVFILT_VNODE`, which has no names: diff the directory to synthesize them. |
 | `prctl` | dm worker, lock, PAM worker, PDF print/sandbox, theme helper | `procctl(PROC_PDEATHSIG_CTL / PROC_NO_NEW_PRIVS_CTL / PROC_TRACE_CTL)`, `pthread_set_name_np`. |
 | `statx`, `getdents64` | Files dirsize/properties, supervisor, session restart, IPC | `fstatat`, `getdirentries` or `std.Io.Dir`. |
 | raw `linux.fork/execve/wait4/exit_group/close/read` | many | libc. Note the `-errno` vs `errno` convention change. |
 | `SO_PEERCRED` | IPC peer checks (4 files) | `getpeereid` / `LOCAL_PEERCRED`. Security-relevant: sandbox allowances need the peer pid; confirm `cr_pid`. |
-| `/proc/self/exe` | 11 sites (Zig, `bass.c`, torrent helper; dm re-execs through it) | `sysctl KERN_PROC_PATHNAME` / `std.process.executablePath`; `fexecve` for the re-exec. |
+| `/proc/self/exe` | `platform/exe.zig` and `platform/self_exe.h` (Zig sites, `bass.c`, torrent helper; dm re-execs through `exe.execSelf`) | `sysctl KERN_PROC_PATHNAME` / `std.process.executablePath`; `fexecve` on a descriptor opened at startup for the re-exec. |
 | `/proc/self/fd`, `fdinfo` | spawn paths | `closefrom`/`close_range`. |
 | `/proc/<pid>/stat`, `/proc/stat`, `/proc/meminfo`, task children | system monitor, `ipc/processes.zig` | libprocstat / `kern.proc` sysctls behind a collector backend. |
 | `pty.h` | terminal engine | `libutil.h` (`openpty`/`forkpty`), link `util`. |
@@ -106,12 +107,15 @@ Refactors that are worth doing for Linux alone and shrink the port. Each
 lands separately, keeps behaviour, and is checked with the usual Debug,
 ReleaseSafe, `zig build test` and affected integration suites.
 
-1. **Child watching:** move the ~8 ad hoc pidfd sites onto `session/child.zig`
-   / `child_set.zig` (or one successor API). The port then reimplements one
-   module instead of ten call sites.
-2. **File watching:** one watcher API for the 7 inotify users (directory,
-   file, debounce, close). Removes duplicated event parsing.
-3. **Own executable:** one helper for the 11 `/proc/self/exe` readers.
+1. **Child watching** (done): the ad hoc pidfd sites and `child_set.zig` are
+   now `platform.child` (`Handle`, `Set`, `reap`) with `session/child.zig` as
+   the Wayland-loop adapter and `platform/child.h` for the terminal engine.
+   The port reimplements that module, not ten call sites. Left for P.4: plain
+   `kill`/`wait4`, the supervisor's `signalfd`/`epoll`, and the `/proc` walks.
+2. **File watching** (done): `platform.watch.Watcher` for the 7 inotify users,
+   with event parsing in one place and `sys/inotify.h` out of `libc.h`.
+3. **Own executable** (done): `platform.exe` and `self_exe.h` for the 11
+   `/proc/self/exe` readers.
 4. **Raw syscalls to libc** where libc has the call (fork, execve, wait4,
    close, read, getuid, …), keeping `std.os.linux` for what has no libc form.
 5. **One sandbox interface:** move the PDF sandbox from libseccomp to the raw
@@ -135,8 +139,9 @@ headless + GLES2 path works there.
 
 ### 1. Compositor builds and runs
 
-Add `src/platform/` with Linux parts (moving the preparation helpers in) and
-FreeBSD parts; split the translate roots; build conditions for `seccomp`,
+Split `src/platform/` into Linux and FreeBSD parts (`exe.path` can use
+`std.process.executablePath`, which already reads `kern.proc.pathname`);
+split the translate roots; build conditions for `seccomp`,
 `util`, `pam`. Hide NM, BlueZ, PPD, UDisks, app scopes; PDF and theme helper
 refuse. Goal: `rediwm` and the apps start in a seatd session and the headless
 integration suites run.

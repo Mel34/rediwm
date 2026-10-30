@@ -19,6 +19,7 @@ pub const Context = struct {
     i18n_mod: *std.Build.Module,
     ui_mod: *std.Build.Module,
     dbus_mod: *std.Build.Module,
+    platform_mod: *std.Build.Module,
     config_mod: *std.Build.Module,
     protocol_mod: *std.Build.Module,
     c: CHeaders,

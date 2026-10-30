@@ -1,6 +1,7 @@
 //! Immutable file/chooser jobs. The UI only consumes results after the eventfd wakes it.
 const std = @import("std");
 const c = @import("../files/c.zig").api;
+const platform = @import("platform");
 const document = @import("document.zig");
 const Document = document.Document;
 const a = std.heap.c_allocator;
@@ -124,17 +125,6 @@ fn ensureMemory(size: usize) !void {
     if (size < memory_check_floor) return;
     const available = availableMemory() orelse return;
     if (size + size / 8 > available) return error.OutOfMemory;
-}
-pub fn executable(buf: []u8, name: []const u8) []const u8 {
-    var path: [4096]u8 = undefined;
-    const n = c.readlink("/proc/self/exe", &path, path.len);
-    if (n > 0 and n < path.len) {
-        if (std.fs.path.dirname(path[0..@intCast(n)])) |dir| {
-            const sibling = std.fmt.bufPrintSentinel(buf, "{s}/{s}", .{ dir, name }, 0) catch return name;
-            if (c.access(sibling, c.X_OK) == 0) return sibling;
-        }
-    }
-    return name;
 }
 pub const Operation = struct {
     pub const Kind = enum { load, save, open_dialog, save_dialog };
@@ -298,9 +288,9 @@ pub const Operation = struct {
         defer _ = c.close(output);
         try writeAll(input, json);
         if (c.lseek(input, 0, c.SEEK_SET) < 0) return error.ReadFailed;
-        var exe: [4096]u8 = undefined;
+        var exe: [platform.exe.max_path]u8 = undefined;
         var child = try std.process.spawn(self.io, .{
-            .argv = &.{ executable(&exe, "rediwm-files"), "--chooser-stdin" },
+            .argv = &.{ platform.exe.siblingOrName(&exe, "rediwm-files"), "--chooser-stdin" },
             .stdin = .{ .file = .{ .handle = input, .flags = .{ .nonblocking = false } } },
             .stdout = .{ .file = .{ .handle = output, .flags = .{ .nonblocking = false } } },
         });

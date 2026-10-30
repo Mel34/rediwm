@@ -870,7 +870,7 @@ pub fn run(init: std.process.Init) !void {
 
         var fds = [_]c.struct_pollfd{
             .{ .fd = display.getFd(), .events = @intCast(c.POLLIN | @as(c_int, if (flushed == .AGAIN) c.POLLOUT else 0)), .revents = 0 },
-            .{ .fd = watch.fd, .events = c.POLLIN, .revents = 0 },
+            .{ .fd = watch.fd(), .events = c.POLLIN, .revents = 0 },
         };
         const now = key_repeat.nowMs();
         var timeout: c_int = if (self.key_repeat.timeoutMs(now)) |wait| @intCast(@min(wait, 60_000)) else -1;

@@ -26,15 +26,22 @@ struct fake_device {
     unsigned generation, writes, failures;
     unsigned fail_after;
 };
-static struct fake_device devices[6];
+enum { DEVICE_COUNT = 11 };
+static struct fake_device devices[DEVICE_COUNT];
 static struct wlr_backend *backend;
 static const struct wlr_pointer_impl impl = {.name = "pointer-settings-fixture"};
-static const char *names[] = {"Fixture Mouse", "Fixture Touchpad", "Fixture Mouse", "Fixture Mouse", "Fixture Unsupported", ""};
-static const char *paths[] = {"pci-fixture-usb-0:1:1.0", "platform-fixture-touchpad", "pci-fixture-usb-0:2:1.0", "pci-fixture-usb-0:1:1.0", NULL, "pci-fixture-usb-0:3:1.0"};
-static char sysnames[6][32];
+static const char *names[] = {
+    "Fixture Mouse", "Fixture Touchpad", "Fixture Mouse", "Fixture Mouse", "Fixture Unsupported", "",
+    "Fixture Consumer Control", "Fixture Mouse Macros", "Fixture Touchpad Mouse", "Fixture Keyboard Mouse", "Fixture Pointing Stick",
+};
+static const char *paths[] = {
+    "pci-fixture-usb-0:1:1.0", "platform-fixture-touchpad", "pci-fixture-usb-0:2:1.0", "pci-fixture-usb-0:1:1.0", NULL, "pci-fixture-usb-0:3:1.0",
+    "pci-fixture-usb-0:1:1.1", "pci-fixture-usb-0:1:1.2", "platform-fixture-touchpad", "pci-fixture-usb-0:4:1.3", "platform-fixture-touchpad",
+};
+static char sysnames[DEVICE_COUNT][32];
 
 static int index_of(const void *device) {
-    for (unsigned i = 0; i < 6; i++) if (device == &devices[i]) return (int)i;
+    for (unsigned i = 0; i < DEVICE_COUNT; i++) if (device == &devices[i]) return (int)i;
     return -1;
 }
 static int live_index(const void *device) {
@@ -52,7 +59,7 @@ static void snapshot(void) {
     FILE *file = fopen(temporary, "w");
     assert(file);
     fputs("[", file);
-    for (unsigned i = 0; i < 6; i++) {
+    for (unsigned i = 0; i < DEVICE_COUNT; i++) {
         struct fake_device *d = &devices[i];
         fprintf(file, "%s{\"live\":%s,\"speed\":%.9g,\"natural\":%s,\"left\":%s,\"tap\":%s,\"drag\":%s,\"dwt\":%s,\"writes\":%u,\"failures\":%u}",
             i ? "," : "", d->live ? "true" : "false", d->speed,
@@ -70,7 +77,7 @@ static int input_ready(int fd, uint32_t mask, void *data) {
     ssize_t n;
     while ((n = read(fd, packet, sizeof(packet))) == sizeof(packet)) {
         unsigned index = packet[1];
-        assert(index < 6);
+        assert(index < DEVICE_COUNT);
         struct fake_device *d = &devices[index];
         switch (packet[0]) {
         case 1:
@@ -114,7 +121,7 @@ struct wlr_backend *wlr_headless_backend_create(struct wl_event_loop *loop) {
 void wlr_backend_destroy(struct wlr_backend *target) {
     REAL(wlr_backend_destroy);
     if (target == backend) {
-        for (unsigned i = 0; i < 6; i++) if (devices[i].live) {
+        for (unsigned i = 0; i < DEVICE_COUNT; i++) if (devices[i].live) {
             wlr_pointer_finish(&devices[i].pointer);
             devices[i].live = false;
         }
@@ -122,12 +129,12 @@ void wlr_backend_destroy(struct wlr_backend *target) {
     real(target);
 }
 bool wlr_input_device_is_libinput(struct wlr_input_device *device) {
-    for (unsigned i = 0; i < 6; i++) if (device == &devices[i].pointer.base) return true;
+    for (unsigned i = 0; i < DEVICE_COUNT; i++) if (device == &devices[i].pointer.base) return true;
     REAL(wlr_input_device_is_libinput);
     return real(device);
 }
 struct libinput_device *wlr_libinput_get_device_handle(struct wlr_input_device *device) {
-    for (unsigned i = 0; i < 6; i++) if (device == &devices[i].pointer.base) {
+    for (unsigned i = 0; i < DEVICE_COUNT; i++) if (device == &devices[i].pointer.base) {
         assert(devices[i].live);
         return (struct libinput_device *)&devices[i];
     }
@@ -140,6 +147,11 @@ unsigned int libinput_device_get_id_bustype(struct libinput_device *device) { li
 unsigned int libinput_device_get_id_vendor(struct libinput_device *device) { live_index(device); return 0x1234; }
 unsigned int libinput_device_get_id_product(struct libinput_device *device) { int i = live_index(device); return i == 1 ? 2 : i == 5 ? 3 : 1; }
 struct udev_device *libinput_device_get_udev_device(struct libinput_device *device) { live_index(device); return (struct udev_device *)device; }
+struct libinput_device_group *libinput_device_get_device_group(struct libinput_device *device) {
+    int i = live_index(device);
+    int group = (i == 6 || i == 7) ? 0 : (i == 8 || i == 10) ? 1 : i;
+    return (struct libinput_device_group *)&devices[group];
+}
 struct udev_device *udev_device_unref(struct udev_device *device) {
     if (index_of(device) >= 0) return NULL;
     REAL(udev_device_unref); return real(device);
@@ -149,7 +161,13 @@ struct udev_device *udev_device_get_parent(struct udev_device *device) {
     REAL(udev_device_get_parent); return real(device);
 }
 const char *udev_device_get_sysattr_value(struct udev_device *device, const char *key) {
-    if (index_of(device) >= 0) return strcmp(key, "bInterfaceNumber") == 0 ? "00" : NULL;
+    int i = index_of(device);
+    if (i >= 0) {
+        if (strcmp(key, "bInterfaceNumber") == 0) return "00";
+        if (strcmp(key, "bInterfaceClass") == 0) return "03";
+        if (strcmp(key, "bInterfaceProtocol") == 0) return i == 7 || i == 9 || i == 10 ? "01" : "00";
+        return NULL;
+    }
     REAL(udev_device_get_sysattr_value); return real(device, key);
 }
 const char *udev_device_get_property_value(struct udev_device *device, const char *key) {
@@ -158,8 +176,9 @@ const char *udev_device_get_property_value(struct udev_device *device, const cha
         if (strcmp(key, "ID_PATH") == 0) return paths[i];
         if (strcmp(key, "ID_SERIAL_SHORT") == 0 && i == 1) return "fixture-touchpad-serial";
         if (strcmp(key, "ID_INPUT_TOUCHPAD") == 0) return i == 1 ? "1" : NULL;
-        if (strcmp(key, "ID_INPUT_MOUSE") == 0) return i != 1 && i != 4 ? "1" : NULL;
+        if (strcmp(key, "ID_INPUT_MOUSE") == 0) return i != 1 && i != 4 && i != 6 ? "1" : NULL;
         if (strcmp(key, "ID_INPUT_TRACKBALL") == 0) return i == 5 ? "1" : NULL;
+        if (strcmp(key, "ID_INPUT_POINTINGSTICK") == 0) return i == 10 ? "1" : NULL;
         if (strcmp(key, "ID_VENDOR_FROM_DATABASE") == 0 && i == 5) return "Kensington";
         if (strcmp(key, "ID_MODEL_FROM_DATABASE") == 0 && i == 5) return "Expert Mouse";
         return NULL;
@@ -167,7 +186,8 @@ const char *udev_device_get_property_value(struct udev_device *device, const cha
     REAL(udev_device_get_property_value); return real(device, key);
 }
 int libinput_device_has_capability(struct libinput_device *device, enum libinput_device_capability cap) {
-    live_index(device); return cap == LIBINPUT_DEVICE_CAP_POINTER;
+    int i = live_index(device);
+    return cap == LIBINPUT_DEVICE_CAP_POINTER || (i == 6 && cap == LIBINPUT_DEVICE_CAP_KEYBOARD);
 }
 int libinput_device_config_accel_is_available(struct libinput_device *device) { return live_index(device) != 4; }
 int libinput_device_config_scroll_has_natural_scroll(struct libinput_device *device) { return live_index(device) != 4; }

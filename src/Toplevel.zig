@@ -20,6 +20,7 @@ const gpa = @import("main.zig").gpa;
 const window_rules = @import("config").window_rules;
 const anim = @import("ui").anim;
 const toplevel_create = @import("toplevel/create.zig");
+const Child = @import("session/child.zig");
 const toplevel_info = @import("toplevel/info.zig");
 const toplevel_focus_close = @import("toplevel/focus_close.zig");
 const toplevel_configure = @import("toplevel/configure.zig");
@@ -54,23 +55,16 @@ pub const Placeholder = struct {
     delay_timer: ?*wl.EventSource = null,
 
     timeout_timer: ?*wl.EventSource = null,
-    child_source: ?*wl.EventSource = null,
-    child_pidfd: i32 = -1,
+    /// Watches the launched process; the services manager owns its status.
+    child: ?*Child = null,
     launch_time_ms: i64,
     matched: bool = false,
     cancelled: bool = false,
 
     pub fn setPid(self: *Placeholder, toplevel: *Toplevel, pid: i32) void {
         self.pid = pid;
-        if (pid <= 0 or self.child_source != null) return;
-        const rc = std.os.linux.pidfd_open(pid, 0);
-        if (std.os.linux.errno(rc) != .SUCCESS) return;
-        self.child_pidfd = @intCast(rc);
-        self.child_source = toplevel.server.wl_server.getEventLoop().addFd(*Toplevel, self.child_pidfd, .{ .readable = true }, handleChildExit, toplevel) catch {
-            _ = std.os.linux.close(self.child_pidfd);
-            self.child_pidfd = -1;
-            return;
-        };
+        if (pid <= 0 or self.child != null) return;
+        self.child = Child.observe(gpa, toplevel.server.wl_server.getEventLoop(), pid, toplevel, handleChildExit) catch null;
     }
 
     pub fn deinit(self: *Placeholder) void {
@@ -82,8 +76,7 @@ pub const Placeholder = struct {
             t.remove();
             self.timeout_timer = null;
         }
-        if (self.child_source) |source| source.remove();
-        if (self.child_pidfd >= 0) _ = std.os.linux.close(self.child_pidfd);
+        if (self.child) |child| child.cancel();
         gpa.free(self.desktop_id);
         gpa.free(self.name);
         gpa.free(self.app_id);

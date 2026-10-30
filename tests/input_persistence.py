@@ -97,9 +97,11 @@ class Fixture:
             wait(lambda: self.state_file.stat().st_mtime_ns != before, "fixture command")
 
     def select(self, ui, ipc, device):
-        # IPC automation owns the first (non-libinput) pointer in this headless
-        # session. It is shown read-only alongside the fixture's real devices.
-        index = self.connected.index(device) + 1
+        # The synthetic pointer is present only in the optional full list.
+        index = self.connected.index(device) + int(ui.find("pointer_show_all")["checked"])
+        self.select_index(ui, ipc, index)
+
+    def select_index(self, ui, ipc, index):
         ui.click(ui.scroll_into_view("pointer_device"), panel="control_center")
         ui.wait_settled("control_center")
         ipc.key_down_up(102)  # Home
@@ -169,6 +171,58 @@ def capture_input(ui, ipc, suffix, menu_open=False):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.unlink(missing_ok=True)
     ipc.screenshot(str(path))
+
+
+def verify_primary_devices(fixture, ui, ipc):
+    def last_device(index):
+        ui.click(ui.scroll_into_view("pointer_device"), panel="control_center")
+        ipc.key_down_up(107)  # End
+        ipc.key_down_up(28)   # Return
+        ui.wait_settled("control_center")
+        selector = ui.find("pointer_device")
+        assert selector["selected_index"] == index, selector
+
+    # One mouse and one touchpad expose consumer controls, mouse macros, a
+    # compatibility mouse, and a keyboard's phantom mouse interface as well.
+    for device in (6, 7, 8, 9):
+        fixture.command(1, device)
+    ui.wait_settled("control_center")
+    last_device(1)
+    ui.click(ui.find("pointer_device"), panel="control_center")
+    capture_input(ui, ipc, "primary-devices", menu_open=True)
+    ipc.key_down_up(1)
+    ui.wait_settled("control_center")
+
+    fixture.click(ui, "pointer_show_all")
+    last_device(6)
+    fixture.select_index(ui, ipc, 0)
+    assert ui.find("pointer_speed")["role"] != "slider"
+    assert ui.find("natural_scroll")["is_disabled"]
+    fixture.select(ui, ipc, 7)
+    assert not ui.find("natural_scroll")["is_disabled"]
+    fixture.click(ui, "pointer_show_all")
+    assert ui.find("pointer_device")["selected_index"] == 0
+    last_device(1)
+
+    # The mouse interface remains usable if its touchpad peer is removed.
+    fixture.command(2, 1)
+    ui.wait_settled("control_center")
+    last_device(1)
+    fixture.command(1, 1)
+    ui.wait_settled("control_center")
+    assert ui.find("pointer_device")["selected_index"] == 0
+    last_device(1)
+
+    # A real pointing stick sharing the pad's group and a keyboard interface
+    # must stay visible, unlike the touchpad's compatibility mouse.
+    fixture.command(1, 10)
+    ui.wait_settled("control_center")
+    last_device(2)
+    for device in (6, 7, 8, 9, 10):
+        fixture.command(2, device)
+    ui.wait_settled("control_center")
+    fixture.select(ui, ipc, 0)
+    print("PASS: primary device list hides synthetic and auxiliary interfaces; full list, pointing sticks and peer hotplug remain usable")
 
 
 def verify_trackball_profile(fixture, ui, ipc):
@@ -280,6 +334,9 @@ def run_session(fixture, restart):
             print("PASS: per-device settings and reset-to-default inheritance restored after compositor restart")
             return
 
+        verify_primary_devices(fixture, ui, ipc)
+        state = fixture.state()
+
         # Global-only configurations still select the appropriate device defaults.
         assert math.isclose(state[0]["speed"], -.4, abs_tol=1e-6) and math.isclose(state[1]["speed"], .3, abs_tol=1e-6), state
         assert state[0]["natural"] and state[1]["natural"], state
@@ -373,6 +430,7 @@ def run_session(fixture, restart):
         assert not fixture.state()[0]["natural"]
 
         fixture.command(1, 4)
+        fixture.click(ui, "pointer_show_all")
         fixture.select(ui, ipc, 4)
         for name in ("natural_scroll", "left_handed", "tap_to_click", "tap_drag", "disable_while_typing"):
             assert ui.find(name)["is_disabled"]

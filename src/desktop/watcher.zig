@@ -2,6 +2,7 @@
 const i18n = @import("i18n");
 const std = @import("std");
 const c = @import("c.zig").api;
+const platform = @import("platform");
 const icons = @import("../icon_cache.zig");
 const theme = @import("../icon_theme.zig");
 const desktop = @import("dotdesktop.zig");
@@ -412,15 +413,14 @@ pub const Worker = struct {
         };
         const zdir = a.dupeSentinel(u8, self.dir, 0) catch return;
         defer a.free(zdir);
-        const fd = c.inotify_init1(c.IN_NONBLOCK | c.IN_CLOEXEC);
-        defer if (fd >= 0) {
-            _ = c.close(fd);
-        };
-        var wd: c_int = -1;
+        // Without file watching `watcher.fd` stays -1 and only commands wake the loop.
+        var watcher = platform.watch.Watcher.init() catch platform.watch.Watcher{};
+        defer watcher.deinit();
+        var watch = platform.watch.none;
         while (!self.stop.load(.acquire)) {
-            if (fd >= 0 and wd < 0) {
+            if (watcher.fd >= 0 and watch < 0) {
                 _ = c.mkdir(zdir, 0o755);
-                wd = c.inotify_add_watch(fd, zdir, c.IN_CREATE | c.IN_DELETE | c.IN_MOVED_FROM | c.IN_MOVED_TO | c.IN_CLOSE_WRITE | c.IN_ATTRIB | c.IN_DELETE_SELF | c.IN_MOVE_SELF);
+                watch = watcher.add(self.dir, .listing) orelse platform.watch.none;
             }
             _ = c.pthread_mutex_lock(&self.mutex);
             if (self.pending_child_env) |env| {
@@ -446,7 +446,7 @@ pub const Worker = struct {
                 if (self.scan()) |snap| {
                     _ = c.pthread_mutex_lock(&self.mutex);
                     const old = self.pending;
-                    // Preserve an unconsumed result when inotify replaces a snapshot.
+                    // Preserve an unconsumed result when a file change replaces a snapshot.
                     snap.created_folder = self.created_folder;
                     self.created_folder = null;
                     if (old) |previous| {
@@ -463,25 +463,22 @@ pub const Worker = struct {
             }
             var fds = [2]c.struct_pollfd{
                 .{ .fd = self.wake_worker, .events = c.POLLIN, .revents = 0 },
-                .{ .fd = fd, .events = c.POLLIN, .revents = 0 },
+                .{ .fd = watcher.fd, .events = c.POLLIN, .revents = 0 },
             };
             // Only a failed watch retry needs a clock; commands and
             // filesystem changes wake the poll directly.
-            const timeout: c_int = if (fd >= 0 and wd < 0) 1000 else -1;
+            const timeout: c_int = if (watcher.fd >= 0 and watch < 0) 1000 else -1;
             _ = c.poll(&fds, fds.len, timeout);
             if (fds[0].revents & c.POLLIN != 0) drain(self.wake_worker);
             if (fds[1].revents & c.POLLIN != 0) {
-                var buf: [16384]u8 align(@alignOf(c.struct_inotify_event)) = undefined;
-                while (true) {
-                    const n = c.read(fd, &buf, buf.len);
-                    if (n <= 0) break;
-                    var off: usize = 0;
-                    while (off + @sizeOf(c.struct_inotify_event) <= @as(usize, @intCast(n))) {
-                        const ev: *const c.struct_inotify_event = @ptrCast(@alignCast(&buf[off]));
-                        if (ev.mask & (c.IN_IGNORED | c.IN_DELETE_SELF | c.IN_MOVE_SELF) != 0) wd = -1;
-                        off += @sizeOf(c.struct_inotify_event) + ev.len;
+                var events: struct {
+                    watch: platform.watch.Watch,
+                    fn event(s: *@This(), ev: platform.watch.Event) void {
+                        if (ev.flags.lost()) s.watch = platform.watch.none;
                     }
-                }
+                } = .{ .watch = watch };
+                watcher.drain(&events, @TypeOf(events).event) catch {};
+                watch = events.watch;
                 self.refresh.store(true, .release);
             }
         }

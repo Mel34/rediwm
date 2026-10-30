@@ -35,6 +35,7 @@ const source_entries = [_]SourceEntry{
     .{ .page = .general, .title = i18n.msg("Brightness"), .target = "@Brightness", .heading = i18n.msg("Brightness"), .keywords = i18n.msg("backlight screen light") },
     .{ .page = .general, .title = i18n.msg("Open files with a single click"), .target = "files_single_click_open", .keywords = i18n.msg("double click folders") },
     .{ .page = .input, .title = i18n.msg("Pointer device"), .target = "pointer_device", .keywords = i18n.msg("mouse touchpad trackpad select") },
+    .{ .page = .input, .title = i18n.msg("Show all devices"), .target = "pointer_show_all", .keywords = i18n.msg("mouse touchpad trackpad select") },
     .{ .page = .input, .title = i18n.msg("Reset pointer settings"), .target = "pointer_reset", .keywords = i18n.msg("mouse touchpad trackball default custom inherit") },
     .{ .page = .input, .title = i18n.msg("Pointer speed"), .target = "pointer_speed", .keywords = i18n.msg("mouse touchpad trackpad acceleration sensitivity") },
     .{ .page = .input, .title = i18n.msg("Disable while typing"), .target = "disable_while_typing", .keywords = i18n.msg("keyboard touchpad trackpad") },

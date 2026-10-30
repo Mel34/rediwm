@@ -1,0 +1,13 @@
+//! Everything that differs between operating systems, behind one interface:
+//! child processes, file-change notification and the program's own path.
+//! Callers never test the OS; `std.os.linux` is used only in here (see
+//! `AGENTS.md` beside this file). No compositor imports.
+pub const child = @import("child.zig");
+pub const exe = @import("exe.zig");
+pub const watch = @import("watch.zig");
+
+test {
+    _ = child;
+    _ = exe;
+    _ = watch;
+}
