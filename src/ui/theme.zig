@@ -257,6 +257,8 @@ pub const Theme = struct {
     /// The scrollbar's channel (`widgets/scrollbar.zig`): flat draws no track at
     /// all (the thumb alone), inset a groove the thumb sits in.
     scrollbar_track_relief: Relief = .flat,
+    /// Relief on the scrollbar thumb; raised shadows stay inside its channel.
+    scrollbar_thumb_relief: Relief = .flat,
     // 0 sizes the menu to the output (`start_menu/size.zig`); set either to pin it.
     start_menu_width: f32 = 0,
     start_menu_max_height: f32 = 0,

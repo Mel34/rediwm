@@ -149,6 +149,7 @@ pub const Look = struct {
     track_radius: f32,
     track_color: [4]f32,
     track_relief: theme.Relief = .flat,
+    thumb_relief: theme.Relief = .flat,
     rect: Rect,
     radius: f32,
     color: [4]f32,
@@ -193,7 +194,7 @@ pub fn look(g: Geometry, state: Appearance, configured: f32, palette: theme.Them
     }
     // Nested corners: the groove's radius is the thumb's plus the margin between.
     const track_radius = @min(cornerRadius(track_thickness) + 1.5, track_thickness / 2);
-    return .{ .track = track_rect, .track_radius = track_radius, .track_color = track_color, .track_relief = palette.scrollbar_track_relief, .rect = rect, .radius = cornerRadius(thickness), .color = color, .axis = g.axis, .highlight = highlight, .shine = state.shine, .glow = @max(palette.scrollbar_glow, 0) };
+    return .{ .track = track_rect, .track_radius = track_radius, .track_color = track_color, .track_relief = palette.scrollbar_track_relief, .thumb_relief = palette.scrollbar_thumb_relief, .rect = rect, .radius = cornerRadius(thickness), .color = color, .axis = g.axis, .highlight = highlight, .shine = state.shine, .glow = @max(palette.scrollbar_glow, 0) };
 }
 
 /// Whether `l`'s thumb gets the lit-edge raster. A flat thumb (`scrollbar_glow`
@@ -224,6 +225,7 @@ pub fn paint(r: *@import("../paint.zig").Renderer, l: Look) void {
 pub fn paintThumb(r: *@import("../paint.zig").Renderer, l: Look) void {
     if (!lit(l)) {
         r.fillRect(l.rect.x, l.rect.y, l.rect.w, l.rect.h, .{ .color = l.color, .radius = l.radius });
+        paintThumbRelief(r, l);
         return;
     }
     const box = l.rect;
@@ -268,6 +270,25 @@ pub fn paintThumb(r: *@import("../paint.zig").Renderer, l: Look) void {
             text.blendPixel(&r.pixels[@intCast(py * r.width + px)], .{ .r = color[0], .g = color[1], .b = color[2], .a = color[3] }, coverage);
         }
     }
+    paintThumbRelief(r, l);
+}
+
+fn paintThumbRelief(r: *@import("../paint.zig").Renderer, l: Look) void {
+    r.paintShapeRelief(l.thumb_relief, .{
+        .x = l.rect.x,
+        .y = l.rect.y,
+        .w = l.rect.w,
+        .h = l.rect.h,
+        .radius = l.radius,
+    }, .{
+        .within = .{
+            .x = l.track.x,
+            .y = l.track.y,
+            .w = l.track.w,
+            .h = l.track.h,
+            .radius = l.track_radius,
+        },
+    });
 }
 
 /// Presentation only: callers retain their scroll mechanics and fixed hit area.
@@ -445,6 +466,7 @@ test "the thumb is centred in its gutter, widens and tints with feedback" {
     try std.testing.expectEqual(@as(f32, 12), rest.track.w);
     try std.testing.expectEqual(@as(f32, 87), rest.track.x);
     try std.testing.expectEqual(theme.Relief.flat, rest.track_relief);
+    try std.testing.expectEqual(theme.Relief.flat, rest.thumb_relief);
     try std.testing.expect(rest.track_color[3] > 0);
     state.wide = 1;
     state.accent = 1;
@@ -455,6 +477,30 @@ test "the thumb is centred in its gutter, widens and tints with feedback" {
     // A gutter narrower than the animated width clamps it.
     const narrow = Geometry.compute(.vertical, .{ .x = 0, .y = 0, .w = 8, .h = 100 }, 100, 400, 0).?;
     try std.testing.expectEqual(@as(f32, 6), look(narrow, state, 8, palette).rect.w);
+}
+
+test "raised thumb relief stays within its channel" {
+    const Renderer = @import("../paint.zig").Renderer;
+    var palette: theme.Theme = .{};
+    palette.scrollbar_thumb = .{ 0.4, 0.4, 0.4, 1 };
+    palette.scrollbar_glow = 0;
+    palette.scrollbar_thumb_relief = .raised;
+    palette.relief_depth = 2;
+    palette.relief_softness = 3;
+    palette.relief_dark = .{ 0, 0, 0, 0.6 };
+    palette.relief_light = .{ 1, 1, 1, 0.6 };
+
+    const g = Geometry.compute(.vertical, .{ .x = 0, .y = 0, .w = gutter(8), .h = 100 }, 100, 400, 0).?;
+    var pixels = @as([14 * 100]u32, @splat(0));
+    var r = Renderer.init(&pixels, 14, 100, 1);
+    r.palette = palette;
+    paint(&r, look(g, .{}, 8, palette));
+
+    // The thumb begins at x=4. Its raised edge shades the channel beside it.
+    try std.testing.expect(pixels[12 * 14 + 3] != 0);
+    // The channel is inset one pixel from the gutter's outer edges.
+    try std.testing.expectEqual(@as(u32, 0), pixels[12 * 14]);
+    try std.testing.expectEqual(@as(u32, 0), pixels[12 * 14 + 13]);
 }
 
 test "the groove shades from the theme's relief and a flat thumb carries no stripe" {

@@ -160,12 +160,12 @@ pub fn drawScrollbar(cr_any: *anyopaque, look: scrollbar.Look) void {
 
     const track = look.track;
     const thumb = look.rect;
-    // Without a groove the layer is the thumb's alone, not the whole gutter.
-    const grooved = look.track_relief != .flat;
-    const left = if (grooved) @min(track.x, thumb.x) else thumb.x;
-    const top = if (grooved) @min(track.y, thumb.y) else thumb.y;
-    const right = if (grooved) @max(track.x + track.w, thumb.x + thumb.w) else thumb.x + thumb.w;
-    const bottom = if (grooved) @max(track.y + track.h, thumb.y + thumb.h) else thumb.y + thumb.h;
+    // An inset track or raised thumb relief needs the channel around the thumb.
+    const needs_track_layer = look.track_relief != .flat or look.thumb_relief == .raised;
+    const left = if (needs_track_layer) @min(track.x, thumb.x) else thumb.x;
+    const top = if (needs_track_layer) @min(track.y, thumb.y) else thumb.y;
+    const right = if (needs_track_layer) @max(track.x + track.w, thumb.x + thumb.w) else thumb.x + thumb.w;
+    const bottom = if (needs_track_layer) @max(track.y + track.h, thumb.y + thumb.h) else thumb.y + thumb.h;
     if (right <= left or bottom <= top) return;
 
     // Snap the combined layer origin to device pixels while preserving
@@ -353,11 +353,36 @@ test "a scrollbar thumb paints its look through cairo" {
     // No groove unless the theme cuts one: nothing below the thumb.
     try std.testing.expectEqual(@as(u32, 0), data[45 * 40 + 27]);
     // With one, the channel continues below it.
-    var grooved = palette;
-    grooved.scrollbar_track_relief = .inset;
-    drawScrollbar(cr, scrollbar.look(g, .{}, 8, grooved));
+    var needs_track_layer = palette;
+    needs_track_layer.scrollbar_track_relief = .inset;
+    drawScrollbar(cr, scrollbar.look(g, .{}, 8, needs_track_layer));
     c.cairo_surface_flush(surface);
     try std.testing.expect(data[45 * 40 + 27] != 0);
+
+    // A raised thumb gets a layer large enough for its shadows, even with
+    // no groove. The relief remains confined to the channel.
+    c.cairo_set_operator(cr, c.CAIRO_OPERATOR_CLEAR);
+    c.cairo_paint(cr);
+    c.cairo_set_operator(cr, c.CAIRO_OPERATOR_OVER);
+    var raised = palette;
+    raised.scrollbar_glow = 0;
+    raised.scrollbar_thumb_relief = .raised;
+    raised.relief_depth = 2;
+    raised.relief_softness = 3;
+    raised.relief_dark = .{ 0, 0, 0, 0.6 };
+    raised.relief_light = .{ 1, 1, 1, 0.6 };
+
+    // The Cairo layer obtains its renderer palette from theme.global.
+    const saved_theme = theme.global;
+    defer theme.global = saved_theme;
+    theme.global = raised;
+
+    drawScrollbar(cr, scrollbar.look(g, .{}, 8, raised));
+    c.cairo_surface_flush(surface);
+    // The channel starts at x=21; the thumb starts at x=24.
+    try std.testing.expect(data[12 * 40 + 23] != 0);
+    try std.testing.expectEqual(@as(u32, 0), data[12 * 40 + 20]);
+    try std.testing.expectEqual(@as(u32, 0), data[12 * 40 + 33]);
 
     // Engaged thumbs share the shell raster, including fractional placement,
     // Cairo translation and clipping. The highlight remains inside the thumb.
