@@ -45,6 +45,7 @@ pub fn paintRow(widget: *const Widget, data: RowData, renderer: *Renderer) void 
             .radius = t.radius,
             .border_width = 1,
             .border_color = t.start_menu_selected_border,
+            .relief = t.row_selected_relief,
         });
         const marker_h = @max(10, widget.computed_height - 18);
         const marker_y = widget.computed_y + (widget.computed_height - marker_h) / 2;
@@ -58,6 +59,7 @@ pub fn paintRow(widget: *const Widget, data: RowData, renderer: *Renderer) void 
             .radius = t.radius,
             .border_width = 1,
             .border_color = t.border_soft,
+            .relief = t.row_hover_relief,
         });
     }
 }
@@ -271,6 +273,7 @@ pub fn paintPill(widget: *const Widget, style: TextStyle, renderer: *Renderer) v
     renderer.fillRect(x, y, w, h, .{
         .color = wash,
         .radius = h / 2,
+        .relief = t.pill_relief,
         .border_width = 1,
         .border_color = lerp4(t.border, .{ t.accent[0], t.accent[1], t.accent[2], t.pill_border_active_alpha * t.accent[3] }, glow),
     });
@@ -296,6 +299,7 @@ pub fn paintSegmented(widget: *const Widget, data: SegmentedData, renderer: *Ren
         .radius = t.radius,
         .border_width = 1,
         .border_color = t.border,
+        .relief = t.segmented_relief,
     });
     if (data.labels.len == 0) return;
     const cell_w = widget.computed_width / @as(f32, @floatFromInt(data.labels.len));
@@ -307,6 +311,7 @@ pub fn paintSegmented(widget: *const Widget, data: SegmentedData, renderer: *Ren
             renderer.fillRect(cell_x + 2, widget.computed_y + 2, cell_w - 4, widget.computed_height - 4, .{
                 .color = accent_wash,
                 .radius = @max(0, t.radius - 2),
+                .relief = t.segmented_selected_relief,
                 .border_width = 1,
                 .border_color = t.accent,
             });
@@ -327,6 +332,7 @@ pub fn paintSwatch(widget: *const Widget, data: SwatchData, renderer: *Renderer)
     renderer.fillRect(widget.computed_x, widget.computed_y, widget.computed_width, widget.computed_height, .{
         .color = data.color,
         .radius = t.swatch_radius,
+        .relief = t.swatch_relief,
         .border_width = border_width,
         .border_color = border_color,
     });
@@ -353,6 +359,7 @@ pub fn paintStepper(widget: *const Widget, data: StepperData, renderer: *Rendere
         .radius = t.radius,
         .border_width = 1,
         .border_color = t.border,
+        .relief = t.stepper_relief,
     });
     renderer.drawIcon(widget.computed_x, widget.computed_y, stepper_button_width, widget.computed_height, .{ .id = .minimize, .color = t.fg });
     renderer.drawIcon(widget.computed_x + widget.computed_width - stepper_button_width, widget.computed_y, stepper_button_width, widget.computed_height, .{ .id = .plus, .color = t.fg });

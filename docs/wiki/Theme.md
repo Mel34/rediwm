@@ -422,7 +422,14 @@ When `relief_depth` is greater than zero, individual controls can opt into
 that did not previously use explicit relief. The standard slider progress fill
 overlays the start of the track, so an inset `slider_track_relief` can have its
 left-side groove shadow covered by that fill. The shaded slider and toggle paths
-use their existing procedural lighting instead of these settings.
+(`slider_shaded`, `toggle_shaded`) keep their procedural lighting and add these
+shadows on top, dropping only what the relief would double: the toggle's hand-made
+track rim under a non-flat track relief, and the knob's cast shadow under a
+non-flat thumb relief. A groove's shadows skip its knob, and a knob's stay inside
+its track (toggle) or the slider's box, so neither crosses the thumb or outlives
+the control's damage bounds. A theme that leaves the keys `flat` renders exactly
+as before. Raised shadows reach `relief_depth + relief_softness` past a box: use
+`inset` for segments, rows and pills packed into a layout.
 
 | Key | Built-in default | Description |
 | --- | --- | --- |
@@ -433,10 +440,17 @@ use their existing procedural lighting instead of these settings.
 | `select_relief` | `"flat"` | Resting select/dropdown control relief |
 | `select_popup_relief` | `"flat"` | Select/dropdown popup container relief |
 | `checkbox_relief` | `"flat"` | Checkbox frame relief |
-| `toggle_track_relief` | `"flat"` | Standard toggle track relief |
-| `toggle_thumb_relief` | `"flat"` | Standard toggle thumb relief |
-| `slider_track_relief` | `"flat"` | Standard slider track relief |
-| `slider_thumb_relief` | `"flat"` | Standard slider thumb relief |
+| `toggle_track_relief` | `"flat"` | Toggle track relief (plain and shaded) |
+| `toggle_thumb_relief` | `"flat"` | Toggle knob relief (plain and shaded) |
+| `slider_track_relief` | `"flat"` | Slider track relief (plain and shaded) |
+| `slider_thumb_relief` | `"flat"` | Slider thumb relief (plain and shaded) |
+| `segmented_relief` | `"flat"` | Segmented control frame relief |
+| `segmented_selected_relief` | `"flat"` | Selected segment relief |
+| `stepper_relief` | `"flat"` | Stepper frame relief |
+| `swatch_relief` | `"flat"` | Colour swatch relief |
+| `pill_relief` | `"flat"` | Slider value readout (pill) relief |
+| `row_hover_relief` | `"flat"` | Hovered or pressed list row relief |
+| `row_selected_relief` | `"flat"` | Selected list row relief |
 | Additional constraint | Range |
 | --- | --- |
 | `chrome_height` | 28–84 |

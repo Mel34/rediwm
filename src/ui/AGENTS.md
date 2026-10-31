@@ -67,3 +67,11 @@ text and colours, secrets) are in the root `AGENTS.md` ("Shared UI").
   `paint` draws it into any `Renderer`, so the two cannot drift. The caller
   owns the data (hide it when there is no battery) and the connection
   shimmer's clock (`Spec.shimmer`).
+* **Relief on hand-shaded controls.** A control drawn through `fillRect` opts in
+  with `RectStyle.relief` and a theme key. One that lights its own pixels (the
+  shaded toggle and slider) paints first, then calls `Renderer.paintShapeRelief`
+  with `ReliefLimits`: a groove passes `.outside` (the knob), a knob passes
+  `.within` (its track or the control's box), so shadows never cross the thumb
+  or leave the damage bounds. `Renderer.reliefActive` tells it whether to drop
+  the hand-made rim or cast shadow the relief replaces; flat keys must leave
+  its pixels byte-identical.

@@ -444,3 +444,186 @@ test "an inset fill shades the edge facing the light and lights the opposite one
     try std.testing.expectEqual(@as(u32, 0xff808080), pixels[30 * 60 + 30]);
     try std.testing.expectEqual(@as(u32, 0xff808080), pixels[30 * 60 + 15]);
 }
+
+const paintSlider = @import("paint_widgets.zig").paintSlider;
+const paintSegmented = @import("paint_widgets.zig").paintSegmented;
+const paintSwatch = @import("paint_widgets.zig").paintSwatch;
+const paintRow = @import("paint_widgets.zig").paintRow;
+
+/// The blue channel at (`x`, `y`): shadows are black and highlights white, so
+/// it is enough to tell them from the mid-grey page.
+fn channel(pixels: []const u32, width: usize, x: usize, y: usize) u32 {
+    return pixels[y * width + x] & 0xff;
+}
+
+/// Inset: the edge facing the light is in shadow, the far one lit.
+fn expectInsetShading(flat: []const u32, cut: []const u32, width: usize, x: usize, top: usize, bottom: usize) !void {
+    try std.testing.expect(channel(cut, width, x, top) < channel(flat, width, x, top));
+    try std.testing.expect(channel(cut, width, x, bottom) > channel(flat, width, x, bottom));
+}
+
+/// A shaded toggle on a mid-grey page, painted with `palette`.
+fn shadedToggle(palette: theme.Theme, on: bool) [80 * 60]u32 {
+    var pixels = @as([80 * 60]u32, @splat(0xff808080));
+    var r = Renderer.init(&pixels, 80, 60, 1);
+    r.palette = palette;
+    @import("widgets/toggle.zig").paint(&r, .{ .x = 20, .y = 20, .w = 36, .h = 20 }, .{ .on = on });
+    return pixels;
+}
+
+test "shaded toggles take the relief keys and are untouched while they are flat" {
+    var flat = reliefTheme();
+    flat.toggle_shaded = true;
+    var stock: theme.Theme = .{};
+    stock.toggle_shaded = true;
+    // Relief on in the theme but off for the control: pixel for pixel as before.
+    try std.testing.expectEqualSlices(u32, &shadedToggle(stock, false), &shadedToggle(flat, false));
+
+    // Off, the knob rests at the left: 22.8 to 37.2 across and down the track.
+    const base = shadedToggle(flat, false);
+    var raised = flat;
+    raised.toggle_thumb_relief = .raised;
+    const lit = shadedToggle(raised, false);
+    // Light from the upper left: a shadow lower right of the knob, a glow upper left.
+    try std.testing.expect(channel(&lit, 80, 39, 33) < channel(&base, 80, 39, 33));
+    try std.testing.expect(channel(&lit, 80, 21, 30) > channel(&base, 80, 21, 30));
+    // The knob's shadows never leave the track.
+    try std.testing.expectEqual(@as(u32, 0xff808080), lit[42 * 80 + 30]);
+
+    var groove = flat;
+    groove.toggle_track_relief = .inset;
+    const cut = shadedToggle(groove, false);
+    try expectInsetShading(&base, &cut, 80, 40, 21, 38);
+    // The groove's shadows skip the knob.
+    try std.testing.expectEqual(base[30 * 80 + 30], cut[30 * 80 + 30]);
+}
+
+/// A shaded slider at half on a mid-grey page: the disc is 16 across, centred
+/// on (60, 22), in a box from (10, 10) that is 100 by 24.
+fn shadedSlider(palette: theme.Theme) [130 * 50]u32 {
+    var pixels = @as([130 * 50]u32, @splat(0xff808080));
+    var r = Renderer.init(&pixels, 130, 50, 1);
+    r.palette = palette;
+    const widget = Widget{
+        .kind = .{ .slider = .{
+            .style = .standard,
+            .value = 0.5,
+            .min = 0,
+            .max = 1,
+            .feel = .{},
+            .on_change = struct {
+                fn call(_: ?*anyopaque, _: usize, _: f32) void {}
+            }.call,
+        } },
+        .computed_x = 10,
+        .computed_y = 10,
+        .computed_width = 100,
+        .computed_height = 24,
+    };
+    paintSlider(&widget, widget.kind.slider, &r);
+    return pixels;
+}
+
+fn shadedSliderTheme(track_height: f32) theme.Theme {
+    var t = reliefTheme();
+    t.slider_shaded = true;
+    t.slider_thumb_size = 16;
+    t.slider_track_height = track_height;
+    return t;
+}
+
+test "shaded sliders take the relief keys, off the thumb and inside their box" {
+    var flat = shadedSliderTheme(6);
+    var stock: theme.Theme = .{};
+    stock.slider_shaded = true;
+    stock.slider_thumb_size = 16;
+    stock.slider_track_height = 6;
+    try std.testing.expectEqualSlices(u32, &shadedSlider(stock), &shadedSlider(flat));
+
+    const base = shadedSlider(flat);
+    flat.slider_thumb_relief = .raised;
+    const lit = shadedSlider(flat);
+    try std.testing.expect(channel(&lit, 130, 68, 26) < channel(&base, 130, 68, 26));
+    try std.testing.expect(channel(&lit, 130, 51, 17) > channel(&base, 130, 51, 17));
+    // Below the box (it ends at y = 34) the page is untouched.
+    try std.testing.expectEqual(@as(u32, 0xff808080), lit[36 * 130 + 60]);
+
+    // A rail tall enough for the groove's two shadows not to meet.
+    var groove = shadedSliderTheme(14);
+    const wide = shadedSlider(groove);
+    groove.slider_track_relief = .inset;
+    const cut = shadedSlider(groove);
+    try expectInsetShading(&wide, &cut, 130, 90, 16, 27);
+    // The groove's shadows skip the disc.
+    try std.testing.expectEqual(wide[22 * 130 + 60], cut[22 * 130 + 60]);
+}
+
+fn paintedSegmented(palette: theme.Theme) [80 * 60]u32 {
+    var pixels = @as([80 * 60]u32, @splat(0xff808080));
+    var r = Renderer.init(&pixels, 80, 60, 1);
+    r.palette = palette;
+    const widget = Widget{
+        .kind = .{ .segmented = .{ .labels = &.{}, .selected = 0, .on_change = struct {
+            fn call(_: ?*anyopaque, _: usize, _: usize) void {}
+        }.call } },
+        .computed_x = 20,
+        .computed_y = 20,
+        .computed_width = 40,
+        .computed_height = 24,
+    };
+    paintSegmented(&widget, widget.kind.segmented, &r);
+    return pixels;
+}
+
+fn paintedSwatch(palette: theme.Theme) [80 * 60]u32 {
+    var pixels = @as([80 * 60]u32, @splat(0xff808080));
+    var r = Renderer.init(&pixels, 80, 60, 1);
+    r.palette = palette;
+    const widget = Widget{
+        .kind = .{ .swatch = .{ .color = .{ 0.5, 0.5, 0.5, 1 }, .selected = false, .on_select = struct {
+            fn call(_: ?*anyopaque, _: usize, _: [4]f32) void {}
+        }.call } },
+        .computed_x = 20,
+        .computed_y = 20,
+        .computed_width = 24,
+        .computed_height = 24,
+    };
+    paintSwatch(&widget, widget.kind.swatch, &r);
+    return pixels;
+}
+
+fn paintedRow(palette: theme.Theme, data: layout.RowData) [80 * 60]u32 {
+    var pixels = @as([80 * 60]u32, @splat(0xff808080));
+    var r = Renderer.init(&pixels, 80, 60, 1);
+    r.palette = palette;
+    const widget = Widget{ .kind = .{ .row = data }, .computed_x = 10, .computed_y = 10, .computed_width = 40, .computed_height = 30 };
+    paintRow(&widget, data, &r);
+    return pixels;
+}
+
+test "segmented frames, swatches and rows take their own relief keys" {
+    const stock: theme.Theme = .{};
+    const flat = reliefTheme();
+    // Relief on in the theme, every key flat: the same pixels as a theme without it.
+    try std.testing.expectEqualSlices(u32, &paintedSegmented(stock), &paintedSegmented(flat));
+    try std.testing.expectEqualSlices(u32, &paintedSwatch(stock), &paintedSwatch(flat));
+    try std.testing.expectEqualSlices(u32, &paintedRow(stock, .{ .selected = true }), &paintedRow(flat, .{ .selected = true }));
+
+    var inset = flat;
+    inset.segmented_relief = .inset;
+    try expectInsetShading(&paintedSegmented(flat), &paintedSegmented(inset), 80, 40, 21, 42);
+
+    var raised = flat;
+    raised.swatch_relief = .raised;
+    const base = paintedSwatch(flat);
+    const lit = paintedSwatch(raised);
+    // The swatch is 20 to 44 across and down: shadow to its lower right, glow upper left.
+    try std.testing.expect(channel(&lit, 80, 45, 33) < channel(&base, 80, 45, 33));
+    try std.testing.expect(channel(&lit, 80, 18, 33) > channel(&base, 80, 18, 33));
+
+    var rows = flat;
+    rows.row_selected_relief = .inset;
+    try expectInsetShading(&paintedRow(flat, .{ .selected = true }), &paintedRow(rows, .{ .selected = true }), 80, 35, 11, 38);
+    rows.row_hover_relief = .inset;
+    try expectInsetShading(&paintedRow(flat, .{ .state = .hover }), &paintedRow(rows, .{ .state = .hover }), 80, 35, 11, 38);
+}

@@ -241,6 +241,18 @@ pub const Theme = struct {
     toggle_thumb_relief: Relief = .flat,
     slider_track_relief: Relief = .flat,
     slider_thumb_relief: Relief = .flat,
+    // Relief for the controls that had none: the segmented control (frame and
+    // selected cell), stepper, swatch, a slider's value pill, and list rows
+    // (hovered, selected). A raised box casts shadows `relief_depth +
+    // relief_softness` past its edge, so cells and rows packed into a layout
+    // want `inset`.
+    segmented_relief: Relief = .flat,
+    segmented_selected_relief: Relief = .flat,
+    stepper_relief: Relief = .flat,
+    swatch_relief: Relief = .flat,
+    pill_relief: Relief = .flat,
+    row_hover_relief: Relief = .flat,
+    row_selected_relief: Relief = .flat,
     // 0 sizes the menu to the output (`start_menu/size.zig`); set either to pin it.
     start_menu_width: f32 = 0,
     start_menu_max_height: f32 = 0,
