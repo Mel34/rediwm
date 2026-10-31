@@ -3,7 +3,8 @@
 The rules every caller follows (callback owners, one look per control, app
 text and colours, secrets) are in the root `AGENTS.md` ("Shared UI").
 
-* **The scrollbar** (`widgets/scrollbar.zig`, Files' look): a track-less thumb
+* **The scrollbar** (`widgets/scrollbar.zig`, Files' look): a thumb (track-less
+  unless `scrollbar_track_relief` cuts a groove; flat at `scrollbar_glow = 0`)
   centred in a `gutter(scrollbar_width)` strip, thin at rest, widening and
   tinting to the accent on hover/drag, holding a faint tint after a scroll.
   `Geometry.compute` gives the thumb for any axis and unit (pixels, or items

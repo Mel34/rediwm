@@ -119,7 +119,8 @@ pub const Theme = struct {
     scrollbar_thumb: [4]f32 = .{ 89.0 / 255.0, 98.0 / 255.0, 110.0 / 255.0, 1 }, // #59626e
     /// Unset follows the surface accent during hover/drag.
     scrollbar_thumb_active: ?[4]f32 = null,
-    /// Strength of the light on a hovered/dragged/scrolling thumb (1 = subtle).
+    /// Strength of the light on a hovered/dragged/scrolling thumb (1 = subtle,
+    /// 0 = a flat thumb: no highlight stripe, only the colour feedback).
     scrollbar_glow: f32 = 1.0,
     taskbar_title_size: f32 = 12.5,
     clock_bold: bool = false,
@@ -253,6 +254,9 @@ pub const Theme = struct {
     pill_relief: Relief = .flat,
     row_hover_relief: Relief = .flat,
     row_selected_relief: Relief = .flat,
+    /// The scrollbar's channel (`widgets/scrollbar.zig`): flat draws no track at
+    /// all (the thumb alone), inset a groove the thumb sits in.
+    scrollbar_track_relief: Relief = .flat,
     // 0 sizes the menu to the output (`start_menu/size.zig`); set either to pin it.
     start_menu_width: f32 = 0,
     start_menu_max_height: f32 = 0,

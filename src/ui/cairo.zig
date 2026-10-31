@@ -153,17 +153,19 @@ pub fn drawSplitter(cr_any: *anyopaque, geometry: splitter.Geometry, engaged: bo
     c.cairo_fill(cr);
 }
 
-/// Fills a scrollbar thumb: `scrollbar.look` through Cairo, the counterpart of
-/// `scrollbar.paint` for the widget tree.
+/// Fills a scrollbar, groove and thumb: `scrollbar.look` through Cairo, the
+/// counterpart of `scrollbar.paint` for the widget tree.
 pub fn drawScrollbar(cr_any: *anyopaque, look: scrollbar.Look) void {
     const cr: *c.cairo_t = @ptrCast(cr_any);
 
     const track = look.track;
     const thumb = look.rect;
-    const left = @min(track.x, thumb.x);
-    const top = @min(track.y, thumb.y);
-    const right = @max(track.x + track.w, thumb.x + thumb.w);
-    const bottom = @max(track.y + track.h, thumb.y + thumb.h);
+    // Without a groove the layer is the thumb's alone, not the whole gutter.
+    const grooved = look.track_relief != .flat;
+    const left = if (grooved) @min(track.x, thumb.x) else thumb.x;
+    const top = if (grooved) @min(track.y, thumb.y) else thumb.y;
+    const right = if (grooved) @max(track.x + track.w, thumb.x + thumb.w) else thumb.x + thumb.w;
+    const bottom = if (grooved) @max(track.y + track.h, thumb.y + thumb.h) else thumb.y + thumb.h;
     if (right <= left or bottom <= top) return;
 
     // Snap the combined layer origin to device pixels while preserving
@@ -348,7 +350,13 @@ test "a scrollbar thumb paints its look through cairo" {
     // Six wide at rest, centred in the 14 wide gutter: x 24..30, top half.
     try std.testing.expectEqual(@as(u32, 0xff0000ff), data[15 * 40 + 27]);
     try std.testing.expectEqual(@as(u32, 0), data[15 * 40 + 22]);
-    // The recessed groove continues below the thumb.
+    // No groove unless the theme cuts one: nothing below the thumb.
+    try std.testing.expectEqual(@as(u32, 0), data[45 * 40 + 27]);
+    // With one, the channel continues below it.
+    var grooved = palette;
+    grooved.scrollbar_track_relief = .inset;
+    drawScrollbar(cr, scrollbar.look(g, .{}, 8, grooved));
+    c.cairo_surface_flush(surface);
     try std.testing.expect(data[45 * 40 + 27] != 0);
 
     // Engaged thumbs share the shell raster, including fractional placement,

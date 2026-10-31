@@ -186,7 +186,7 @@ geometry retain their content or structural dimensions.
 | `display_tile_border` | `"rgba(255,255,255,0.16)"` |
 | `scrollbar_thumb` | `"rgba(89,98,110,1)"` |
 | `scrollbar_thumb_active` | `unset` |
-| `scrollbar_glow` | `1.0` (strength of the thumb's light) |
+| `scrollbar_glow` | `1.0` (strength of the thumb's light; `0` makes the thumb flat, with no highlight stripe) |
 | `bg` | `"rgba(9,11,24,1)"` |
 | `fg` | `"rgba(245,245,245,1)"` |
 | `dim` | `"rgba(214,214,214,1)"` |
@@ -451,6 +451,7 @@ as before. Raised shadows reach `relief_depth + relief_softness` past a box: use
 | `pill_relief` | `"flat"` | Slider value readout (pill) relief |
 | `row_hover_relief` | `"flat"` | Hovered or pressed list row relief |
 | `row_selected_relief` | `"flat"` | Selected list row relief |
+| `scrollbar_track_relief` | `"flat"` | Scrollbar channel: `flat` draws no track, `inset` cuts a groove the thumb sits in. Pair with `scrollbar_glow = 0` for a flat thumb |
 | Additional constraint | Range |
 | --- | --- |
 | `chrome_height` | 28–84 |
